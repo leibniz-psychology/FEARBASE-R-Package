@@ -1,3 +1,5 @@
+name: Deploy to AKS
+
 on:
   workflow_dispatch:
   push:
@@ -59,7 +61,7 @@ jobs:
       - name: Check out the repo
         uses: actions/checkout@v3
         with:
-          repository: leibniz-psychology/k8s-argocd-OpenCpu-config
+          repository: leibniz-psychology/FEARBASE-R-gitops
           ref: main
           ssh-key: ${{ secrets.SSH_PRIVATE_KEY }}
           persist-credentials: true
@@ -84,6 +86,6 @@ jobs:
       - name: Git push
         uses: ad-m/github-push-action@master
         with:
-          repository: leibniz-psychology/k8s-argocd-fearbase-config
+          repository: leibniz-psychology/FEARBASE-R-gitops
           ssh: true
           branch: main
