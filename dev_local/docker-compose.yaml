@@ -1,0 +1,8 @@
+services:
+  opencpu:
+    build:
+      context: ../
+      dockerfile: ./dev_local/Dockerfile
+    ports:
+      - 80:80
+      - 8004:8004

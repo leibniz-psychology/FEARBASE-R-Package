@@ -17,3 +17,12 @@
 
 ### Following R packages are used: 
 ...
+
+# Development
+
+## Start a local opencpu server
+
+* run `docker-compose up -d` in the `dev_local` directory of this repository
+  * run `docker-compose down` to stop the server
+* open `http://localhost:80/ocpu/` in your browser to see the opencpu server
+* test fearbase package by posting requests in `../library/fearbase/`
