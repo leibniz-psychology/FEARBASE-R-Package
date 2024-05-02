@@ -1,2 +1,7 @@
+.git
+.gitignore
+.github
+.Rproj.user
+.Rhistory
 README.md
 dev_local
