@@ -24,8 +24,6 @@ RUN R -e "install.packages('vctrs')"
 
 COPY . /home/opencpu/fearbase
 
-RUN echo $(ls -1 /home/opencpu/fearbase) && sleep 1000
-
 RUN cd /home/opencpu && \
     R -e "install.packages('remotes')" && \
     R CMD build fearbase && \
