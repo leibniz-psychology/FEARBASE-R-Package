@@ -1,0 +1,44 @@
+name: Update Adjusted Base Image
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/manifests/development/adjustedBaseImage/*'
+
+jobs:
+  update-worker-image:
+    name: update fearbase base image if needed
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      GH_BRANCH: ${{ github.ref_name }}
+      NAMESPACE: development
+      GH_SHA: ${{ github.sha }}
+      APP: fearbase-adjusted
+      REGISTRY: ${{ secrets.ACR_NAME }}.azurecr.io
+    steps:
+      -   name: Check out the repo
+          uses: actions/checkout@v2
+          with:
+            ref: 'development'
+
+      -   name: Construct image ref
+          run: echo "IMAGE_REF=${REGISTRY}/${GITHUB_REPOSITORY,,}/${APP}:$(cat ${APP}/VERSION)" >> $GITHUB_ENV
+
+      -   name: Azure Login
+          uses: azure/login@v1
+          with:
+            creds: "${{ secrets.AZURE_CREDENTIALS }}"
+
+      -   name: Connect to Azure Container Registry (ACR)
+          run: |
+            az acr login --name ${{ secrets.ACR_NAME }}
+
+      -   name: Create opencpu adjusted image based on development
+          if: github.ref_name == 'development' &&  success()
+          run: |
+            DOCKER_BUILDKIT=1 docker build . -t ${{ secrets.ACR_NAME }}.azurecr.io/fearbase/ocpu-base-image:latest-dev \
+              --file .github/workflows/manifests/${{ env.GH_BRANCH }}/adjustedBaseImage/Dockerfile 
+            docker push ${{ secrets.ACR_NAME }}.azurecr.io/fearbase/ocpu-base-image:latest-dev

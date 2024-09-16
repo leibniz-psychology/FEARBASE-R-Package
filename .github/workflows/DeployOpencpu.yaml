@@ -1,0 +1,91 @@
+name: Deploy to AKS
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ development ]
+
+jobs:
+  build:
+    name: Deploy to AKS
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      GH_BRANCH: ${{ github.ref_name }}
+      GH_SHA: ${{ github.sha }}
+      NAMESPACE: development
+      APP: fearbase/ocpu
+      REGISTRY: ${{ secrets.ACR_NAME }}.azurecr.io
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v2
+        with:
+          ref: 'development'
+
+#      - name: Construct image ref
+#        run: echo "IMAGE_REF=${REGISTRY}/${GITHUB_REPOSITORY,,}/${APP}:$(cat ${APP}/VERSION)" >> $GITHUB_ENV
+
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: "${{ secrets.AZURE_CREDENTIALS }}"
+
+      - name: Connect to Azure Container Registry (ACR)
+        run: |
+          az acr login --name ${{ secrets.ACR_NAME }}
+
+      - name: Create php image build based on development and push to a Azure Container Registry (ACR)
+        if: github.ref_name == 'development' &&  success()
+        run: |
+          DOCKER_BUILDKIT=1 docker build . -t ${{ secrets.ACR_NAME }}.azurecr.io/${{ env.APP }}:${{ github.sha }} \
+            --build-arg OCPU_PASS=${{ secrets.OCPU_PASS}} \
+            --build-arg SSL_KEY=${{ secrets.SSL_KEY}} \
+            --file .github/workflows/manifests/development/opencpu/Dockerfile
+          docker push ${{ secrets.ACR_NAME }}.azurecr.io/${{ env.APP }}:${{ github.sha }}
+
+      - name: set tag latest-dev
+        run: |
+          docker pull ${{ secrets.ACR_NAME }}.azurecr.io/${{ env.APP }}:${{ github.sha }}
+          docker tag ${{ secrets.ACR_NAME }}.azurecr.io/${{ env.APP }}:${{ github.sha }} ${{ secrets.ACR_NAME }}.azurecr.io/${{ env.APP }}:latest-dev
+          docker push ${{ secrets.ACR_NAME }}.azurecr.io/${{ env.APP }}:latest-dev
+  kustomize:
+    name: kustomize
+    runs-on: ubuntu-latest
+    needs: build
+    permissions:
+      contents: read
+    env:
+      APP: fearbase/ocpu
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v3
+        with:
+          repository: leibniz-psychology/FEARBASE-R-gitops
+          ref: main
+          ssh-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          persist-credentials: true
+          # path: config
+
+      - name: Setup Kustomize
+        uses: imranismail/setup-kustomize@v1
+        with:
+          kustomize-version: "3.6.1"
+
+      - name: Switch out image tag
+        run: |
+          cd dev
+          kustomize edit set image crzpiddev.azurecr.io/${{ env.APP }}:${{ github.sha }}
+          cat kustomization.yaml
+
+      - name: Commit files
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git commit -am "Update docker tag "${{ github.sha }}""
+      - name: Git push
+        uses: ad-m/github-push-action@master
+        with:
+          repository: leibniz-psychology/FEARBASE-R-gitops
+          ssh: true
+          branch: main
