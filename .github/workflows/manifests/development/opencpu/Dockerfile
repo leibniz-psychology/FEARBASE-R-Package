@@ -1,4 +1,4 @@
-FROM crzpiddev.azurecr.io/fearbase/fearbase-base-image:latest-dev
+FROM crzpiddev.azurecr.io/fearbase/ocpu-base-image:latest-dev
 
 ARG OCPU_PASS
 ARG SSL_KEY
