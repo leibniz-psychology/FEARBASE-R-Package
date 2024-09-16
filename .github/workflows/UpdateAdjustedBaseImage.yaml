@@ -39,6 +39,6 @@ jobs:
       -   name: Create opencpu adjusted image based on development
           if: github.ref_name == 'development' &&  success()
           run: |
-            DOCKER_BUILDKIT=1 docker build . -t ${{ secrets.ACR_NAME }}.azurecr.io/fearbase/fearbase-base-image:latest-dev \
+            DOCKER_BUILDKIT=1 docker build . -t ${{ secrets.ACR_NAME }}.azurecr.io/fearbase/ocpu-base-image:latest-dev \
               --file .github/workflows/manifests/${{ env.GH_BRANCH }}/adjustedBaseImage/Dockerfile 
-            docker push ${{ secrets.ACR_NAME }}.azurecr.io/fearbase/fearbase-base-image:latest-dev
+            docker push ${{ secrets.ACR_NAME }}.azurecr.io/fearbase/ocpu-base-image:latest-dev
