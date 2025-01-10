@@ -62,7 +62,7 @@ To run `jsonSummary` on the `randomData` enter:
 * Method: `POST`
 * Endpoint: `../library/fearbase/R/jsonSummary`
 * Param Name: `d`
-* Param Value: `randomData`
+* Param Value: `"randomData"`
 
 To see the result of the analysis, pick one of the links in the response and run a get request on it:
 * Method: `GET`
