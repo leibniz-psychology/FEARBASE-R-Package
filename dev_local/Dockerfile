@@ -21,6 +21,13 @@ RUN R -e "install.packages('rlang')"
 RUN R -e 'remove.packages("rlang", "/usr/lib/opencpu/library")'
 RUN R -e 'remove.packages("vctrs", "/usr/lib/opencpu/library")'
 RUN R -e "install.packages('vctrs')"
+RUN R -e "install.packages('tidyverse')"
+RUN R -e "install.packages('egg')"
+RUN R -e "install.packages('lme4')"
+RUN R -e "install.packages('lmerTest')"
+RUN R -e "install.packages('psych')"
+RUN R -e "install.packages('gsheet')"
+RUN R -e "install.packages('plotly')"
 
 COPY . /home/opencpu/fearbase
 
