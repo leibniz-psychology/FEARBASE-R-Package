@@ -1,38 +1,34 @@
 #' @title build combined histogram of measures
+#' @import dplyr
+#' @import ggplot2
+#' @import purrr
+#' @import tidyr
+#' @import tibble
 #' @export
 
 combinedHistogram <- function() {
-    library(dplyr)
-    library(ggplot2)
-    library(purrr)
-    library(tidyr)
-    library(tibble)
+ 
+    dl <- getDataLong()
+    md <- getMetadata()
 
+    study_ids <- unique(dl$study_id)
 
-    dat <- get("data_long")
-    metadat <- get("metadata")
+    fulld <- dl |>
+        left_join(md)
 
-    # load(file.path("data", "dat.RData"))
-    # load(file.path("data", "metadat.RData"))
-
-    study_ids <- unique(dat$study_id)
-
-    dat <- dat |>
-        left_join(metadat, by = c("study_id" = "id"))
-
-    quest <- dat |>
+    quest <- fulld |>
         filter(measure %in% c("stais", "stait", "neo-ffi", "asi", "promis", "ius", "pswq")) |>
         select(study_id, participant_id, measure) |>
         unique() |>
         mutate(type = "questionnaire")
 
-    phys <- dat |>
+    phys <- fulld |>
         filter(measure %in% c("scr", "scl", "ps", "fps", "hr")) |>
         select(study_id, participant_id, measure) |>
         unique() |>
         mutate(type = "physiological")
 
-    rate <- dat |>
+    rate <- fulld |>
         filter(measure %in% c("anx", "arous", "aware", "expect", "fear", "val", "stress")) |>
         select(study_id, participant_id, measure) |>
         unique() |>

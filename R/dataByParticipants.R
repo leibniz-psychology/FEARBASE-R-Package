@@ -1,10 +1,10 @@
 #' @title data collection year
+#' @import dplyr
+#' @import ggplot2
+#' @import tidyr
 #' @export
 
 dataCollectionYear <- function() {
-    library(dplyr)
-    library(ggplot2)
-    library(tidyr)
 
     dl <- getDataLong()
 

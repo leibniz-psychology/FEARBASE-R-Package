@@ -1,4 +1,47 @@
 .idea
 /.idea/
-.Rproj.user
+
+# --- R Specific ---
 .Rhistory
+*.RData
+.Ruserdata
+.Rproj.user/
+.Rapp.history
+.Rsession_device
+
+# --- Package Build Artifacts ---
+# These are generated when you build or check your package
+*.Rcheck/
+/vignettes/*.html
+/vignettes/*.pdf
+/man/*.Rd
+# Note: Some people prefer to track .Rd files, 
+# but they are auto-generated from Roxygen2 tags in your R/ files.
+
+# --- Data & Results (The Pipeline specific stuff) ---
+# Ignore all raw data formats to be safe
+*.csv
+*.xlsx
+*.xls
+*.rds
+*.rda
+*.parquet
+*.sqlite
+*.db
+
+# Ignore your output reports (rendered from your pipeline)
+/inst/reports/*.html
+/inst/reports/*.pdf
+/output/
+/results/
+
+# --- Environment & Secrets ---
+.env
+.Renviron
+auth/
+credentials/
+*-secret.R
+
+# --- OS Specific ---
+.DS_Store
+Thumbs.db

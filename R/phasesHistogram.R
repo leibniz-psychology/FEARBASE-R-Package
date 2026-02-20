@@ -9,16 +9,13 @@ phasesHistogram <- function() {
     library(tibble)
 
 
-    dat <- get("data_long")
-    metadat <- get("metadata")
+    data_long <- getDataLong()
+    metadat <- getMetadata()
 
-    # load(file.path("data", "dat.RData"))
-    # load(file.path("data", "metadat.RData"))
+    study_ids <- unique(data_long$study_id)
 
-    study_ids <- unique(dat$study_id)
-
-    dat <- dat |>
-        left_join(metadat, by = c("study_id" = "id"))
+    dat <- data_long |>
+        left_join(metadat, by = c("study_id" = "study_id"))
 
     phases <- data_long |>
         select(study_id, participant_id, phase) |>
@@ -37,9 +34,9 @@ phasesHistogram <- function() {
     crosstable <- as_tibble(crosstable)
     colnames(crosstable) <- phase_names
     crosstable$phase <- phase_names
-    crosstable <- crosstable |>
-        rowwise() |>
-        mutate(across(-phase, ~ ifelse(phase == cur_column(), NA, .)))
+    # crosstable <- crosstable |>
+    #     rowwise() |>
+    #     mutate(across(-phase, ~ ifelse(phase == cur_column(), NA, .)))
 
     hm <- crosstable %>%
         pivot_longer(cols = -phase, names_to = "phase2", values_to = "value") %>%
