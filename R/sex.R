@@ -1,11 +1,10 @@
 #' @title sex distribution
+#' @import dplyr
+#' @import ggplot2
+#' @import tidyr
 #' @export
 
 sex <- function() {
-    library(dplyr)
-    library(ggplot2)
-    library(tidyr)
-
     dl <- getDataLong()
 
     sex <- dl |>

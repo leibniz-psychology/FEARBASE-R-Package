@@ -3,20 +3,20 @@
 updateMapping <- function() {
     url <- 'https://docs.google.com/spreadsheets/d/1INi9MHloIm8XtaNLOoj046xf-T1Afm3vqFI-zRGKONw/edit?gid=0#gid=0'
     mapping <- read.csv(text=gsheet::gsheet2text(url, format='csv'))
-    saveRDS(mapping, file.path("data", "mapping.rds"))
+    usethis::use_data(mapping)
 }
 
 getMetadata <- function() {
-    if(!"mapping.rds" %in% list.files(file.path("data"))) {
+    if(!"mapping.rda" %in% list.files(file.path("data"))) {
         updateMapping()
     }
 
     if (!exists("mapping")) {
-        mapping <- readRDS(file.path("data", "mapping.rds"))
+        load(file.path("data", "mapping.rda"))
     }
 
     if(!exists("metadata")) {
-        metadata <- readRDS(file.path("data", "metadata.rds"))
+       load(file.path("data", "metadata.rda"))
     }
 
     output <- get("metadata") |>
@@ -27,16 +27,16 @@ getMetadata <- function() {
 }
 
 getDataLong <- function() {
-    if(!"mapping.rds" %in% list.files(file.path("data"))) {
+    if(!"mapping.rda" %in% list.files(file.path("data"))) {
         updateMapping()
     }
     
     if (!exists("mapping")) {
-        mapping <- readRDS(file.path("data", "mapping.rds"))
+        load(file.path("data", "mapping.rda"))
     }
 
     if(!exists("data_long")) {
-        data_long <- readRDS(file.path("data", "data_long.rds"))
+        load(file.path("data", "data_long.rda"))
     }
 
     output <- get("data_long") |>

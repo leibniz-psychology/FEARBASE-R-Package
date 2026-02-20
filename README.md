@@ -55,3 +55,16 @@ Open [http://localhost/ocpu/](http://localhost:80/ocpu/) in your browser to acce
 
 In the interface you can run any functions and access included data of the fearbase package by making requests in `../library/fearbase/`. 
 Check the [OpenCPU API docs](https://www.opencpu.org/api.html#api-methods) for information on how to use the OpenCPU API Explorer
+
+## loading the fearbase package locally
+
+Copy .rda files into /data
+
+```R
+if(!requireNamespace("devtools")){
+    install.packages("devtools")
+}
+devtools::load_all()
+
+age()
+```

@@ -1,14 +1,12 @@
 #' @title build combined histogram of measures
+#' @import dplyr
+#' @import ggplot2
+#' @import purrr
+#' @import tidyr
+#' @import tibble
 #' @export
 
 phasesHistogram <- function() {
-    library(dplyr)
-    library(ggplot2)
-    library(purrr)
-    library(tidyr)
-    library(tibble)
-
-
     data_long <- getDataLong()
     metadat <- getMetadata()
 

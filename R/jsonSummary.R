@@ -6,9 +6,7 @@
 #' A \code{string} representing the dataset name which json representation should be returned.
 #' @return
 #' returns a json representation of an included dataset
-#' @author
 #' @export
-#' @examples
 
 jsonSummary <- function(d) {
   requireNamespace("jsonlite")
