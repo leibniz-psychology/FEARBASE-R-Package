@@ -28,6 +28,8 @@ RUN R -e "install.packages('lmerTest')"
 RUN R -e "install.packages('psych')"
 RUN R -e "install.packages('gsheet')"
 RUN R -e "install.packages('plotly')"
+RUN R -e "install.packages('ggridges')"
+RUN R -e "install.packages('Polychrome')"
 
 COPY . /home/opencpu/fearbase
 
