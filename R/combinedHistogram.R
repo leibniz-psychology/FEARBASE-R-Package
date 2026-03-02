@@ -11,26 +11,26 @@ combinedHistogram <- function() {
     dl <- getDataLong()
     md <- getMetadata()
 
-    study_ids <- unique(dl$study_id)
+    condition_ids <- unique(dl$condition_id)
 
     fulld <- dl |>
         left_join(md)
 
     quest <- fulld |>
         filter(measure %in% c("stais", "stait", "neo-ffi", "asi", "promis", "ius", "pswq")) |>
-        select(study_id, participant_id, measure) |>
+        select(condition_id, participant_id, measure) |>
         unique() |>
         mutate(type = "questionnaire")
 
     phys <- fulld |>
         filter(measure %in% c("scr", "scl", "ps", "fps", "hr")) |>
-        select(study_id, participant_id, measure) |>
+        select(condition_id, participant_id, measure) |>
         unique() |>
         mutate(type = "physiological")
 
     rate <- fulld |>
         filter(measure %in% c("anx", "arous", "aware", "expect", "fear", "val", "stress")) |>
-        select(study_id, participant_id, measure) |>
+        select(condition_id, participant_id, measure) |>
         unique() |>
         mutate(type = "ratings")
 
@@ -45,30 +45,36 @@ combinedHistogram <- function() {
     bp <- measure_cat |>
         ggplot(aes(x = measure, y = used, fill = type)) +
         geom_col() +
-        geom_text(aes(label = used), position = position_stack(vjust = 0.5), color = "black") +
+        geom_text(aes(label = used, y = 50), color = "black") +
         theme_minimal() +
         coord_flip() +
-        scale_fill_manual(values = c("gray", "#0033a07c", "#FFC94F")) +
+        scale_fill_manual(values = c("gray", "#6a95f1", "#FFC94F")) +
         theme_void() +
         theme(axis.text.x = element_text(size = rel(1)), legend.position = "top")
     #bp
 
-    x <- rbind(quest, phys, rate) |>
-        mutate(type = factor(type, levels = c("questionnaire", "ratings", "physiological"))) |>
-        pivot_wider(names_from = study_id, values_from = participant_id, values_fn = length, values_fill = 0) |>
-        select(-measure, -type) |>
-        as.matrix()
+    # test <- rbind(quest, phys, rate) |>
+    #     mutate(type = factor(type, levels = c("questionnaire", "ratings", "physiological"))) |>
+    #     group_by(condition_id, measure, type) |>
+    #     summarise(n = n())
+    # test
 
-    x_t <- rbind(quest, phys, rate) |>
+    # x <- rbind(quest, phys, rate) |>
+    #     mutate(type = factor(type, levels = c("questionnaire", "ratings", "physiological"))) |>
+    #     pivot_wider(names_from = condition_id, values_from = participant_id, values_fn = length, values_fill = 0) |>
+    #     select(-measure, -type) |>
+    #     as.matrix()
+
+    x <- rbind(quest, phys, rate) |>
         select(-type) |>
         pivot_wider(names_from = measure, values_from = participant_id, values_fn = length, values_fill = 0) |>
-        select(-study_id) |>
+        select(-condition_id) |>
         as.matrix()
     
-    crosstable <- x %*% t(x > 0)
+    crosstable <- t(x > 0) %*% x
     crosstable <- as_tibble(crosstable)
-    colnames(crosstable) <- colnames(x_t)
-    crosstable$measure <- colnames(x_t)
+    colnames(crosstable) <- colnames(x)
+    crosstable$measure <- colnames(x)
     crosstable <- crosstable |>
         rowwise() |>
         mutate(across(ius:aware, ~ ifelse(measure == cur_column(), NA, .)))
@@ -82,9 +88,9 @@ combinedHistogram <- function() {
         mutate(measure2 = forcats::fct_reorder(measure2, used.y)) %>%
         ggplot(aes(x = measure, y = measure2, fill = value)) +
         geom_tile() +
-        scale_fill_gradient(low = "#0033a07c", high = "#FFC94F") +
+        scale_fill_gradient(low = "#0033a0", high = "#ff7b00") +
         scale_y_discrete(position = "right") +
-        geom_text(aes(label = value), color = "black", nudge_x = -0.3, nudge_y = 0.3) +
+        shadowtext::geom_shadowtext(aes(label = value), color = "black", fontface = 'bold', nudge_x = 0, nudge_y = 0, bg.color = "white") +
         theme(
             axis.text.x = element_text(angle = 45, hjust = 1),
             legend.position = "top",

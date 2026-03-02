@@ -4,7 +4,7 @@
 #' @import tidyr
 #' @export
 
-dataCollectionYear <- function() {
+dataByParticipants <- function() {
 
     dl <- getDataLong()
 
