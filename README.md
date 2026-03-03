@@ -68,3 +68,8 @@ devtools::load_all()
 
 age()
 ```
+
+## useful
+
+### R formatter
+https://posit-dev.github.io/air/formatter.html

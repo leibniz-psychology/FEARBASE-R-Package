@@ -1,3 +1,5 @@
 ^.*\.Rproj$
 ^\.Rproj\.user$
 csv_to_rds.R
+^[.]?air[.]toml$
+^\.vscode$

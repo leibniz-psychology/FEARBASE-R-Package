@@ -6,22 +6,21 @@
 #' @export
 
 measures <- function(study_id = NULL) {
+  if (!is.null(study_id)) {
+    input_id <- study_id
+  } else {
+    input_id <- allStudies()
+  }
 
-    if (!is.null(study_id)) {
-        input_id <- study_id
-    } else {
-        input_id <- allStudies()
-    }
+  dl <- getDataLong()
 
-    dl <- getDataLong()
+  measures <- dl |>
+    filter(study_id %in% input_id) |>
+    select(measure) |>
+    drop_na() |>
+    distinct() |>
+    arrange(measure) |>
+    pull(measure)
 
-    measures <- dl |>
-        filter(study_id %in% input_id) |>
-        select(measure) |>
-        drop_na() |>
-        distinct() |>
-        arrange(measure) |>
-        pull(measure)
-
-    return(measures)
+  return(measures)
 }

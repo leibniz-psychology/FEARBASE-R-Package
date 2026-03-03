@@ -1,5 +1,7 @@
 .idea
 /.idea/
+.vscode
+.github
 
 # --- R Specific ---
 .Rhistory
