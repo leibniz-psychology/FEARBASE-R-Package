@@ -24,15 +24,28 @@ getDataLong <- function() {
 
 set_theme(theme_classic())
 
+fearbase_palette <- c(
+  "#ffece2",
+  "#ff8800",
+  "#0032A0"
+)
+
 # update_theme(palette.colour.discrete = grDevices::colorRampPalette(c("#000000", "#0032A0", "#ffffff")))
 update_theme(
-  palette.colour.discrete = grDevices::colorRampPalette(c(
-    "#ffece2",
-    "#ff8800",
-    "#0032A0"
-  ))
+  palette.colour.discrete = grDevices::colorRampPalette(
+    fearbase_palette,
+    space = "Lab",
+    interpolate = "spline"
+  ),
+  palette.fill.discrete = grDevices::colorRampPalette(
+    fearbase_palette,
+    space = "Lab",
+    interpolate = "spline"
+  ),
+  palette.fill.continuous = fearbase_palette,
+  palette.color.continuous = fearbase_palette
 )
-update_geom_defaults("bar", list("fill" = "#0032A0"))
+# update_geom_defaults("bar", list("fill" = "#0032A0"))
 
 # grDevices::colorRampPalette(c("#ffb184", "#0032A0", "#3f003f"))(30) |>
-# Polychrome::swatch()
+# Polychrome::swatch(grDevices::colorRampPalette(fearbase_palette, space = "Lab", interpolate = "spline")(30))
