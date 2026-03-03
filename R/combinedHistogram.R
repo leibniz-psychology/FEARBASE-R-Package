@@ -54,10 +54,15 @@ combinedHistogram <- function() {
   bp <- measure_cat |>
     ggplot(aes(x = measure, y = used, fill = type)) +
     geom_col() +
-    geom_text(aes(label = used, y = 50), color = "black") +
+    shadowtext::geom_shadowtext(
+      aes(label = used, y = 5),
+      hjust = 0,
+      color = "black",
+      fontface = 'bold',
+      bg.color = "white"
+    ) +
     theme_minimal() +
     coord_flip() +
-    scale_fill_manual(values = c("gray", "#6a95f1", "#FFC94F")) +
     theme_void() +
     theme(axis.text.x = element_text(size = rel(1)), legend.position = "top")
   #bp
@@ -106,7 +111,6 @@ combinedHistogram <- function() {
     mutate(measure2 = forcats::fct_reorder(measure2, used.y)) %>%
     ggplot(aes(x = measure, y = measure2, fill = value)) +
     geom_tile() +
-    scale_fill_gradient(low = "#0033a0", high = "#ff7b00") +
     scale_y_discrete(position = "right") +
     shadowtext::geom_shadowtext(
       aes(label = value),
@@ -123,14 +127,6 @@ combinedHistogram <- function() {
       axis.title = element_blank()
     )
 
-  graph <- egg::ggarrange(hm, bp, ncol = 2, widths = c(1, 0.5))
+  graph <- egg::ggarrange(hm, bp, ncol = 2, widths = c(1, 0.5), draw = FALSE)
   return(graph)
 }
-# todos:
-## in der matrix phys rating und quest klar machen
-
-# descriptive visualisierungen:
-## male female verteilung
-## studie größen verteilung
-
-# welche reiforcementrates

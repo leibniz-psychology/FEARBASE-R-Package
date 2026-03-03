@@ -30,10 +30,15 @@ phasesHistogram <- function() {
     summarise(used = sum(used)) |>
     ggplot(aes(x = phase, y = used)) +
     geom_col() +
-    geom_text(aes(label = used, y = 50), color = "black") +
+    shadowtext::geom_shadowtext(
+      aes(label = used, y = 5),
+      hjust = 0,
+      color = "black",
+      fontface = 'bold',
+      bg.color = "white"
+    ) +
     theme_minimal() +
     coord_flip() +
-    scale_fill_manual(values = c("gray", "#6a95f1", "#FFC94F")) +
     theme_void() +
     theme(axis.text.x = element_text(size = rel(1)), legend.position = "top")
 
@@ -60,18 +65,28 @@ phasesHistogram <- function() {
     # mutate(phase2 = forcats::fct_reorder(phase2, used.y)) %>%
     ggplot(aes(x = phase, y = phase2, fill = value)) +
     geom_tile() +
-    scale_fill_gradient(low = "#6a95f1", high = "#FFC94F") +
-    # scale_color_manual(values = c("#ffffff00", "red")) +
     scale_y_discrete(position = "right") +
-    geom_text(aes(label = value), color = "black", nudge_x = 0, nudge_y = 0) +
+    shadowtext::geom_shadowtext(
+      aes(label = value),
+      color = "black",
+      fontface = 'bold',
+      nudge_x = 0,
+      nudge_y = 0,
+      bg.color = "white"
+    ) +
     theme(
-      axis.text.x = element_text(angle = 45, hjust = 1),
+      axis.text = element_text(
+        size = rel(1.5)
+      ),
+      axis.text.x = element_text(
+        angle = 45,
+        hjust = 1,
+      ),
       legend.position = "top",
       panel.background = element_rect(fill = "white"),
       axis.title = element_blank()
     )
 
-  graph <- egg::ggarrange(hm, bp, ncol = 2, widths = c(1, 0.5))
-
+  graph <- egg::ggarrange(hm, bp, ncol = 2, widths = c(1, 0.5), draw = FALSE)
   return(graph)
 }
