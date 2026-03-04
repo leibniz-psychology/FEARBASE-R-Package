@@ -22,6 +22,23 @@ getDataLong <- function() {
   return(output)
 }
 
+#' @title All Studies
+#' @description This function returns the list of all study IDs in the metadata.
+#' @return A list containing all study IDs.
+#' @import dplyr
+#' @export
+allStudies <- function() {
+  md <- getMetadata()
+
+  studies <- md |>
+    select(study_id) |>
+    distinct() |>
+    arrange(study_id) |>
+    pull(study_id)
+
+  return(studies)
+}
+
 set_theme(theme_classic())
 
 fearbase_palette <- c(
