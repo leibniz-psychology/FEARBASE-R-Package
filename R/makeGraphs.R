@@ -13,8 +13,8 @@ makeGraphs <- function(folder = "output/") {
   )
 
   ggsave(
-    filename = file.path(folder, "measureHistogram.png"),
-    plot = combinedHistogram(),
+    filename = file.path(folder, "measureHeatmap.png"),
+    plot = measuresHeatmap(),
     width = 16,
     height = 10
   )
@@ -48,8 +48,8 @@ makeGraphs <- function(folder = "output/") {
   )
 
   ggsave(
-    filename = file.path(folder, "phasesHistogram.png"),
-    plot = phasesHistogram(),
+    filename = file.path(folder, "phasesHeatmap.png"),
+    plot = phasesHeatmap(),
     width = 10,
     height = 6
   )
@@ -97,6 +97,28 @@ makeGraphs <- function(folder = "output/") {
   ggsave(
     filename = file.path(folder, "instructions.png"),
     plot = instructions(),
+    width = 10,
+    height = 6
+  )
+
+  # New graphs
+  ggsave(
+    filename = file.path(folder, "phaseResponseDistribution_SCR.png"),
+    plot = phaseResponseDistribution("scr"),
+    width = 10,
+    height = 6
+  )
+
+  ggsave(
+    filename = file.path(folder, "dataDensityMatrix.png"),
+    plot = dataDensityMatrix(),
+    width = 16,
+    height = 12
+  )
+
+  ggsave(
+    filename = file.path(folder, "measureByStudy_STAIS.png"),
+    plot = measureByStudy("stais"),
     width = 10,
     height = 6
   )
