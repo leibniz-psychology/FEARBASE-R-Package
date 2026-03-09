@@ -2,6 +2,7 @@
 #' @import dplyr
 #' @import ggplot2
 #' @import tidyr
+#' @export
 
 descriptives <- function() {
   dl <- getDataLong()
