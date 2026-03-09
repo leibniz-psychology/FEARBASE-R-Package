@@ -2,7 +2,7 @@ FROM opencpu/base:latest
 
 #install needed dependenciesp
 RUN apt-get update && apt-get install -y \
-    libcurl4-gnutls-dev \
+    libcurl4-gnutls-dev libcairo2-dev\
     && apt install -y cmake \
     ## clean up
     && apt-get clean \
@@ -29,7 +29,9 @@ RUN R -e "install.packages('psych')"
 RUN R -e "install.packages('gsheet')"
 RUN R -e "install.packages('plotly')"
 RUN R -e "install.packages('ggridges')"
-RUN R -e "install.packages('Polychrome')"
+RUN R -e "install.packages('ggiraph')"
+RUN R -e "install.packages('shadowtext')"
+RUN R -e "install.packages('broom.mixed')"
 
 COPY . /home/opencpu/fearbase
 
