@@ -3,6 +3,7 @@
 #' @import ggplot2
 #' @description
 #' generate an overview of the full dataset
+#' @export
 
 reinforcementRates <- function() {
   metadata <- getMetadata()
