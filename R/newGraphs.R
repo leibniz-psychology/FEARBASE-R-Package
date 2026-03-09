@@ -12,7 +12,10 @@ phaseResponseDistribution <- function(measure_name = "scr") {
   plot_data <- dl |>
     filter(measure == measure_name) |>
     filter(!is.na(phase), !is.na(value)) |>
-    mutate(value = as.numeric(value)) |>
+    mutate(
+      value = as.numeric(value),
+      phase = reorderPhases(phase)
+    ) |>
     filter(!is.na(value))
 
   if (nrow(plot_data) == 0) {
@@ -66,38 +69,4 @@ dataDensityMatrix <- function() {
       y = "Study ID"
     ) +
     theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
-}
-
-#' @title distribution of a measure across studies
-#' @description
-#' Compare the distribution of a questionnaire or rating across different studies.
-#' @param measure_name The name of the measure (e.g., "stais", "age")
-#' @import dplyr
-#' @import ggplot2
-#' @export
-measureByStudy <- function(measure_name = "stais") {
-  dl <- getDataLong()
-
-  plot_data <- dl |>
-    filter(measure == measure_name) |>
-    mutate(value = as.numeric(value)) |>
-    filter(!is.na(value))
-
-  if (nrow(plot_data) == 0) {
-    stop(paste("No data found for measure:", measure_name))
-  }
-
-  ggplot(
-    plot_data,
-    aes(x = as.factor(study_id), y = value, fill = as.factor(study_id))
-  ) +
-    geom_boxplot() +
-    coord_flip() +
-    theme_minimal() +
-    labs(
-      title = paste("Distribution of", measure_name, "by Study"),
-      x = "Study ID",
-      y = "Value"
-    ) +
-    theme(legend.position = "none")
 }

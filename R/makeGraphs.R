@@ -116,10 +116,19 @@ makeGraphs <- function(folder = "output/") {
     height = 12
   )
 
+
+
   ggsave(
-    filename = file.path(folder, "measureByStudy_STAIS.png"),
-    plot = measureByStudy("stais"),
-    width = 10,
-    height = 6
+    filename = file.path(folder, "measureByStudy_All.png"),
+    plot = measureByStudy(),
+    width = 16,
+    height = 12
+  )
+
+  ggsave(
+    filename = file.path(folder, "measureByStudy_Stimulus.png"),
+    plot = measureByStudy(split_by_stimulus = TRUE),
+    width = 16,
+    height = 12
   )
 }

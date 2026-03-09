@@ -126,13 +126,7 @@ phasesHeatmap <- function() {
     group_by(phase) |>
     summarise(used = sum(used), .groups = "drop")
 
-  # Set the order: priority phases first, then the rest
-  priority_phases <- c("hab", "acq", "ext")
-  existing_priority <- priority_phases[priority_phases %in% phase_summary$phase]
-  other_phases <- setdiff(phase_summary$phase, priority_phases)
-  phase_levels <- c(existing_priority, other_phases)
-
-  phase_summary$phase <- factor(phase_summary$phase, levels = rev(phase_levels))
+  phase_summary$phase <- forcats::fct_rev(reorderPhases(phase_summary$phase))
 
   # Compute co-occurrence
   crosstable_long <- .get_co_occurrence_data(
@@ -143,11 +137,8 @@ phasesHeatmap <- function() {
   )
 
   # Apply the same levels to the heatmap data
-  crosstable_long$phase <- factor(crosstable_long$phase, levels = phase_levels)
-  crosstable_long$phase2 <- factor(
-    crosstable_long$phase2,
-    levels = rev(phase_levels)
-  )
+  crosstable_long$phase <- reorderPhases(crosstable_long$phase)
+  crosstable_long$phase2 <- forcats::fct_rev(reorderPhases(crosstable_long$phase2))
 
   # Heatmap
   hm <- .plot_co_occurrence_heatmap(
@@ -272,7 +263,6 @@ phasesHeatmap <- function() {
     bp,
     ncol = 2,
     widths = c(1, 0.5),
-    draw = FALSE,
-    newpage = FALSE
+    draw = FALSE
   )
 }

@@ -19,11 +19,8 @@ trialsPhaseParticipant <- function(y = "n") {
     summarise(n = n()) |>
     mutate(
       condition_id = as.factor(condition_id),
-      phase = factor(
-        phase,
-        levels = c("hab", "acq", "ext", "int", "rin", "rex", "rev", "other")
-      )
-    ) # TODO: add additional phases
+      phase = reorderPhases(phase)
+    )
 
   if (tolower(y) %in% c("n", "participant", "participants")) {
     graph <- trials |>
