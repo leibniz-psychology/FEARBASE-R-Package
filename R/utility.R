@@ -3,22 +3,16 @@
 updateMapping <- function() {
   url <- 'https://docs.google.com/spreadsheets/d/1INi9MHloIm8XtaNLOoj046xf-T1Afm3vqFI-zRGKONw/edit?gid=0#gid=0'
   mapping <- read.csv(text = gsheet::gsheet2text(url, format = 'csv'))
-  usethis::use_data(mapping)
+  usethis::use_data(mapping, overwrite = TRUE)
 }
 
 getMetadata <- function() {
-  output <- get("metadata") |>
-    dplyr::left_join(mapping, by = c("id" = "condition_id")) |>
-    dplyr::rename("condition_id" = "id")
-
+  output <- get("metadata")
   return(output)
 }
 
 getDataLong <- function() {
-  output <- get("data_long") |>
-    dplyr::left_join(mapping, by = c("study_id" = "condition_id")) |>
-    dplyr::rename("condition_id" = "study_id", "study_id" = "study_id.y")
-
+  output <- get("data_long")
   return(output)
 }
 
@@ -46,13 +40,37 @@ csv_to_internal <- function(files = list.files("data", pattern = ".csv$")) {
     assign(sub(".csv", "", f), read_csv(file.path("data", f)))
   }
 
-  usethis::use_data(data_long, overwrite = TRUE)
-  usethis::use_data(data_wide, overwrite = TRUE)
-  usethis::use_data(codebook, overwrite = TRUE)
-  usethis::use_data(questionnaires, overwrite = TRUE)
-  usethis::use_data(metadata, overwrite = TRUE)
-  usethis::use_data(study_design, overwrite = TRUE)
+  data_long <- data_long |>
+    left_join(mapping, by = c("study_id" = "condition_id")) |>
+    rename("condition_id" = "study_id", "study_id" = "study_id.y")
+  use_data(data_long, overwrite = TRUE)
+  use_data(data_wide, overwrite = TRUE)
+  use_data(codebook, overwrite = TRUE)
+  use_data(questionnaires, overwrite = TRUE)
+
+  metadata <- metadata |>
+    left_join(mapping, by = c("id" = "condition_id")) |>
+    rename("condition_id" = "id")
+  use_data(metadata, overwrite = TRUE)
+  use_data(study_design, overwrite = TRUE)
 
   #   data_long[data_long$study_id == "98" & data_long$phase == "hab", ]
   #   data_long |> filter(study_id == "98", phase == "hab", measure == "scr")
+}
+
+#' @title Reorder phases
+#' @description Returns a factor with standardized levels: priority phases first ("hab", "acq", "ext", "int", "rin", "rex", "rev", "other"), then others.
+#' @param phases A vector of phases to be converted to factor levels.
+#' @return A factor with the standardized phase levels.
+#' @import dplyr
+#' @import forcats
+#' @export
+reorderPhases <- function(phases) {
+  unique_phases <- unique(as.character(phases))
+  priority_phases <- c("hab", "acq", "ext", "int", "rin", "rex", "rev", "other")
+  existing_priority <- priority_phases[priority_phases %in% unique_phases]
+  other_phases <- setdiff(unique_phases, priority_phases)
+  phase_levels <- c(existing_priority, other_phases)
+
+  return(factor(phases, levels = phase_levels))
 }
