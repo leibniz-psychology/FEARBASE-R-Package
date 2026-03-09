@@ -20,11 +20,14 @@ generate_palette <- function(n_colors) {
   }
 }
 
-set_theme(theme_classic())
+.onLoad <- function(libname, pkgname) {
+  # These settings only apply when the package is loaded in a session
+  set_theme(theme_classic())
 
 update_theme(
-  palette.colour.discrete = generate_palette,
-  palette.fill.discrete = generate_palette,
-  palette.fill.continuous = fearbase_palette,
-  palette.color.continuous = fearbase_palette
-)
+    palette.colour.discrete = generate_palette,
+    palette.fill.discrete = generate_palette,
+    palette.fill.continuous = fearbase_palette,
+    palette.color.continuous = fearbase_palette
+  )
+}
