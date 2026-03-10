@@ -1,7 +1,8 @@
 fearbase_palette <- c(
   "#ffece2",
   "#ff8800",
-  "#0032A0"
+  "#0032A0",
+  "#0a1120"
 )
 
 generate_palette <- function(n_colors) {
@@ -24,10 +25,13 @@ generate_palette <- function(n_colors) {
   # These settings only apply when the package is loaded in a session
   set_theme(theme_classic())
 
-update_theme(
+  update_theme(
     palette.colour.discrete = generate_palette,
     palette.fill.discrete = generate_palette,
     palette.fill.continuous = fearbase_palette,
     palette.color.continuous = fearbase_palette
   )
+
+  update_geom_defaults("bar", list(fill = generate_palette(1)))
+  update_geom_defaults("boxplot", list(fill = generate_palette(1)))
 }
