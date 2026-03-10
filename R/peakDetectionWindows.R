@@ -11,6 +11,7 @@ peakDetectionWindows <- function() {
   graph <- metadata |>
     select(
       condition_id,
+      scr_scoring_approach,
       scr_baseline_window_start,
       scr_baseline_window_end,
       scr_peak_detection_window_min,
@@ -18,10 +19,14 @@ peakDetectionWindows <- function() {
     ) |>
     drop_na(scr_peak_detection_window_max) |>
     distinct() |>
-    arrange(desc(scr_peak_detection_window_max)) |>
+    arrange(
+      scr_scoring_approach,
+      desc(scr_peak_detection_window_min),
+      desc(scr_peak_detection_window_max)
+    ) |>
     mutate(condition_id = factor(condition_id, levels = condition_id)) |>
     pivot_longer(
-      cols = -c(condition_id),
+      cols = -c(condition_id, scr_scoring_approach),
       names_to = c("measure", "window", "timepoint"),
       names_pattern = "(scr)_(.*)_window_(.*)"
     ) |>
@@ -46,7 +51,14 @@ peakDetectionWindows <- function() {
       y = "Time (s)",
       color = "Window"
     ) +
-    coord_flip()
+    coord_flip(ylim = c(-6, 8)) + # TODO: set limits dynamically
+    geom_text(
+      aes(y = -3, label = scr_scoring_approach),
+      color = "black",
+      hjust = 1,
+      size = 3
+    ) +
+    geom_hline(yintercept = 0)
 
   return(graph)
 }
