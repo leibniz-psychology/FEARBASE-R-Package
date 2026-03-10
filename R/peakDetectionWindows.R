@@ -44,7 +44,7 @@ peakDetectionWindows <- function() {
       title = "SCR Detection Windows by Study",
       x = "Study",
       y = "Time (s)",
-      fill = "Window"
+      color = "Window"
     ) +
     coord_flip()
 

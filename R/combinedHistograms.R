@@ -138,7 +138,9 @@ phasesHeatmap <- function() {
 
   # Apply the same levels to the heatmap data
   crosstable_long$phase <- reorderPhases(crosstable_long$phase)
-  crosstable_long$phase2 <- forcats::fct_rev(reorderPhases(crosstable_long$phase2))
+  crosstable_long$phase2 <- forcats::fct_rev(reorderPhases(
+    crosstable_long$phase2
+  ))
 
   # Heatmap
   hm <- .plot_co_occurrence_heatmap(
@@ -221,6 +223,7 @@ phasesHeatmap <- function() {
       fontface = 'bold',
       bg.color = "white"
     ) +
+    labs(fill = "Participants") +
     theme(
       axis.text.x = element_text(angle = 45, hjust = 1),
       legend.position = "top",
@@ -248,12 +251,13 @@ phasesHeatmap <- function() {
       fontface = 'bold',
       bg.color = "white"
     ) +
-    theme_minimal() +
+    scale_fill_discrete(palette = scales::pal_grey()) +
     coord_flip() +
     theme_void() +
     theme(
       axis.text.x = element_text(size = rel(1)),
-      legend.position = "top"
+      legend.position = "top",
+      legend.title = element_blank()
     )
 }
 

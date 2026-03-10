@@ -31,7 +31,8 @@ age <- function(type = "histogram") {
         stat = "identity",
         color = "black",
         linewidth = .2
-      )
+      ) +
+      labs(x = "Age", y = "Number of Participants", fill = "Study ID")
   } else if (tolower(type) %in% c("ridge", "density", "r", "d")) {
     age <- dl |>
       filter(measure == "age") |>
@@ -49,7 +50,8 @@ age <- function(type = "histogram") {
 
     graph <- age |>
       ggplot(aes(x = age, y = study_id, group = study_id, fill = study_id)) +
-      ggridges::geom_density_ridges()
+      ggridges::geom_density_ridges() +
+      labs(x = "Age", y = "Study ID", fill = "Study ID")
   } else {
     stop("unknown argument type")
   }

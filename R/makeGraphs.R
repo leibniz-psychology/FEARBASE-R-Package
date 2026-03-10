@@ -101,7 +101,6 @@ makeGraphs <- function(folder = "output/") {
     height = 6
   )
 
-  # New graphs
   ggsave(
     filename = file.path(folder, "phaseResponseDistribution_SCR.png"),
     plot = phaseResponseDistribution("scr"),
@@ -115,8 +114,6 @@ makeGraphs <- function(folder = "output/") {
     width = 16,
     height = 12
   )
-
-
 
   ggsave(
     filename = file.path(folder, "measureByStudy_All.png"),
