@@ -16,6 +16,7 @@ dataByParticipants <- function() {
     mutate(study_id = factor(study_id, levels = study_id)) |>
     ggplot(aes(x = study_id, y = n)) +
     geom_bar(stat = "identity") +
+    geom_text(aes(label = n), vjust = -.5) +
     labs(x = "Study ID", y = "Number of Participants")
 
   return(graph)

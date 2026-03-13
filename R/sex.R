@@ -31,8 +31,10 @@ sex <- function() {
     geom_bar(stat = "identity", width = 1) +
     coord_polar("y", start = 0) +
     theme_void(paper = "white") +
-    geom_text(
-      aes(label = paste0(sex, " (", n, ")")),
-      position = position_stack(vjust = 0.5)
-    )
+    geom_label(
+      aes(label = paste0(sex, " (", n, ")"), group = sex),
+      position = position_stack(vjust = 0.5),
+      fill = "white"
+    ) +
+    theme(legend.position = "none")
 }

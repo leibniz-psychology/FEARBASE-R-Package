@@ -36,6 +36,8 @@
 /inst/reports/*.pdf
 /output/
 /results/
+*.tar.gz
+*.zip
 
 # --- Environment & Secrets ---
 .env

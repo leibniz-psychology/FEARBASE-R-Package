@@ -5,16 +5,25 @@ fearbase_palette <- c(
   "#0a1120"
 )
 
+fearbase_palette_v2 <- c(
+  hsl_to_rgb(215.44, 1, .8),
+  hsl_to_rgb(215.44, 1, .5745), #secondary
+  hsl_to_rgb(221.25, 1, .3137), #primary
+  hsl_to_rgb(221.25, 1, .2), #primary 800
+  hsl_to_rgb(221.25, 1, .05)
+)
+
 generate_palette <- function(n_colors) {
+  p <- fearbase_palette_v2
   if (n_colors == 1) {
-    fearbase_palette[3]
+    p[3]
   } else if (n_colors == 2) {
-    fearbase_palette[c(3, 2)]
+    p[c(2, 3)]
   } else if (n_colors == 3) {
-    fearbase_palette[c(3, 2, 1)]
+    p[c(2, 3, 4)]
   } else {
     grDevices::colorRampPalette(
-      fearbase_palette,
+      p,
       space = "Lab",
       interpolate = "spline"
     )(n_colors)
@@ -23,13 +32,13 @@ generate_palette <- function(n_colors) {
 
 .onLoad <- function(libname, pkgname) {
   # These settings only apply when the package is loaded in a session
-  set_theme(theme_classic())
+  set_theme(theme_classic(base_size = 14))
 
   update_theme(
     palette.colour.discrete = generate_palette,
     palette.fill.discrete = generate_palette,
-    palette.fill.continuous = fearbase_palette,
-    palette.color.continuous = fearbase_palette
+    palette.fill.continuous = generate_palette(3),
+    palette.color.continuous = generate_palette(3)
   )
 
   update_geom_defaults("bar", list(fill = generate_palette(1)))

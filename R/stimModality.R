@@ -21,7 +21,11 @@ stimModality <- function(type = "us") {
       geom_bar(stat = "identity", width = 1) +
       coord_polar("y", start = 0) +
       theme_void(paper = "white") +
-      geom_text(aes(label = n), position = position_stack(vjust = 0.5)) +
+      geom_label(
+        aes(label = n, group = us_type),
+        fill = "white",
+        position = position_stack(vjust = 0.5)
+      ) +
       labs(fill = "US Modality")
   } else if (
     tolower(type) %in% c("cs", "conditioned stimulus", "conditioned stimuli")
@@ -36,7 +40,11 @@ stimModality <- function(type = "us") {
       geom_bar(stat = "identity", width = 1) +
       coord_polar("y", start = 0) +
       theme_void(paper = "white") +
-      geom_text(aes(label = n), position = position_stack(vjust = 0.5)) +
+      geom_label(
+        aes(label = n, group = cs_type),
+        fill = "white",
+        position = position_stack(vjust = 0.5)
+      ) +
       labs(fill = "CS Modality")
   } else {
     stop("unknown stimulus type")

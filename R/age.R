@@ -29,7 +29,7 @@ age <- function(type = "histogram") {
       geom_bar(
         aes(fill = study_id),
         stat = "identity",
-        color = "black",
+        color = "white",
         linewidth = .2
       ) +
       labs(x = "Age", y = "Number of Participants", fill = "Study ID")
@@ -51,7 +51,8 @@ age <- function(type = "histogram") {
     graph <- age |>
       ggplot(aes(x = age, y = study_id, group = study_id, fill = study_id)) +
       ggridges::geom_density_ridges() +
-      labs(x = "Age", y = "Study ID", fill = "Study ID")
+      labs(x = "Age", y = "Study ID", fill = "Study ID") +
+      theme(legend.position = "none")
   } else {
     stop("unknown argument type")
   }

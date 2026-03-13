@@ -3,3 +3,5 @@
 csv_to_rds.R
 ^[.]?air[.]toml$
 ^\.vscode$
+.dockerignore
+.github

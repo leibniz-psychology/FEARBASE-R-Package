@@ -217,16 +217,19 @@ phasesHeatmap <- function() {
   ) +
     geom_tile() +
     scale_y_discrete(position = "right") +
-    shadowtext::geom_shadowtext(
+    geom_label(
       aes(label = .data[[value_var]]),
+      # size = rel(3),
       color = "black",
-      fontface = 'bold',
-      bg.color = "white"
+      # fontface = 'bold',
+      fill = "white"
     ) +
     labs(fill = "Participants") +
     theme(
       axis.text.x = element_text(angle = 45, hjust = 1),
       legend.position = "top",
+      legend.key.width = unit(2, "line"),
+      legend.title = element_text(margin = margin(r = 20)),
       panel.background = element_rect(fill = "white"),
       axis.title = element_blank()
     )
@@ -239,19 +242,22 @@ phasesHeatmap <- function() {
   )
 
   if (!is.null(fill_var)) {
-    p <- p + aes(fill = .data[[fill_var]])
+    p <- p +
+      aes(fill = .data[[fill_var]]) +
+      geom_col() +
+      scale_fill_discrete(palette = scales::pal_grey())
+  } else {
+    p <- p + geom_col(fill = "gray50")
   }
 
   p +
-    geom_col() +
-    shadowtext::geom_shadowtext(
+    geom_label(
       aes(label = .data[[count_var]], y = 5),
       hjust = 0,
       color = "black",
-      fontface = 'bold',
-      bg.color = "white"
+      # fontface = 'bold',
+      fill = "white"
     ) +
-    scale_fill_discrete(palette = scales::pal_grey()) +
     coord_flip() +
     theme_void() +
     theme(
@@ -266,7 +272,6 @@ phasesHeatmap <- function() {
     hm,
     bp,
     ncol = 2,
-    widths = c(1, 0.5),
-    draw = FALSE
+    widths = c(1, 0.5)
   )
 }

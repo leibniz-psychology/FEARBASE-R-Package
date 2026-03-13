@@ -37,6 +37,18 @@ peakDetectionWindows <- function() {
       names_from = timepoint,
       values_from = value
     ) |>
+    mutate(
+      scr_scoring_approach = fct_recode(
+        scr_scoring_approach,
+        "BLC" = "baseline_correction",
+        "TTP" = "trough-to-peak"
+      ),
+      window = fct_recode(
+        window,
+        "Baseline" = "baseline",
+        "Peak Detection" = "peak_detection"
+      )
+    ) |>
     ggplot(aes(x = condition_id, color = window, group = window)) +
     geom_segment(
       aes(
@@ -46,12 +58,11 @@ peakDetectionWindows <- function() {
       linewidth = 7
     ) +
     labs(
-      title = "SCR Detection Windows by Study",
       x = "Study",
       y = "Time (s)",
-      color = "Window"
+      color = "Detection Window"
     ) +
-    coord_flip(ylim = c(-6, 8)) + # TODO: set limits dynamically
+    coord_flip(ylim = c(-5, 8)) + # TODO: set limits dynamically
     geom_text(
       aes(y = -3, label = scr_scoring_approach),
       color = "black",
