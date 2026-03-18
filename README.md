@@ -60,19 +60,23 @@ Check the [OpenCPU API docs](https://www.opencpu.org/api.html#api-methods) for i
 
 ### loading the fearbase package locally
 
-Copy .rda files into /data
+Copy *.rda files into /data. The date is then loaded together with the package.
 
+In a R terminal with the repository's root as working directory execute this:
 ```R
 if(!requireNamespace("devtools")){
-    install.packages("devtools")
+    install.packages("devtools")  # ensures that the devtools package is installed
 }
-devtools::load_all()
 
-age()
+devtools::load_all() # load all content of the fearbase package
+
+age() # execute a function of the fearbase package
 ```
 
-### useful
+### useful Links
+
+#### Book on R Packages
+https://r-pkgs.org/whole-game.html
 
 #### R formatter
-
 https://posit-dev.github.io/air/formatter.html
