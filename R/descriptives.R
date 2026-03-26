@@ -16,9 +16,7 @@ descriptives <- function() {
   participants <- length(unique(dl$participant_id))
   studies <- length(unique(dl$study_id))
 
-  sd <- get("metadata") |> # study data
-    left_join(mapping, by = c("id" = "condition_id")) |>
-    dplyr::rename("condition_id" = "id")
+  sd <- getMetadata()
 
   names(sd)
   dis <- length(unique(sd$dataInstitution))

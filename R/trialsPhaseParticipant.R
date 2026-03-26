@@ -51,3 +51,21 @@ trialsPhaseParticipant <- function(y = "n") {
 
   return(graph)
 }
+
+trialsPhaseParticipantDescriptive <- function() {
+  dl <- getDataLong()
+
+  trials <- dl |>
+    select(condition_id, participant_id, phase, stimulus, trial) |>
+    drop_na() |>
+    distinct() |>
+    filter(condition_id != "98") |>
+    group_by(condition_id, participant_id, phase) |>
+    summarise(trials = max(trial)) |>
+    ungroup() |>
+    mutate(
+      condition_id = as.factor(condition_id),
+      phase = reorderPhases(phase)
+    )
+  psych::describeBy(trials, group = "phase")
+}

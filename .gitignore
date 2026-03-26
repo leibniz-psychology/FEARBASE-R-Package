@@ -35,6 +35,7 @@
 /inst/reports/*.html
 /inst/reports/*.pdf
 /output/
+/paper/
 /results/
 *.tar.gz
 *.zip

@@ -22,3 +22,13 @@ reinforcementRates <- function() {
 
   return(graph)
 }
+
+reinforcementRateDescriptives <- function() {
+  metadata <- getMetadata()
+
+  metadata |>
+    select(study_id, starts_with("reinf")) |>
+    pivot_longer(cols = -study_id, names_to = "stimulus") |>
+    pull(value) |>
+    psych::describe()
+}

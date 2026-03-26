@@ -32,7 +32,7 @@ generate_palette <- function(n_colors) {
 
 .onLoad <- function(libname, pkgname) {
   # These settings only apply when the package is loaded in a session
-  set_theme(theme_classic(base_size = 14))
+  set_theme(theme_classic())
 
   update_theme(
     palette.colour.discrete = generate_palette,

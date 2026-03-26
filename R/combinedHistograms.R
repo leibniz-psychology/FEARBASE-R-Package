@@ -6,7 +6,7 @@
 #' @import tibble
 #' @import shadowtext
 #' @import forcats
-#' @import egg
+#' @import patchwork
 #' @export
 measuresHeatmap <- function() {
   dl <- getDataLong()
@@ -98,7 +98,7 @@ measuresHeatmap <- function() {
   bp <- .plot_horizontal_bar(measure_cat, "measure", "used", fill_var = "type")
 
   # Combine
-  return(.arrange_histogram_layout(hm, bp))
+  return(c(hm, bp))
 }
 
 #' @title build histogram of phases
@@ -156,7 +156,7 @@ phasesHeatmap <- function() {
   bp <- .plot_horizontal_bar(phase_summary, "phase", "used")
 
   # Combine
-  return(.arrange_histogram_layout(hm, bp))
+  return(c(hm, bp))
 }
 
 # --- Internal Helper Functions ---
@@ -268,10 +268,5 @@ phasesHeatmap <- function() {
 }
 
 .arrange_histogram_layout <- function(hm, bp) {
-  egg::ggarrange(
-    hm,
-    bp,
-    ncol = 2,
-    widths = c(1, 0.5)
-  )
+  hm + bp + plot_layout(widths = c(1, 0.5))
 }

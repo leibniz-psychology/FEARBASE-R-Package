@@ -36,5 +36,8 @@ sex <- function() {
       position = position_stack(vjust = 0.5),
       fill = "white"
     ) +
-    theme(legend.position = "none")
+    theme(
+      legend.position = "none",
+      plot.background = element_rect(fill = "transparent", color = NA)
+    )
 }

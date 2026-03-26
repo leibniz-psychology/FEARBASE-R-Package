@@ -59,3 +59,21 @@ age <- function(type = "histogram") {
 
   return(graph)
 }
+
+ageDescriptives <- function() {
+  dl <- getDataLong()
+
+  age <- dl |>
+    filter(measure == "age") |>
+    select(study_id, participant_id, value, measure) |>
+    mutate(age = as.numeric(value), study_id = as.factor(study_id)) |>
+    filter(!is.na(age)) |>
+    summarise(
+      mean_age = mean(age),
+      sd = sd(age),
+      min = min(age),
+      max = max(age)
+    )
+
+  return(age)
+}

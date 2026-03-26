@@ -20,8 +20,8 @@ makeGraphs <- function(folder = "output/") {
   )
 
   ggsave(
-    filename = file.path(folder, "dataByParticipants.png"),
-    plot = dataByParticipants(),
+    filename = file.path(folder, "sampleSizeByStudy.png"),
+    plot = sampleSizeByStudy(),
     width = 10,
     height = 6
   )
