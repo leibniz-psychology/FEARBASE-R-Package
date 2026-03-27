@@ -4,7 +4,6 @@
 #' @import purrr
 #' @import tidyr
 #' @import tibble
-#' @import shadowtext
 #' @import forcats
 #' @import patchwork
 #' @export
@@ -107,8 +106,7 @@ measuresHeatmap <- function() {
 #' @import purrr
 #' @import tidyr
 #' @import tibble
-#' @import shadowtext
-#' @import egg
+#' @import patchwork
 #' @export
 phasesHeatmap <- function() {
   data_long <- getDataLong()
@@ -118,6 +116,7 @@ phasesHeatmap <- function() {
     select(condition_id, participant_id, phase) |>
     distinct() |>
     drop_na(phase) |>
+    filter(phase != "int") |>
     group_by(condition_id, phase) |>
     summarise(used = n(), .groups = "drop")
 
@@ -149,8 +148,7 @@ phasesHeatmap <- function() {
     "phase2",
     "value",
     diag_na = TRUE
-  ) +
-    theme(axis.text = element_text(size = rel(1.5)))
+  )
 
   # Bar plot
   bp <- .plot_horizontal_bar(phase_summary, "phase", "used")
@@ -224,7 +222,7 @@ phasesHeatmap <- function() {
       # fontface = 'bold',
       fill = "white"
     ) +
-    labs(fill = "Participants") +
+    labs(fill = "Number of Participants") +
     theme(
       axis.text.x = element_text(angle = 45, hjust = 1),
       legend.position = "top",
@@ -261,7 +259,6 @@ phasesHeatmap <- function() {
     coord_flip() +
     theme_void() +
     theme(
-      axis.text.x = element_text(size = rel(1)),
       legend.position = "top",
       legend.title = element_blank()
     )

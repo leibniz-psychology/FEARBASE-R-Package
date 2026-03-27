@@ -1,3 +1,4 @@
+#' @import patchwork
 Group1 <- function(folder = "paper/", m = 3) {
   p1 <- sampleSizeByStudy() +
     theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) +
@@ -41,6 +42,9 @@ Group1 <- function(folder = "paper/", m = 3) {
 
 Group2 <- function(folder = "paper/", m = 3) {
   p1 <- reinforcementRates() +
+    # theme(text = element_text(size = 8 * m)) +
+    coord_cartesian(ylim = c(0, 16)) +
+    geom_text(aes(label = value), vjust = -.5) +
     labs(title = "Reinforcement Rate Histogram")
   p2 <- peakDetectionWindows() +
     labs(title = "Scoring Methods") +
@@ -71,27 +75,31 @@ Group2 <- function(folder = "paper/", m = 3) {
   )
 }
 
-Group3 <- function(folder = "paper/", m = 3) {
+Group3 <- function(folder = "paper/", m = 2) {
   p12 <- measuresHeatmap()
   p34 <- phasesHeatmap()
 
-  p1 <- p12[1] +
+  update_geom_defaults("label", list(size = 6 * m / .pt))
+
+  p1 <- p12[[1]] +
     labs(title = "Combinations of Measures by Participant") +
     theme(text = element_text(size = 6 * m))
-  p2 <- p12[2]
+  p2 <- p12[[2]] +
+    labs(title = "Number of\nParticipants")
 
-  p3 <- p34[1] +
+  p3 <- p34[[1]] +
     labs(title = "Combinations of Phases by Participant") +
     theme(text = element_text(size = 6 * m))
-  p4 <- p34[2]
+  p4 <- p34[[2]] +
+    labs(title = "Number of\nParticipants")
 
-  plt <- p1 +
-    p2 /
-      p3 +
-    p4 +
-
-    plot_annotation(tag_levels = 'A') &
-    theme(text = element_text(size = 8 * m))
+  plt <- (p1 + p2 + plot_layout(widths = c(1, 0.5))) /
+    (p3 + p4 + plot_layout(widths = c(1, 0.5))) +
+    plot_annotation(tag_levels = list(c('A', '', 'B', ''))) &
+    theme(
+      text = element_text(size = 11 * m),
+      legend.text = element_text(size = 6 * m)
+    )
 
   ggsave(
     file.path(folder, "group3.png"),
@@ -99,6 +107,46 @@ Group3 <- function(folder = "paper/", m = 3) {
     width = 6,
     height = 8,
     units = "in",
+    scale = m,
+    dpi = 96 * m
+  )
+}
+
+TPPalternatives <- function(folder = "paper/TPPalternatives/", m = 2) {
+  ggsave(
+    filename = file.path(folder, "1.png"),
+    plot = trialsPhaseParticipant("s") +
+      theme(
+        text = element_text(size = 14 * m)
+      ) +
+      labs(title = "Phase Lengths 1"),
+    width = 6,
+    height = 7,
+    scale = m,
+    dpi = 96 * m
+  )
+
+  ggsave(
+    filename = file.path(folder, "2.png"),
+    plot = trialsPhaseParticipant("s", TRUE) +
+      theme(
+        text = element_text(size = 14 * m)
+      ) +
+      labs(title = "Phase Lengths 2"),
+    width = 6,
+    height = 7,
+    scale = m,
+    dpi = 96 * m
+  )
+  ggsave(
+    filename = file.path(folder, "3.png"),
+    plot = studyDesign() +
+      theme(
+        text = element_text(size = 14 * m)
+      ) +
+      labs(title = "Phase Lengths 3"),
+    width = 6,
+    height = 7,
     scale = m,
     dpi = 96 * m
   )

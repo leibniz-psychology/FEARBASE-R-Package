@@ -22,10 +22,6 @@ sex <- function() {
 
   sex |>
     group_by(sex) |>
-    summarise(n = n())
-
-  sex |>
-    group_by(sex) |>
     summarise(n = n()) |>
     ggplot(aes(x = "", y = n, fill = sex)) +
     geom_bar(stat = "identity", width = 1) +

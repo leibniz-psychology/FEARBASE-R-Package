@@ -46,7 +46,7 @@ peakDetectionWindows <- function() {
       window = fct_recode(
         window,
         "Baseline" = "baseline",
-        "Peak Detection" = "peak_detection"
+        "Trough Detection" = "peak_detection"
       )
     ) |>
     ggplot(aes(x = condition_id, color = window, group = window)) +

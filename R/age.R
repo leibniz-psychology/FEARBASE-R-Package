@@ -7,20 +7,22 @@
 age <- function(type = "histogram") {
   dl <- getDataLong()
 
+  age <- dl |>
+    filter(measure == "age") |>
+    select(study_id, participant_id, value, measure) |>
+    mutate(age = as.numeric(value), study_id = as.factor(study_id)) |>
+    filter(!is.na(age))
+
+  study_order <- age |>
+    group_by(study_id) |>
+    summarise(mean_age = median(age)) |>
+    arrange(desc(mean_age)) |>
+    pull(study_id)
+
   if (tolower(type) %in% c("histogram", "hist", "h")) {
-    age <- dl |>
-      filter(measure == "age") |>
-      select(study_id, participant_id, value, measure) |>
-      mutate(age = as.numeric(value), study_id = as.factor(study_id)) |>
-      filter(!is.na(age)) |>
+    age <- age |>
       group_by(age, study_id) |>
       summarise(n = n())
-
-    study_order <- age |>
-      group_by(study_id) |>
-      summarise(mean_age = median(age)) |>
-      arrange(desc(mean_age)) |>
-      pull(study_id)
 
     age$study_id <- factor(age$study_id, levels = study_order)
 
@@ -34,18 +36,6 @@ age <- function(type = "histogram") {
       ) +
       labs(x = "Age", y = "Number of Participants", fill = "Study ID")
   } else if (tolower(type) %in% c("ridge", "density", "r", "d")) {
-    age <- dl |>
-      filter(measure == "age") |>
-      select(study_id, participant_id, value, measure) |>
-      mutate(age = as.numeric(value), study_id = as.factor(study_id)) |>
-      filter(!is.na(age))
-
-    study_order <- age |>
-      group_by(study_id) |>
-      summarise(mean_age = median(age)) |>
-      arrange(desc(mean_age)) |>
-      pull(study_id)
-
     age$study_id <- factor(age$study_id, levels = study_order)
 
     graph <- age |>
@@ -56,7 +46,6 @@ age <- function(type = "histogram") {
   } else {
     stop("unknown argument type")
   }
-
   return(graph)
 }
 
