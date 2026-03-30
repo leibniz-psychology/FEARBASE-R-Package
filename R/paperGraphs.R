@@ -51,9 +51,9 @@ Group2 <- function(folder = "paper/", m = 3) {
     theme(legend.position = "top")
   p3 <- instructions() +
     labs(title = "Contingency Instruction")
-  p4 <- stimModality("cs") +
+  p4 <- stimModality(data_long, "cs_type", "n_studies") +
     labs(title = "Conditioned Stimulus Modality")
-  p5 <- stimModality("us") +
+  p5 <- stimModality(data_long, "us_type", "n_studies") +
     labs(title = "Unconditioned Stimulus Modality")
 
   update_geom_defaults("label", list(size = 5 * m / .pt))

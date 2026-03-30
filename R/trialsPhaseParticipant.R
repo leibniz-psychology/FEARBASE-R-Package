@@ -55,7 +55,7 @@ trialsPhaseParticipant <- function(y_axis = "n", alt = FALSE) {
   if (alt) {
     dat <- dl |>
       select(condition_id, participant_id, phase, stimulus, trial) |>
-      drop_na(phase) |>
+      drop_na(phase, trial) |>
       filter(phase != "int") |>
       distinct() |>
       group_by(condition_id, participant_id, phase) |>
@@ -70,7 +70,7 @@ trialsPhaseParticipant <- function(y_axis = "n", alt = FALSE) {
   } else {
     dat <- dl |>
       select(condition_id, participant_id, phase, stimulus, trial) |>
-      drop_na(phase) |>
+      drop_na(phase, trial) |>
       filter(phase != "int") |>
       distinct() |>
       group_by(condition_id, participant_id, phase) |>
