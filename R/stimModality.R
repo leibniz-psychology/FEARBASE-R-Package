@@ -4,51 +4,39 @@
 #' @import tidyr
 #' @export
 
-stimModality <- function(type = "us") {
-  md <- getMetadata()
-
-  if (
-    tolower(type) %in%
-      c("us", "unconditioned stimulus", "unconditioned stimuli")
-  ) {
-    graph <- md |>
-      select(condition_id, study_id, us_type, cs_type) |>
-      group_by(us_type) |>
-      summarise(n = n()) |>
-      arrange(n) |>
-      mutate(us_type = factor(us_type, levels = us_type)) |>
-      ggplot(aes(x = "", fill = us_type, y = n)) +
-      geom_bar(stat = "identity", width = 1) +
-      coord_polar("y", start = 0) +
-      theme_void(paper = "white") +
-      geom_label(
-        aes(label = n, group = us_type),
-        fill = "white",
-        position = position_stack(vjust = 0.5)
-      ) +
-      labs(fill = "US Modality")
-  } else if (
-    tolower(type) %in% c("cs", "conditioned stimulus", "conditioned stimuli")
-  ) {
-    graph <- md |>
-      select(condition_id, study_id, us_type, cs_type) |>
-      group_by(cs_type) |>
-      summarise(n = n()) |>
-      arrange(n) |>
-      mutate(cs_type = factor(cs_type, levels = cs_type)) |>
-      ggplot(aes(x = "", fill = cs_type, y = n)) +
-      geom_bar(stat = "identity", width = 1) +
-      coord_polar("y", start = 0) +
-      theme_void(paper = "white") +
-      geom_label(
-        aes(label = n, group = cs_type),
-        fill = "white",
-        position = position_stack(vjust = 0.5)
-      ) +
-      labs(fill = "CS Modality")
-  } else {
-    stop("unknown stimulus type")
+stimModality <- function(
+  dl,
+  type = "us_type",
+  level = "n_studies"
+) {
+  if (type != "us_type" & type != "cs_type") {
+    stop("type must be either 'us_type' or 'cs_type'")
   }
 
+  if (level != "n_studies" & level != "n_subjects") {
+    stop("level must be either 'n_studies' or 'n_subjects'")
+  }
+
+  data <- md |>
+    select(condition_id, study_id, n_subjects, us_type, cs_type) |>
+    group_by(.data[[type]]) |>
+    summarise(n_studies = n(), n_subjects = sum(n_subjects)) |>
+    mutate(!!type := factor(.data[[type]], levels = .data[[type]]))
+
+  title <- ifelse(type == "us_type", "US Modality", "CS Modality")
+
+  graph <- data |>
+    ggplot(aes(x = "", fill = .data[[type]], y = .data[[level]])) +
+    geom_bar(stat = "identity", width = 1) +
+    coord_polar("y", start = 0) +
+    theme_void(paper = "white") +
+    geom_label(
+      aes(label = .data[[level]], group = .data[[type]]),
+      fill = "white",
+      position = position_stack(vjust = 0.5)
+    ) +
+    labs(fill = title)
   return(graph)
 }
+
+stimModality(type = "cs_type", level = "n_subjects")
