@@ -103,8 +103,8 @@ trialsPhaseParticipantDescriptive <- function() {
   psych::describeBy(trials, group = "phase")
 }
 
-studyDesign <- function(data = "study_design") {
-  sd <- get(data) # in "study_design" the "condition_id" is still named "study_id" and "phase" is named "name"
+studyDesign <- function(sd) {
+  # in "study_design" the "condition_id" is still named "study_id" and "phase" is named "name"
 
   trials <- sd |>
     drop_na(cspTrials) |>

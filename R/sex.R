@@ -4,19 +4,24 @@
 #' @import tidyr
 #' @export
 
-sex <- function() {
-  dl <- getDataLong()
+sex <- function(dl) {
+  sex <- dl |>
+    select(study_id, participant_id, value, measure) |>
+    filter(measure == "sex" | measure == "gender")
 
   sex <- dl |>
-    filter(measure == "sex" | measure == "gender") |>
-    select(study_id, participant_id, value, measure)
+    filter(!(participant_id %in% sex$participant_id)) |>
+    select(study_id, participant_id) |>
+    distinct() |>
+    mutate(value = "not reported", measure = "sex") |>
+    bind_rows(sex)
 
   sex <- sex |>
     mutate(
       sex = factor(
         stringr::str_split_i(tolower(value), "", 1),
-        levels = c("m", "f"),
-        labels = c("male", "female")
+        levels = c("m", "f", "n"),
+        labels = c("male", "female", "not reported")
       )
     )
 

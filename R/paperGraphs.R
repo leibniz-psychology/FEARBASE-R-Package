@@ -82,13 +82,13 @@ Group3 <- function(folder = "paper/", m = 2) {
   update_geom_defaults("label", list(size = 6 * m / .pt))
 
   p1 <- p12[[1]] +
-    labs(title = "Combinations of Measures by Participant") +
+    labs(title = "Combinations of Measures") +
     theme(text = element_text(size = 6 * m))
   p2 <- p12[[2]] +
     labs(title = "Number of\nParticipants")
 
   p3 <- p34[[1]] +
-    labs(title = "Combinations of Phases by Participant") +
+    labs(title = "Combinations of Phases") +
     theme(text = element_text(size = 6 * m))
   p4 <- p34[[2]] +
     labs(title = "Number of\nParticipants")
