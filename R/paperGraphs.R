@@ -51,9 +51,9 @@ Group2 <- function(folder = "paper/", m = 3) {
     theme(legend.position = "top")
   p3 <- instructions() +
     labs(title = "Contingency Instruction")
-  p4 <- stimModality(data_long, "cs_type", "n_studies") +
+  p4 <- stimModality(metadata, "cs_type", "n_studies") +
     labs(title = "Conditioned Stimulus Modality")
-  p5 <- stimModality(data_long, "us_type", "n_studies") +
+  p5 <- stimModality(metadata, "us_type", "n_studies") +
     labs(title = "Unconditioned Stimulus Modality")
 
   update_geom_defaults("label", list(size = 5 * m / .pt))
@@ -140,7 +140,7 @@ TPPalternatives <- function(folder = "paper/TPPalternatives/", m = 2) {
   )
   ggsave(
     filename = file.path(folder, "3.png"),
-    plot = studyDesign() +
+    plot = studyDesign(study_design) +
       theme(
         text = element_text(size = 14 * m)
       ) +

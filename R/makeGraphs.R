@@ -76,26 +76,26 @@ makeGraphs <- function(folder = "output/") {
 
   ggsave(
     filename = file.path(folder, "csModalityParticipants.png"),
-    plot = stimModality(data_long, type = "cs_type", level = "n_subjects"),
+    plot = stimModality(metadata, type = "cs_type", level = "n_subjects"),
     width = 5,
     height = 5
   )
   ggsave(
     filename = file.path(folder, "usModalityParticipants.png"),
-    plot = stimModality(data_long, type = "us_type", level = "n_subjects"),
+    plot = stimModality(metadata, type = "us_type", level = "n_subjects"),
     width = 5,
     height = 5
   )
 
   ggsave(
     filename = file.path(folder, "csModalityStudies.png"),
-    plot = stimModality(data_long, type = "cs_type", level = "n_studies"),
+    plot = stimModality(metadata, type = "cs_type", level = "n_studies"),
     width = 5,
     height = 5
   )
   ggsave(
     filename = file.path(folder, "usModalityStudies.png"),
-    plot = stimModality(data_long, type = "us_type", level = "n_studies"),
+    plot = stimModality(metadata, type = "us_type", level = "n_studies"),
     width = 5,
     height = 5
   )

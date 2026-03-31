@@ -5,7 +5,7 @@
 #' @export
 
 stimModality <- function(
-  dl,
+  md,
   type = "us_type",
   level = "n_studies"
 ) {
@@ -38,5 +38,3 @@ stimModality <- function(
     labs(fill = title)
   return(graph)
 }
-
-stimModality(type = "cs_type", level = "n_subjects")
