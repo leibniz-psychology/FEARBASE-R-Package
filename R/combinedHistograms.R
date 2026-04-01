@@ -7,7 +7,14 @@
 #' @import forcats
 #' @import patchwork
 #' @export
-measuresHeatmap <- function() {
+#'
+
+measuresHeatmap <- funtion()
+{
+  plots <- prepMeasuresHeatmap()
+  .arrange_histogram_layout(plots[1], plots[2])
+}
+prepMeasuresHeatmap <- function() {
   dl <- getDataLong()
   md <- getMetadata()
 
@@ -108,7 +115,14 @@ measuresHeatmap <- function() {
 #' @import tibble
 #' @import patchwork
 #' @export
-phasesHeatmap <- function() {
+#'
+phasesHeatmap <- funtion()
+{
+  plots <- prepPhasesHeatmap()
+  .arrange_histogram_layout(plots[1], plots[2])
+}
+
+prepPhasesHeatmap <- function() {
   data_long <- getDataLong()
 
   # Prepare phase data

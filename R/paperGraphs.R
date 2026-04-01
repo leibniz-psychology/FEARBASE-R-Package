@@ -76,8 +76,8 @@ Group2 <- function(folder = "paper/", m = 3) {
 }
 
 Group3 <- function(folder = "paper/", m = 2) {
-  p12 <- measuresHeatmap()
-  p34 <- phasesHeatmap()
+  p12 <- prepMeasuresHeatmap()
+  p34 <- prepPhasesHeatmap()
 
   update_geom_defaults("label", list(size = 6 * m / .pt))
 
