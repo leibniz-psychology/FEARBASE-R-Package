@@ -9,10 +9,9 @@
 #' @export
 #'
 
-measuresHeatmap <- funtion()
-{
+measuresHeatmap <- function() {
   plots <- prepMeasuresHeatmap()
-  .arrange_histogram_layout(plots[1], plots[2])
+  .arrange_histogram_layout(plots[[1]], plots[[2]])
 }
 prepMeasuresHeatmap <- function() {
   dl <- getDataLong()
@@ -116,10 +115,9 @@ prepMeasuresHeatmap <- function() {
 #' @import patchwork
 #' @export
 #'
-phasesHeatmap <- funtion()
-{
+phasesHeatmap <- function() {
   plots <- prepPhasesHeatmap()
-  .arrange_histogram_layout(plots[1], plots[2])
+  .arrange_histogram_layout(plots[[1]], plots[[2]])
 }
 
 prepPhasesHeatmap <- function() {
@@ -278,6 +276,7 @@ prepPhasesHeatmap <- function() {
     )
 }
 
+#' @import patchwork
 .arrange_histogram_layout <- function(hm, bp) {
   hm + bp + plot_layout(widths = c(1, 0.5))
 }
