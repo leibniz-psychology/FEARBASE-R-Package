@@ -1,10 +1,9 @@
 #' @import patchwork
 Group1 <- function(folder = "paper/", m = 3) {
   p1 <- sampleSizeByStudy() +
-    theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) +
-    geom_text(aes(label = n), vjust = -.5) +
+    geom_text(aes(label = n), hjust = -.3) +
     labs(title = "Sample Size by Study")
-  p2 <- sex() +
+  p2 <- sex(getDataLong()) +
     labs(title = "Sex Distribution")
   p3 <- dataCollectionYear() +
     theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) +

@@ -2,7 +2,7 @@
 /.idea/
 .vscode
 .github
-notes.md
+backlog.md
 
 # --- R Specific ---
 .Rhistory
