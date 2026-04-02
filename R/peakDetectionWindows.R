@@ -10,7 +10,7 @@ peakDetectionWindows <- function() {
 
   graph <- metadata |>
     select(
-      condition_id,
+      paper_id,
       scr_scoring_approach,
       scr_baseline_window_start,
       scr_baseline_window_end,
@@ -24,9 +24,9 @@ peakDetectionWindows <- function() {
       desc(scr_peak_detection_window_min),
       desc(scr_peak_detection_window_max)
     ) |>
-    mutate(condition_id = factor(condition_id, levels = condition_id)) |>
+    mutate(paper_id = factor(paper_id, levels = paper_id)) |>
     pivot_longer(
-      cols = -c(condition_id, scr_scoring_approach),
+      cols = -c(paper_id, scr_scoring_approach),
       names_to = c("measure", "window", "timepoint"),
       names_pattern = "(scr)_(.*)_window_(.*)"
     ) |>
@@ -49,7 +49,7 @@ peakDetectionWindows <- function() {
         "Trough Detection" = "peak_detection"
       )
     ) |>
-    ggplot(aes(x = condition_id, color = window, group = window)) +
+    ggplot(aes(x = paper_id, color = window, group = window)) +
     geom_segment(
       aes(
         y = start,

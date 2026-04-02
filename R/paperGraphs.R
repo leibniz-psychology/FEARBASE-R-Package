@@ -2,14 +2,14 @@
 Group1 <- function(folder = "paper/", m = 3) {
   p1 <- sampleSizeByStudy() +
     geom_text(aes(label = n), hjust = -.3) +
-    labs(title = "Sample Size by Study")
+    labs(title = "Sample Size")
   p2 <- sex(getDataLong()) +
     labs(title = "Sex Distribution")
   p3 <- dataCollectionYear() +
-    theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) +
+    # theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) +
     labs(title = "Publication Year")
   p4 <- age("r") +
-    labs(title = "Age Distribution by Study")
+    labs(title = "Age Distribution")
   p5 <- age("h") +
     theme(
       legend.position = "inside",
@@ -19,8 +19,8 @@ Group1 <- function(folder = "paper/", m = 3) {
     labs(title = "Age Distribution")
 
   library(patchwork)
-  update_geom_defaults("label", list(size = 5 * m / .pt))
-  update_geom_defaults("text", list(size = 5 * m / .pt))
+  update_geom_defaults("label", list(size = 4.5 * m / .pt))
+  update_geom_defaults("text", list(size = 4.5 * m / .pt))
 
   plt <- ((p1 + p2 + p3) +
     plot_layout(widths = c(2, 1, 2))) /
@@ -51,15 +51,17 @@ Group2 <- function(folder = "paper/", m = 3) {
   p3 <- instructions() +
     labs(title = "Contingency Instruction")
   p4 <- stimModality(metadata, "cs_type", "n_studies") +
-    labs(title = "Conditioned Stimulus Modality")
+    labs(title = "CS Modality") +
+    guides(fill = guide_legend(position = "top", title = ""))
   p5 <- stimModality(metadata, "us_type", "n_studies") +
-    labs(title = "Unconditioned Stimulus Modality")
+    labs(title = "US Modality") +
+    guides(fill = guide_legend(position = "top", title = ""))
 
   update_geom_defaults("label", list(size = 5 * m / .pt))
   update_geom_defaults("text", list(size = 5 * m / .pt))
 
   plt <- (free(p2) | p1) /
-    (p3 + (p4 / p5)) +
+    (p3 | (p4 / p5)) +
     plot_annotation(tag_levels = 'A') &
     theme(text = element_text(size = 6 * m))
 
