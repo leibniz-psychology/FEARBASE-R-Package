@@ -16,6 +16,7 @@ Group1 <- function(folder = "paper/", m = 3) {
       legend.position.inside = c(.9, .5),
       legend.text = element_text(size = 4 * m)
     ) +
+    guides(fill = guide_legend(ncol = 2, reverse = TRUE)) +
     labs(title = "Age Distribution")
 
   library(patchwork)

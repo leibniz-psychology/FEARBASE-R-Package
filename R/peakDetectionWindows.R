@@ -10,7 +10,7 @@ peakDetectionWindows <- function() {
 
   graph <- metadata |>
     select(
-      paper_id,
+      paper_study_id,
       scr_scoring_approach,
       scr_baseline_window_start,
       scr_baseline_window_end,
@@ -24,9 +24,9 @@ peakDetectionWindows <- function() {
       desc(scr_peak_detection_window_min),
       desc(scr_peak_detection_window_max)
     ) |>
-    mutate(paper_id = factor(paper_id, levels = paper_id)) |>
+    mutate(paper_study_id = factor(paper_study_id, levels = paper_study_id)) |>
     pivot_longer(
-      cols = -c(paper_id, scr_scoring_approach),
+      cols = -c(paper_study_id, scr_scoring_approach),
       names_to = c("measure", "window", "timepoint"),
       names_pattern = "(scr)_(.*)_window_(.*)"
     ) |>
@@ -43,13 +43,16 @@ peakDetectionWindows <- function() {
         "BLC" = "baseline_correction",
         "TTP" = "trough-to-peak"
       ),
-      window = fct_recode(
-        window,
-        "Baseline" = "baseline",
-        "Trough Detection" = "peak_detection"
-      )
+      window = case_when(
+        scr_scoring_approach != "BLC" ~ "Trough Detection",
+        scr_scoring_approach == "BLC" &
+          window == "peak_detection" ~ "Peak Detection",
+        scr_scoring_approach == "BLC" & window == "baseline" ~ "Baseline",
+        TRUE ~ window
+      ) |>
+        factor(levels = c("Baseline", "Peak Detection", "Trough Detection"))
     ) |>
-    ggplot(aes(x = paper_id, color = window, group = window)) +
+    ggplot(aes(x = paper_study_id, color = window, group = window)) +
     geom_segment(
       aes(
         y = start,

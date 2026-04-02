@@ -8,14 +8,14 @@ sampleSizeByStudy <- function() {
   dl <- getDataLong()
 
   data <- dl |>
-    select(paper_id, participant_id) |>
+    select(paper_study_id, participant_id) |>
     unique() |>
-    group_by(paper_id) |>
+    group_by(paper_study_id) |>
     summarise(n = n()) |>
     arrange(desc(n)) |>
-    mutate(paper_id = factor(paper_id, levels = paper_id))
+    mutate(paper_study_id = factor(paper_study_id, levels = paper_study_id))
   graph <- data |>
-    ggplot(aes(x = paper_id, y = n)) +
+    ggplot(aes(x = paper_study_id, y = n)) +
     coord_flip(ylim = c(0, max(data$n) + 10)) +
     geom_bar(stat = "identity") +
     labs(x = "Study", y = "Number of Participants")
@@ -28,9 +28,9 @@ sampleSizeDescriptives <- function() {
   dl <- getDataLong()
 
   dl |>
-    select(paper_id, participant_id) |>
+    select(paper_study_id, participant_id) |>
     unique() |>
-    group_by(paper_id) |>
+    group_by(paper_study_id) |>
     summarise(n = n()) |>
     pull(n) |>
     psych::describe()
