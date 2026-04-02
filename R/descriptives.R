@@ -34,3 +34,28 @@ descriptives <- function() {
     "Data Analysis Lab Countries" = lcs
   ))
 }
+
+participants <- function(dl) {
+  dl |>
+    select(study_id, condition_id, participant_id) |>
+    distinct()
+}
+
+delayedExtinction <- function(sd, dl) {
+  studies_with_extinction <- sd |>
+    filter(name == "ext") |>
+    pull(condition_id)
+
+  participants <- dl |>
+    filter(phase == "ext") |>
+    select(study_id, condition_id, participant_id) |>
+    drop_na() |>
+    distinct()
+
+  sd |>
+    filter(name == "acq", condition_id %in% studies_with_extinction) |>
+    print(n = Inf) |>
+    left_join(participants, by = "condition_id") |>
+    group_by(timeToNextUnit) |>
+    summarise(n = n())
+}
