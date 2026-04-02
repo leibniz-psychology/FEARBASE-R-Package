@@ -52,6 +52,9 @@ csv_to_internal <- function(files = list.files("data", pattern = ".csv$")) {
     left_join(mapping, by = c("id" = "condition_id")) |>
     rename("condition_id" = "id")
   use_data(metadata, overwrite = TRUE)
+  study_design <- study_design |>
+    left_join(mapping, by = c("study_id" = "condition_id")) |>
+    rename("condition_id" = "study_id", "study_id" = "study_id.y")
   use_data(study_design, overwrite = TRUE)
 
   #   data_long[data_long$study_id == "98" & data_long$phase == "hab", ]
@@ -75,7 +78,7 @@ reorderPhases <- function(phases) {
   return(factor(phases, levels = phase_levels))
 }
 
-
+# taken from stack overflow, see https://stackoverflow.com/questions/28562288/how-to-use-the-hsl-hue-saturation-lightness-cylindric-color-model
 hsl_to_rgb <- function(h, s, l) {
   h <- h / 360
   r <- g <- b <- 0.0
