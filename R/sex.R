@@ -32,7 +32,7 @@ sex <- function(dl) {
     geom_bar(stat = "identity", width = 1) +
     coord_polar("y", start = 0) +
     theme_void(paper = "white") +
-    geom_label(
+    ggrepel::geom_label_repel(
       aes(label = paste0(sex, " (", n, ")"), group = sex),
       position = position_stack(vjust = 0.5),
       fill = "white"
