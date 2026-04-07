@@ -128,7 +128,7 @@ prepPhasesHeatmap <- function() {
     select(condition_id, participant_id, phase) |>
     distinct() |>
     drop_na(phase) |>
-    filter(phase != "int") |>
+    filter(phase != "int", phase != "other") |>
     group_by(condition_id, phase) |>
     summarise(used = n(), .groups = "drop")
 

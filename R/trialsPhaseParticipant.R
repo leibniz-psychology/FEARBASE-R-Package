@@ -108,7 +108,7 @@ studyDesign <- function(sd) {
 
   trials <- sd |>
     drop_na(cspTrials) |>
-    filter(name != "int") |>
+    filter(name != "int", phase != "other") |>
     distinct() |>
     group_by(study_id, name) |>
     summarise(trials = sum(cspTrials)) |>
