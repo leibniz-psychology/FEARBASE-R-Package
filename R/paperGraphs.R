@@ -1,11 +1,11 @@
 #' @import patchwork
 Group1 <- function(folder = "paper/", m = 3) {
-  p1 <- sampleSizeByStudy() +
+  sample <- sampleSizeByStudy() +
     geom_text(aes(label = n), hjust = -.3) +
     labs(title = "Sample Size")
-  p2 <- sex(getDataLong()) +
+  sex <- sex(getDataLong()) +
     labs(title = "Sex Distribution")
-  p3 <- dataCollectionYear() +
+  year <- dataCollectionYear() +
     # theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) +
     labs(title = "Publication Year")
   p4 <- age("r") +
@@ -23,8 +23,8 @@ Group1 <- function(folder = "paper/", m = 3) {
   update_geom_defaults("label", list(size = 4.5 * m / .pt))
   update_geom_defaults("text", list(size = 4.5 * m / .pt))
 
-  plt <- ((p1 + p2 + p3) +
-    plot_layout(widths = c(2, 1, 2))) /
+  plt <- ((year + sample + sex) +
+    plot_layout(widths = c(2, 2, 1))) /
     (p4 + p5) +
     plot_annotation(tag_levels = 'A') &
     theme(text = element_text(size = 6 * m))
@@ -45,12 +45,13 @@ Group2 <- function(folder = "paper/", m = 3) {
     # theme(text = element_text(size = 8 * m)) +
     coord_cartesian(ylim = c(0, 16)) +
     geom_text(aes(label = value), vjust = -.5) +
-    labs(title = "Reinforcement Rate Histogram")
+    labs(title = "Reinforcement Rate")
   p2 <- peakDetectionWindows() +
-    labs(title = "Scoring Methods") +
+    labs(title = "SCR Response Quantification Approach") +
     theme(legend.position = "top")
   p3 <- instructions() +
-    labs(title = "Contingency Instruction")
+    labs(title = "Contingency Instruction") +
+    theme(plot.title = element_text(hjust = -1.55))
   p4 <- stimModality(metadata, "cs_type", "n_studies") +
     labs(title = "CS Modality") +
     guides(fill = guide_legend(position = "top", title = ""))
