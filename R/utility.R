@@ -4,6 +4,7 @@ updateMapping <- function() {
   url <- 'https://docs.google.com/spreadsheets/d/1INi9MHloIm8XtaNLOoj046xf-T1Afm3vqFI-zRGKONw/edit?gid=0#gid=0'
   mapping <- read.csv(text = gsheet::gsheet2text(url, format = 'csv'))
   usethis::use_data(mapping, overwrite = TRUE)
+  return(mapping)
 }
 
 getMetadata <- function() {
@@ -36,6 +37,9 @@ allStudies <- function() {
 #' @import readr
 #' @import dplyr
 csv_to_internal <- function(files = list.files("data", pattern = ".csv$")) {
+  mapping <- updateMapping()
+
+  # read csv and give it the file's name
   for (f in files) {
     assign(sub(".csv", "", f), read_csv(file.path("data", f)))
   }
