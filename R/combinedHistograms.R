@@ -217,6 +217,20 @@ prepPhasesHeatmap <- function() {
       )
   }
 
+  df <- df |>
+    mutate(
+      fill_white = ifelse(.data[[value_var]] > 0, 0, 1),
+      fill_gray = ifelse(is.na(.data[[value_var]]), 1, 0),
+      text_white = factor(
+        ifelse(
+          .data[[value_var]] > max(.data[[value_var]], na.rm = TRUE) / 4,
+          "white",
+          "black"
+        ),
+        levels = c("white", "black")
+      )
+    )
+
   ggplot(
     df,
     aes(
@@ -227,13 +241,23 @@ prepPhasesHeatmap <- function() {
   ) +
     geom_tile() +
     scale_y_discrete(position = "right") +
-    geom_label(
-      aes(label = .data[[value_var]]),
+    geom_text(
+      aes(label = .data[[value_var]], color = text_white),
       # size = rel(3),
-      color = "black",
-      # fontface = 'bold',
+      # color = "black",
+      fontface = 'bold'
+      # fill = "white"
+    ) +
+    geom_tile(
+      aes(alpha = fill_white),
       fill = "white"
     ) +
+    geom_tile(
+      aes(alpha = fill_gray),
+      fill = "gray50"
+    ) +
+    scale_color_manual(values = c("white", "black"), guide = "none") +
+    scale_alpha(guide = "none") +
     labs(fill = "Number of Participants") +
     theme(
       axis.text.x = element_text(angle = 45, hjust = 1),
@@ -261,14 +285,12 @@ prepPhasesHeatmap <- function() {
   }
 
   p +
-    geom_label(
-      aes(label = .data[[count_var]], y = 5),
-      hjust = 0,
+    geom_text(
+      aes(label = .data[[count_var]]),
+      hjust = -.1,
       color = "black",
-      # fontface = 'bold',
-      fill = "white"
     ) +
-    coord_flip() +
+    coord_flip(ylim = c(0, max(df[[count_var]]) * 1.2)) +
     theme_void() +
     theme(
       legend.position = "top",
