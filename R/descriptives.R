@@ -15,6 +15,7 @@ descriptives <- function() {
 
   participants <- length(unique(dl$participant_id))
   studies <- length(unique(dl$study_id))
+  cond <- length(unique(dl$condition_id))
 
   sd <- getMetadata()
 
@@ -27,6 +28,7 @@ descriptives <- function() {
 
   return(c(
     "Studies" = studies,
+    "Conditions" = cond,
     "Participants" = participants,
     "Data Collection Institutions" = dis,
     "Data Collection Countries" = dcs,
@@ -46,16 +48,19 @@ delayedExtinction <- function(sd, dl) {
     filter(name == "ext") |>
     pull(condition_id)
 
-  participants <- dl |>
+  participants_with_extinction <- dl |>
     filter(phase == "ext") |>
     select(study_id, condition_id, participant_id) |>
     drop_na() |>
     distinct()
 
-  sd |>
-    filter(name == "acq", condition_id %in% studies_with_extinction) |>
-    print(n = Inf) |>
-    left_join(participants, by = "condition_id") |>
+  participants_with_extinction |>
+    left_join(
+      # we capture the "time to next phase" so we need to look at the acquisition rows of study_design
+      # only include conditions that have an extinction phase
+      filter(sd, name == "acq", condition_id %in% studies_with_extinction),
+      by = "condition_id"
+    ) |>
     group_by(timeToNextUnit) |>
     summarise(n = n())
 }
