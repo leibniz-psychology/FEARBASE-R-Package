@@ -13,10 +13,7 @@ measuresHeatmap <- function() {
   plots <- prepMeasuresHeatmap()
   .arrange_histogram_layout(plots[[1]], plots[[2]])
 }
-prepMeasuresHeatmap <- function() {
-  dl <- getDataLong()
-  md <- getMetadata()
-
+prepMeasuresHeatmap <- function(dl = data_long, md = metadata) {
   fulld <- dl |>
     left_join(md, by = "condition_id")
 
@@ -43,6 +40,23 @@ prepMeasuresHeatmap <- function() {
         measure %in% quest_measures ~ "questionnaire",
         measure %in% phys_measures ~ "physiological",
         measure %in% rate_measures ~ "rating"
+      )
+    ) |>
+    mutate(
+      measure = fct_recode(
+        measure,
+        SCR = "scr",
+        FPS = "fps",
+        PD = "ps",
+        Expectancy = "expect",
+        Fear = "fear",
+        Awareness = "aware",
+        Arousal = "arous",
+        Valence = "val",
+        `STAI-T` = "stait",
+        IUS = "ius",
+        `STAI-S` = "stais",
+        ASI = "asi"
       )
     ) |>
     mutate(
@@ -116,15 +130,13 @@ prepMeasuresHeatmap <- function() {
 #' @export
 #'
 phasesHeatmap <- function() {
-  plots <- prepPhasesHeatmap()
+  plots <- prepPhasesHeatmap(data_long)
   .arrange_histogram_layout(plots[[1]], plots[[2]])
 }
 
-prepPhasesHeatmap <- function() {
-  data_long <- getDataLong()
-
+prepPhasesHeatmap <- function(dl = data_long) {
   # Prepare phase data
-  phase_data <- data_long |>
+  phase_data <- dl |>
     select(condition_id, participant_id, phase) |>
     distinct() |>
     drop_na(phase) |>
@@ -148,10 +160,26 @@ prepPhasesHeatmap <- function() {
   )
 
   # Apply the same levels to the heatmap data
-  crosstable_long$phase <- reorderPhases(crosstable_long$phase)
+  crosstable_long$phase <- reorderPhases(crosstable_long$phase) |>
+    fct_recode(
+      Hab = "hab",
+      Acq = "acq",
+      Ext = "ext",
+      RI = "rin",
+      `Re-Ext` = "rex",
+      Rev = "rev"
+    )
   crosstable_long$phase2 <- forcats::fct_rev(reorderPhases(
     crosstable_long$phase2
-  ))
+  )) |>
+    fct_recode(
+      Hab = "hab",
+      Acq = "acq",
+      Ext = "ext",
+      RI = "rin",
+      `Re-Ext` = "rex",
+      Rev = "rev"
+    )
 
   # Heatmap
   hm <- .plot_co_occurrence_heatmap(
@@ -242,9 +270,9 @@ prepPhasesHeatmap <- function() {
     geom_tile() +
     scale_y_discrete(position = "right") +
     geom_text(
-      aes(label = .data[[value_var]], color = text_white),
+      aes(label = .data[[value_var]]),
       # size = rel(3),
-      # color = "black",
+      color = "white",
       fontface = 'bold'
       # fill = "white"
     ) +
