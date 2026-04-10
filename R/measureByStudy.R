@@ -4,9 +4,7 @@
 #' @param measure_name The name(s) of the measure(s) (e.g., "stais", "age").
 #'   If NULL (default), all measures in the data are shown.
 #' @param split_by_stimulus Logical; if TRUE, distributions are split by stimulus.
-#' @import dplyr
-#' @import ggplot2
-#' @export
+
 measureByStudy <- function(
   dl = data_long,
   measure_name = NULL,

@@ -2,10 +2,7 @@
 #' @description
 #' Visualizes the distribution of a specific measure's values across different experimental phases.
 #' @param measure_name The name of the measure to visualize (e.g., "scr", "expect", "fear")
-#' @import dplyr
-#' @import ggplot2
-#' @import tidyr
-#' @export
+#'
 phaseResponseDistribution <- function(dl = data_long, measure_name = "scr") {
   plot_data <- dl |>
     filter(measure == measure_name) |>
@@ -38,10 +35,6 @@ phaseResponseDistribution <- function(dl = data_long, measure_name = "scr") {
 #' @title global data density matrix
 #' @description
 #' Visualizes the availability of different measures across all studies.
-#' @import dplyr
-#' @import ggplot2
-#' @import tidyr
-#' @export
 dataDensityMatrix <- function(dl = data_long) {
   # Calculate percentage of participants per study/measure
   density_data <- dl |>

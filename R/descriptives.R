@@ -1,7 +1,4 @@
 #' @title descriptives
-#' @import dplyr
-#' @import ggplot2
-#' @import tidyr
 #' @export
 
 descriptives <- function(dl = data_long, md = metadata) {

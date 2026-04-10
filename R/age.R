@@ -1,9 +1,5 @@
 #' @title age distribution
-#' @import dplyr
-#' @import ggplot2
-#' @import tidyr
 #' @export
-
 age <- function(dl = data_long, type = "histogram") {
   age <- dl |>
     filter(measure == "age") |>
@@ -55,6 +51,7 @@ age <- function(dl = data_long, type = "histogram") {
   return(graph)
 }
 
+#' @export
 ageDescriptives <- function(dl = data_long) {
   age <- dl |>
     filter(measure == "age") |>

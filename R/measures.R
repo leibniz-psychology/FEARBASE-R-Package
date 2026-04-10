@@ -2,7 +2,6 @@
 #' @description This function returns the measures available for a given study.
 #' @param study_id The ID of the study for which to retrieve measures.
 #' @return A list containing the measures available for the specified study.
-#' @import dplyr
 #' @export
 
 measures <- function(dl = data_long, study_id = NULL) {

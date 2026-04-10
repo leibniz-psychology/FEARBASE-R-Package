@@ -1,7 +1,4 @@
 #' @title Study Sample Sizes
-#' @import dplyr
-#' @import ggplot2
-#' @import tidyr
 #' @export
 
 sampleSizeByStudy <- function(dl = data_long) {

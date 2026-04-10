@@ -1,8 +1,6 @@
-#' @title exploration
-#' @import dplyr
-#' @import ggplot2
+#' @title Detection Windows
 #' @description
-#' generate an overview of the full dataset
+#' Generates a graph of the SCR Scoring Windows
 #' @export
 
 peakDetectionWindows <- function(md = metadata) {
@@ -36,7 +34,7 @@ peakDetectionWindows <- function(md = metadata) {
       values_from = value
     ) |>
     mutate(
-      scr_scoring_approach = fct_recode(
+      scr_scoring_approach = forcats::fct_recode(
         scr_scoring_approach,
         "BLC" = "baseline_correction",
         "TTP" = "trough-to-peak"

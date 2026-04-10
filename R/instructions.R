@@ -1,6 +1,4 @@
 #' @title instruction graph
-#' @import dplyr
-#' @import ggplot2
 #' @export
 
 instructions <- function(md = metadata) {

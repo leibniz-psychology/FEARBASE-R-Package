@@ -1,7 +1,4 @@
 #' @title data collection year
-#' @import dplyr
-#' @import ggplot2
-#' @import tidyr
 #' @export
 
 dataCollectionYear <- function(md = metadata) {

@@ -1,14 +1,5 @@
 #' @title build combined histogram of measures
-#' @import dplyr
-#' @import ggplot2
-#' @import purrr
-#' @import tidyr
-#' @import tibble
-#' @import forcats
-#' @import patchwork
 #' @export
-#'
-
 measuresHeatmap <- function() {
   plots <- prepMeasuresHeatmap()
   .arrange_histogram_layout(plots[[1]], plots[[2]])
@@ -43,7 +34,7 @@ prepMeasuresHeatmap <- function(dl = data_long, md = metadata) {
       )
     ) |>
     mutate(
-      measure = fct_recode(
+      measure = forcats::fct_recode(
         measure,
         SCR = "scr",
         FPS = "fps",
@@ -121,14 +112,7 @@ prepMeasuresHeatmap <- function(dl = data_long, md = metadata) {
 }
 
 #' @title build histogram of phases
-#' @import dplyr
-#' @import ggplot2
-#' @import purrr
-#' @import tidyr
-#' @import tibble
-#' @import patchwork
 #' @export
-#'
 phasesHeatmap <- function() {
   plots <- prepPhasesHeatmap(data_long)
   .arrange_histogram_layout(plots[[1]], plots[[2]])
@@ -161,7 +145,7 @@ prepPhasesHeatmap <- function(dl = data_long) {
 
   # Apply the same levels to the heatmap data
   crosstable_long$phase <- reorderPhases(crosstable_long$phase) |>
-    fct_recode(
+    forcats::fct_recode(
       Hab = "hab",
       Acq = "acq",
       Ext = "ext",
@@ -172,7 +156,7 @@ prepPhasesHeatmap <- function(dl = data_long) {
   crosstable_long$phase2 <- forcats::fct_rev(reorderPhases(
     crosstable_long$phase2
   )) |>
-    fct_recode(
+    forcats::fct_recode(
       Hab = "hab",
       Acq = "acq",
       Ext = "ext",
@@ -326,7 +310,6 @@ prepPhasesHeatmap <- function(dl = data_long) {
     )
 }
 
-#' @import patchwork
 .arrange_histogram_layout <- function(hm, bp) {
   hm + bp + plot_layout(widths = c(1, 0.5))
 }

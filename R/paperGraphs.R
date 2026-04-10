@@ -1,4 +1,3 @@
-#' @import patchwork
 Group1 <- function(folder = "paper/", m = 3) {
   sample <- sampleSizeByStudy() +
     geom_text(aes(label = n), hjust = -.3) +
@@ -8,9 +7,9 @@ Group1 <- function(folder = "paper/", m = 3) {
   year <- dataCollectionYear() +
     # theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) +
     labs(title = "Publication Year")
-  p4 <- age("r") +
+  p4 <- age(type = "r") +
     labs(title = "Age Distribution")
-  p5 <- age("h") +
+  p5 <- age(type = "h") +
     theme(
       legend.position = "inside",
       legend.position.inside = c(.9, .5),
@@ -19,7 +18,6 @@ Group1 <- function(folder = "paper/", m = 3) {
     guides(fill = guide_legend(ncol = 2, reverse = TRUE)) +
     labs(title = "Age Distribution")
 
-  library(patchwork)
   update_geom_defaults("label", list(size = 4.5 * m / .pt))
   update_geom_defaults("text", list(size = 4.5 * m / .pt))
 
@@ -118,7 +116,7 @@ Group3 <- function(folder = "paper/", m = 2) {
 TPPalternatives <- function(folder = "paper/TPPalternatives/", m = 2) {
   ggsave(
     filename = file.path(folder, "1.png"),
-    plot = trialsPhaseParticipant("s") +
+    plot = trialsPhaseParticipant(y_axis = "s") +
       theme(
         text = element_text(size = 14 * m)
       ) +
@@ -131,7 +129,7 @@ TPPalternatives <- function(folder = "paper/TPPalternatives/", m = 2) {
 
   ggsave(
     filename = file.path(folder, "2.png"),
-    plot = trialsPhaseParticipant("s", TRUE) +
+    plot = trialsPhaseParticipant(y_axis = "s", alt = TRUE) +
       theme(
         text = element_text(size = 14 * m)
       ) +

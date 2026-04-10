@@ -1,7 +1,4 @@
 #' @title Phase Length
-#' @import dplyr
-#' @import ggplot2
-#' @import tidyr
 #' @export
 
 trialsPhaseParticipant <- function(dl = data_long, y_axis = "n", alt = FALSE) {
@@ -99,12 +96,12 @@ trialsPhaseParticipantDescriptive <- function(dl = data_long) {
   psych::describeBy(trials, group = "phase")
 }
 
-studyDesign <- function(sd) {
+studyDesign <- function(sd = study_design) {
   # in "study_design" the "condition_id" is still named "study_id" and "phase" is named "name"
 
   trials <- sd |>
     drop_na(cspTrials) |>
-    filter(name != "int", phase != "other") |>
+    filter(name != "int", name != "other") |>
     distinct() |>
     group_by(study_id, name) |>
     summarise(trials = sum(cspTrials)) |>

@@ -1,8 +1,6 @@
-#' @title exploration
-#' @import dplyr
-#' @import ggplot2
+#' @title Reinforcement Rates
 #' @description
-#' generate an overview of the full dataset
+#' Creates a bar graph of the studies' reinforcement rates.
 #' @export
 
 reinforcementRates <- function(md = metadata) {

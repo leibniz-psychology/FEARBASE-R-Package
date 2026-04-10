@@ -1,5 +1,4 @@
 #' @title utility functions for FEARBASE package
-
 updateMapping <- function() {
   url <- 'https://docs.google.com/spreadsheets/d/1INi9MHloIm8XtaNLOoj046xf-T1Afm3vqFI-zRGKONw/edit?gid=0#gid=0'
   mapping <- read.csv(text = gsheet::gsheet2text(url, format = 'csv'))
@@ -10,7 +9,6 @@ updateMapping <- function() {
 #' @title All Studies
 #' @description This function returns the list of all study IDs in the metadata.
 #' @return A list containing all study IDs.
-#' @import dplyr
 #' @export
 allStudies <- function(md = metadata) {
   studies <- md |>
@@ -22,8 +20,6 @@ allStudies <- function(md = metadata) {
   return(studies)
 }
 
-#' @import readr
-#' @import dplyr
 csv_to_internal <- function(files = list.files("data", pattern = ".csv$")) {
   mapping <- updateMapping()
 
@@ -35,19 +31,19 @@ csv_to_internal <- function(files = list.files("data", pattern = ".csv$")) {
   data_long <- data_long |>
     left_join(mapping, by = c("study_id" = "condition_id")) |>
     rename("condition_id" = "study_id", "study_id" = "study_id.y")
-  use_data(data_long, overwrite = TRUE)
-  use_data(data_wide, overwrite = TRUE)
-  use_data(codebook, overwrite = TRUE)
-  use_data(questionnaires, overwrite = TRUE)
+  usethis::use_data(data_long, overwrite = TRUE)
+  usethis::use_data(data_wide, overwrite = TRUE)
+  usethis::use_data(codebook, overwrite = TRUE)
+  usethis::use_data(questionnaires, overwrite = TRUE)
 
   metadata <- metadata |>
     left_join(mapping, by = c("id" = "condition_id")) |>
     rename("condition_id" = "id")
-  use_data(metadata, overwrite = TRUE)
+  usethis::use_data(metadata, overwrite = TRUE)
   study_design <- study_design |>
     left_join(mapping, by = c("study_id" = "condition_id")) |>
     rename("condition_id" = "study_id", "study_id" = "study_id.y")
-  use_data(study_design, overwrite = TRUE)
+  usethis::use_data(study_design, overwrite = TRUE)
 
   #   data_long[data_long$study_id == "98" & data_long$phase == "hab", ]
   #   data_long |> filter(study_id == "98", phase == "hab", measure == "scr")
@@ -57,9 +53,6 @@ csv_to_internal <- function(files = list.files("data", pattern = ".csv$")) {
 #' @description Returns a factor with standardized levels: priority phases first ("hab", "acq", "ext", "int", "rin", "rex", "rev", "other"), then others.
 #' @param phases A vector of phases to be converted to factor levels.
 #' @return A factor with the standardized phase levels.
-#' @import dplyr
-#' @import forcats
-#' @export
 reorderPhases <- function(phases) {
   unique_phases <- unique(as.character(phases))
   priority_phases <- c("hab", "acq", "ext", "int", "rin", "rex", "rev", "other")

@@ -1,7 +1,4 @@
-#' @title sex distribution
-#' @import dplyr
-#' @import ggplot2
-#' @import tidyr
+#' @title Stimulus Modalities
 #' @export
 
 stimModality <- function(
