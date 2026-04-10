@@ -4,9 +4,7 @@
 #' @import tidyr
 #' @export
 
-trialsPhaseParticipant <- function(y_axis = "n", alt = FALSE) {
-  dl <- getDataLong()
-
+trialsPhaseParticipant <- function(dl = data_long, y_axis = "n", alt = FALSE) {
   age <- dl |>
     filter(measure == "age") |>
     select(condition_id, participant_id, value, measure) |>
@@ -86,9 +84,7 @@ trialsPhaseParticipant <- function(y_axis = "n", alt = FALSE) {
   return(dat)
 }
 
-trialsPhaseParticipantDescriptive <- function() {
-  dl <- getDataLong()
-
+trialsPhaseParticipantDescriptive <- function(dl = data_long) {
   trials <- dl |>
     select(condition_id, participant_id, phase, stimulus, trial) |>
     drop_na() |>

@@ -4,9 +4,7 @@
 #' @import tidyr
 #' @export
 
-sampleSizeByStudy <- function() {
-  dl <- getDataLong()
-
+sampleSizeByStudy <- function(dl = data_long) {
   data <- dl |>
     select(paper_study_id, participant_id) |>
     unique() |>
@@ -24,9 +22,7 @@ sampleSizeByStudy <- function() {
 }
 
 
-sampleSizeDescriptives <- function() {
-  dl <- getDataLong()
-
+sampleSizeDescriptives <- function(dl = data_long) {
   dl |>
     select(paper_study_id, participant_id) |>
     unique() |>

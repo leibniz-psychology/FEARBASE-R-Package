@@ -4,10 +4,8 @@
 #' @import tidyr
 #' @export
 
-dataCollectionYear <- function() {
-  mdat <- getMetadata()
-
-  graph <- mdat |>
+dataCollectionYear <- function(md = metadata) {
+  graph <- md |>
     select(year) |>
     table() |>
     as_tibble() |>

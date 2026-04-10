@@ -3,7 +3,7 @@ Group1 <- function(folder = "paper/", m = 3) {
   sample <- sampleSizeByStudy() +
     geom_text(aes(label = n), hjust = -.3) +
     labs(title = "Sample Size")
-  sex <- sex(getDataLong()) +
+  sex <- sex(data_long) +
     labs(title = "Sex Distribution")
   year <- dataCollectionYear() +
     # theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) +

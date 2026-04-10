@@ -3,9 +3,7 @@
 #' @import ggplot2
 #' @export
 
-instructions <- function() {
-  md <- getMetadata()
-
+instructions <- function(md = metadata) {
   data <- md |>
     select(condition_id, study_id, starts_with("instruction")) |>
     group_by(study_id) |>

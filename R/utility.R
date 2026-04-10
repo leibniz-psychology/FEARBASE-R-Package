@@ -7,24 +7,12 @@ updateMapping <- function() {
   return(mapping)
 }
 
-getMetadata <- function() {
-  output <- get("metadata")
-  return(output)
-}
-
-getDataLong <- function() {
-  output <- get("data_long")
-  return(output)
-}
-
 #' @title All Studies
 #' @description This function returns the list of all study IDs in the metadata.
 #' @return A list containing all study IDs.
 #' @import dplyr
 #' @export
-allStudies <- function() {
-  md <- getMetadata()
-
+allStudies <- function(md = metadata) {
   studies <- md |>
     select(study_id) |>
     distinct() |>

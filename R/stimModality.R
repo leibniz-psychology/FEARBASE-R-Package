@@ -5,7 +5,7 @@
 #' @export
 
 stimModality <- function(
-  md,
+  md = metadata,
   type = "us_type",
   level = "n_studies"
 ) {

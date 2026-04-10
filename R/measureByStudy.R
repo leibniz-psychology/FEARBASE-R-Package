@@ -7,9 +7,11 @@
 #' @import dplyr
 #' @import ggplot2
 #' @export
-measureByStudy <- function(measure_name = NULL, split_by_stimulus = FALSE) {
-  dl <- getDataLong()
-
+measureByStudy <- function(
+  dl = data_long,
+  measure_name = NULL,
+  split_by_stimulus = FALSE
+) {
   # Filter by measure if provided
   if (!is.null(measure_name)) {
     dl <- dl |> filter(measure %in% measure_name)

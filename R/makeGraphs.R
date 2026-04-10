@@ -1,13 +1,13 @@
 makeGraphs <- function(folder = "output/") {
   ggsave(
     filename = file.path(folder, "age_r.png"),
-    plot = age("r"),
+    plot = age(data_long, "r"),
     width = 10,
     height = 6
   )
   ggsave(
     filename = file.path(folder, "age_h.png"),
-    plot = age("h"),
+    plot = age(data_long, "h"),
     width = 10,
     height = 6
   )
@@ -21,21 +21,21 @@ makeGraphs <- function(folder = "output/") {
 
   ggsave(
     filename = file.path(folder, "sampleSizeByStudy.png"),
-    plot = sampleSizeByStudy(),
+    plot = sampleSizeByStudy(data_long),
     width = 10,
     height = 6
   )
 
   ggsave(
     filename = file.path(folder, "dataCollectionYear.png"),
-    plot = dataCollectionYear(),
+    plot = dataCollectionYear(metadata),
     width = 10,
     height = 6
   )
 
   ggsave(
     filename = file.path(folder, "peakDetectionWindows.png"),
-    plot = peakDetectionWindows(),
+    plot = peakDetectionWindows(metadata),
     width = 10,
     height = 6
   )
@@ -49,27 +49,27 @@ makeGraphs <- function(folder = "output/") {
 
   ggsave(
     filename = file.path(folder, "reinforcementRates.png"),
-    plot = reinforcementRates(),
+    plot = reinforcementRates(metadata),
     width = 6,
     height = 4
   )
 
   ggsave(
     filename = file.path(folder, "sex.png"),
-    plot = sex(),
+    plot = sex(data_long),
     width = 5,
     height = 5
   )
 
   ggsave(
     filename = file.path(folder, "trialsPhaseParticipant_N.png"),
-    plot = trialsPhaseParticipant("n"),
+    plot = trialsPhaseParticipant(data_long, "n"),
     width = 8,
     height = 8
   )
   ggsave(
     filename = file.path(folder, "trialsPhaseParticipant_S.png"),
-    plot = trialsPhaseParticipant("s"),
+    plot = trialsPhaseParticipant(data_long, "s"),
     width = 8,
     height = 8
   )
@@ -102,35 +102,35 @@ makeGraphs <- function(folder = "output/") {
 
   ggsave(
     filename = file.path(folder, "instructions.png"),
-    plot = instructions(),
+    plot = instructions(metadata),
     width = 10,
     height = 6
   )
 
   ggsave(
     filename = file.path(folder, "phaseResponseDistribution_SCR.png"),
-    plot = phaseResponseDistribution("scr"),
+    plot = phaseResponseDistribution(data_long, "scr"),
     width = 10,
     height = 6
   )
 
   ggsave(
     filename = file.path(folder, "dataDensityMatrix.png"),
-    plot = dataDensityMatrix(),
+    plot = dataDensityMatrix(data_long),
     width = 16,
     height = 12
   )
 
   ggsave(
     filename = file.path(folder, "measureByStudy_All.png"),
-    plot = measureByStudy(),
+    plot = measureByStudy(data_long),
     width = 16,
     height = 12
   )
 
   ggsave(
     filename = file.path(folder, "measureByStudy_Stimulus.png"),
-    plot = measureByStudy(split_by_stimulus = TRUE),
+    plot = measureByStudy(data_long, split_by_stimulus = TRUE),
     width = 16,
     height = 12
   )

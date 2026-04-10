@@ -4,9 +4,7 @@
 #' @import tidyr
 #' @export
 
-descriptives <- function() {
-  dl <- getDataLong()
-
+descriptives <- function(dl = data_long, md = metadata) {
   unique(dl$measure)
 
   unique(dl[is.na(dl["measure"]), "study_id"])
@@ -17,13 +15,11 @@ descriptives <- function() {
   studies <- length(unique(dl$study_id))
   cond <- length(unique(dl$condition_id))
 
-  sd <- getMetadata()
-
-  names(sd)
-  dis <- length(unique(sd$dataInstitution))
-  dcs <- length(unique(sd$dataCountry))
-  lis <- length(unique(sd$labInstitution))
-  lcs <- length(unique(sd$labCountry))
+  names(md)
+  dis <- length(unique(md$dataInstitution))
+  dcs <- length(unique(md$dataCountry))
+  lis <- length(unique(md$labInstitution))
+  lcs <- length(unique(md$labCountry))
   # psych::describe(sd$year)
 
   return(c(

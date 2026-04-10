@@ -4,7 +4,7 @@
 #' @import tidyr
 #' @export
 
-sex <- function(dl) {
+sex <- function(dl = data_long) {
   sex <- dl |>
     select(study_id, participant_id, value, measure) |>
     filter(measure == "sex" | measure == "gender")
@@ -21,7 +21,7 @@ sex <- function(dl) {
       sex = factor(
         stringr::str_split_i(tolower(value), "", 1),
         levels = c("m", "f", "n"),
-        labels = c("male", "female", "not reported")
+        labels = c("m", "f", "nr") # c("male", "female", "not reported")
       )
     )
 

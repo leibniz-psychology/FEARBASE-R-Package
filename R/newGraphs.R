@@ -6,9 +6,7 @@
 #' @import ggplot2
 #' @import tidyr
 #' @export
-phaseResponseDistribution <- function(measure_name = "scr") {
-  dl <- getDataLong()
-
+phaseResponseDistribution <- function(dl = data_long, measure_name = "scr") {
   plot_data <- dl |>
     filter(measure == measure_name) |>
     filter(!is.na(phase), !is.na(value)) |>
@@ -44,9 +42,7 @@ phaseResponseDistribution <- function(measure_name = "scr") {
 #' @import ggplot2
 #' @import tidyr
 #' @export
-dataDensityMatrix <- function() {
-  dl <- getDataLong()
-
+dataDensityMatrix <- function(dl = data_long) {
   # Calculate percentage of participants per study/measure
   density_data <- dl |>
     group_by(study_id) |>

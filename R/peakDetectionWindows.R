@@ -5,9 +5,7 @@
 #' generate an overview of the full dataset
 #' @export
 
-peakDetectionWindows <- function() {
-  metadata <- getMetadata()
-
+peakDetectionWindows <- function(md = metadata) {
   graph <- metadata |>
     select(
       paper_study_id,

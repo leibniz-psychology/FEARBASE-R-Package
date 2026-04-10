@@ -5,14 +5,12 @@
 #' @import dplyr
 #' @export
 
-measures <- function(study_id = NULL) {
+measures <- function(dl = data_long, study_id = NULL) {
   if (!is.null(study_id)) {
     input_id <- study_id
   } else {
     input_id <- allStudies()
   }
-
-  dl <- getDataLong()
 
   measures <- dl |>
     filter(study_id %in% input_id) |>

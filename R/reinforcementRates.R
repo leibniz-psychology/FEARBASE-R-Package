@@ -5,10 +5,8 @@
 #' generate an overview of the full dataset
 #' @export
 
-reinforcementRates <- function() {
-  metadata <- getMetadata()
-
-  data <- metadata |>
+reinforcementRates <- function(md = metadata) {
+  data <- md |>
     select(study_id, starts_with("reinf")) |>
     pivot_longer(cols = -study_id, names_to = "Reinforcement Rate") |>
     drop_na(value) |>
@@ -29,10 +27,8 @@ reinforcementRates <- function() {
   return(graph)
 }
 
-reinforcementRateDescriptives <- function() {
-  metadata <- getMetadata()
-
-  metadata |>
+reinforcementRateDescriptives <- function(md = metadata) {
+  md |>
     select(study_id, starts_with("reinf")) |>
     pivot_longer(cols = -study_id, names_to = "stimulus") |>
     pull(value) |>

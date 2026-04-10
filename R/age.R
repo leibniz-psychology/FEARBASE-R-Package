@@ -1,12 +1,10 @@
-#' @title sex distribution
+#' @title age distribution
 #' @import dplyr
 #' @import ggplot2
 #' @import tidyr
 #' @export
 
-age <- function(type = "histogram") {
-  dl <- getDataLong()
-
+age <- function(dl = data_long, type = "histogram") {
   age <- dl |>
     filter(measure == "age") |>
     select(paper_study_id, participant_id, value, measure) |>
@@ -57,9 +55,7 @@ age <- function(type = "histogram") {
   return(graph)
 }
 
-ageDescriptives <- function() {
-  dl <- getDataLong()
-
+ageDescriptives <- function(dl = data_long) {
   age <- dl |>
     filter(measure == "age") |>
     select(paper_study_id, participant_id, value, measure) |>
