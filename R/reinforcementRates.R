@@ -1,8 +1,12 @@
-#' @title Reinforcement Rates
+#' Reinforcement rates
+#'
 #' @description
 #' Creates a bar graph of the studies' reinforcement rates.
+#'
+#' @param md The metadata.
+#'
+#' @return A ggplot object.
 #' @export
-
 reinforcementRates <- function(md = metadata) {
   data <- md |>
     select(study_id, starts_with("reinf")) |>

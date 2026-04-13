@@ -1,6 +1,14 @@
-#' @title Stimulus Modalities
+#' Stimulus modalities
+#'
+#' @description
+#' Generates a pie chart of the stimulus modalities.
+#'
+#' @param md The metadata.
+#' @param type The type of stimulus to plot. Either "us_type" or "cs_type".
+#' @param level The level of aggregation. Either "n_studies" or "n_subjects".
+#'
+#' @return A ggplot object.
 #' @export
-
 stimModality <- function(
   md = metadata,
   type = "us_type",

@@ -1,6 +1,12 @@
-#' @title instruction graph
+#' Instruction graph
+#'
+#' @description
+#' Generates a bar plot of the contingency instructions.
+#'
+#' @param md The metadata.
+#'
+#' @return A ggplot object.
 #' @export
-
 instructions <- function(md = metadata) {
   data <- md |>
     select(condition_id, study_id, starts_with("instruction")) |>

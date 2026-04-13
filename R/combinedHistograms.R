@@ -1,4 +1,9 @@
-#' @title build combined histogram of measures
+#' Measures heatmap
+#'
+#' @description
+#' Builds a combined heatmap and bar plot of measures.
+#'
+#' @return A ggplot object (patchwork).
 #' @export
 measuresHeatmap <- function() {
   plots <- prepMeasuresHeatmap()
@@ -111,7 +116,12 @@ prepMeasuresHeatmap <- function(dl = data_long, md = metadata) {
   return(c(hm, bp))
 }
 
-#' @title build histogram of phases
+#' Phases heatmap
+#'
+#' @description
+#' Builds a combined heatmap and bar plot of phases.
+#'
+#' @return A ggplot object (patchwork).
 #' @export
 phasesHeatmap <- function() {
   plots <- prepPhasesHeatmap(data_long)

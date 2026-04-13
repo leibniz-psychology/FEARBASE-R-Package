@@ -1,8 +1,12 @@
-#' @title Detection Windows
+#' Peak detection windows
+#'
 #' @description
 #' Generates a graph of the SCR Scoring Windows
+#'
+#' @param md The metadata.
+#'
+#' @return A ggplot object.
 #' @export
-
 peakDetectionWindows <- function(md = metadata) {
   graph <- metadata |>
     select(

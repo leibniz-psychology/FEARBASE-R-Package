@@ -1,6 +1,12 @@
-#' @title Study Sample Sizes
+#' Study sample sizes
+#'
+#' @description
+#' Generates a bar plot of the sample sizes for each study.
+#'
+#' @param dl The data in long format.
+#'
+#' @return A ggplot object.
 #' @export
-
 sampleSizeByStudy <- function(dl = data_long) {
   data <- dl |>
     select(paper_study_id, participant_id) |>

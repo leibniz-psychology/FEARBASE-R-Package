@@ -60,7 +60,16 @@ Check the [OpenCPU API docs](https://www.opencpu.org/api.html#api-methods) for i
 
 ### loading the fearbase package locally
 
-Copy *.rda files into /data. The date is then loaded together with the package.
+#### First Setup and Database Update
+Copy *.csv files into /data.
+
+in /R/utility.R load the funciton csv_to_internal and then execute it:
+```R
+csv_to_internal()
+```
+
+#### 
+If necessary, copy *.rda files into /data. The date is then loaded together with the package.
 
 In a R terminal with the repository's root as working directory execute this:
 ```R

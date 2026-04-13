@@ -1,4 +1,9 @@
-#' @title age distribution
+#' Age distribution
+#'
+#' @param dl The data in long format.
+#' @param type The type of plot to produce. Either "histogram", "hist", "h" or "ridge", "density", "r", "d".
+#'
+#' @return A ggplot object.
 #' @export
 age <- function(dl = data_long, type = "histogram") {
   age <- dl |>
@@ -51,6 +56,11 @@ age <- function(dl = data_long, type = "histogram") {
   return(graph)
 }
 
+#' Age descriptives
+#'
+#' @param dl The data in long format.
+#'
+#' @return A data frame with mean, sd, min and max age.
 #' @export
 ageDescriptives <- function(dl = data_long) {
   age <- dl |>

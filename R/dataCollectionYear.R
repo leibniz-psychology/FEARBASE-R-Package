@@ -1,6 +1,9 @@
-#' @title data collection year
+#' Data collection year
+#'
+#' @param md The metadata.
+#'
+#' @return A ggplot object.
 #' @export
-
 dataCollectionYear <- function(md = metadata) {
   graph <- md |>
     select(year) |>

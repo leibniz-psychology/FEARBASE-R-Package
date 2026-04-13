@@ -6,9 +6,13 @@ updateMapping <- function() {
   return(mapping)
 }
 
-#' @title All Studies
+#' All studies
+#'
 #' @description This function returns the list of all study IDs in the metadata.
-#' @return A list containing all study IDs.
+#'
+#' @param md The metadata.
+#'
+#' @return A character vector of all study IDs.
 #' @export
 allStudies <- function(md = metadata) {
   studies <- md |>

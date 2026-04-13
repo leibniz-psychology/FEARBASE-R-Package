@@ -1,6 +1,13 @@
-#' @title descriptives
+#' Descriptive statistics
+#'
+#' @description
+#' Returns a summary of the number of studies, conditions, participants, and institutions.
+#'
+#' @param dl The data in long format.
+#' @param md The metadata.
+#'
+#' @return A named vector of counts.
 #' @export
-
 descriptives <- function(dl = data_long, md = metadata) {
   unique(dl$measure)
 

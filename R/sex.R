@@ -1,6 +1,12 @@
-#' @title Sex Distribution
+#' Sex distribution
+#'
+#' @description
+#' Generates a pie chart of the sex distribution.
+#'
+#' @param dl The data in long format.
+#'
+#' @return A ggplot object.
 #' @export
-
 sex <- function(dl = data_long) {
   sex <- dl |>
     select(study_id, participant_id, value, measure) |>
@@ -28,7 +34,7 @@ sex <- function(dl = data_long) {
     ggplot(aes(x = "", y = n, fill = sex)) +
     geom_bar(stat = "identity", width = 1) +
     coord_polar("y", start = 0) +
-    theme_void(paper = "white") +
+    theme_void() +
     ggrepel::geom_label_repel(
       aes(label = paste0(sex, " (", n, ")"), group = sex),
       position = position_stack(vjust = 0.5),

@@ -1,9 +1,12 @@
-#' @title measures
+#' Available measures
+#'
 #' @description This function returns the measures available for a given study.
+#'
+#' @param dl The data in long format.
 #' @param study_id The ID of the study for which to retrieve measures.
-#' @return A list containing the measures available for the specified study.
+#'
+#' @return A character vector of measures.
 #' @export
-
 measures <- function(dl = data_long, study_id = NULL) {
   if (!is.null(study_id)) {
     input_id <- study_id
