@@ -52,17 +52,19 @@ peakDetectionWindows <- function(md = metadata) {
       ) |>
         factor(levels = c("Baseline", "Peak Detection", "Trough Detection"))
     ) |>
-    ggplot(aes(x = paper_study_id, color = window, group = window)) +
+    ggplot(aes(x = paper_study_id)) +
     geom_segment(
       aes(
         y = start,
-        yend = end
+        yend = end,
+        color = window,
+        group = window
       ),
       linewidth = 7
     ) +
     labs(
       x = "Study",
-      y = "Time (s)",
+      y = "Time (s) relative to stimulus onset",
       color = "Detection Window"
     ) +
     coord_flip(ylim = c(-5, 8)) + # TODO: set limits dynamically
@@ -72,7 +74,17 @@ peakDetectionWindows <- function(md = metadata) {
       hjust = 1,
       size = 3
     ) +
-    geom_hline(yintercept = 0)
+    geom_hline(yintercept = 0) +
+    geom_text(
+      x = 16,
+      y = 0,
+      angle = 90,
+      group = "none",
+      label = "CS Onset",
+      color = "black",
+      vjust = -0.1,
+      size = 5
+    )
 
   return(graph)
 }
