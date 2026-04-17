@@ -67,11 +67,11 @@ peakDetectionWindows <- function(md = metadata) {
       y = "Time (s) relative to stimulus onset",
       color = "Detection Window"
     ) +
-    coord_flip(ylim = c(-5, 8)) + # TODO: set limits dynamically
+    coord_flip() + # TODO: set limits dynamically
     geom_text(
       aes(y = -3, label = scr_scoring_approach),
       color = "black",
-      hjust = 1,
+      hjust = 0,
       size = 3
     ) +
     geom_hline(yintercept = 0) +

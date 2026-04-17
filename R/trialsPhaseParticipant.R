@@ -1,21 +1,16 @@
-#' @title Phase Length
+#' Phase length
+#'
+#' @description
+#' This function calculates the number of trials per phase for n participants and s studies,
+#' and visualizes the distribution of trial counts across phases.
+#'
+#' @param dl A data frame in long format containing the trial data.
+#' @param y_axis A string specifying the y-axis variable: "n" for number of participants, "s" for number of studies.
+#'
+#' @return A ggplot object visualizing the distribution of trial counts across phases.
 #' @export
-
-trialsPhaseParticipant <- function(dl = data_long, y_axis = "n", alt = FALSE) {
-  age <- dl |>
-    filter(measure == "age") |>
-    select(condition_id, participant_id, value, measure) |>
-    mutate(age = as.numeric(value), condition_id = as.factor(condition_id)) |>
-    filter(!is.na(age))
-
-  study_order <- age |>
-    group_by(condition_id) |>
-    summarise(mean_age = median(age)) |>
-    arrange(desc(mean_age)) |>
-    pull(condition_id)
-
-  trials <- .prepareTrialCountData(dl, alt = alt)
-  # trials$condition_id <- factor(trials$condition_id, levels = study_order)
+trialsPhaseParticipant <- function(dl = data_long, y_axis = "s") {
+  trials <- .prepareTrialCountData(dl = dl)
 
   if (tolower(y_axis) %in% c("n", "participant", "participants")) {
     graph <- trials |>
@@ -46,38 +41,35 @@ trialsPhaseParticipant <- function(dl = data_long, y_axis = "n", alt = FALSE) {
   return(graph)
 }
 
-.prepareTrialCountData <- function(dl, alt = FALSE) {
-  if (alt) {
-    dat <- dl |>
-      select(condition_id, participant_id, phase, stimulus, trial) |>
-      drop_na(phase, trial) |>
-      filter(phase != "int") |>
-      distinct() |>
-      group_by(condition_id, participant_id, phase) |>
-      summarise(trials = n()) |>
-      group_by(condition_id, phase, trials) |>
-      summarise(n = n()) |>
-      ungroup() |>
-      mutate(
-        condition_id = as.factor(condition_id),
-        phase = reorderPhases(phase)
-      )
-  } else {
-    dat <- dl |>
-      select(condition_id, participant_id, phase, stimulus, trial) |>
-      drop_na(phase, trial) |>
-      filter(phase != "int") |>
-      distinct() |>
-      group_by(condition_id, participant_id, phase) |>
-      summarise(trials = max(trial)) |>
-      group_by(condition_id, phase, trials) |>
-      summarise(n = n()) |>
-      ungroup() |>
-      mutate(
-        condition_id = as.factor(condition_id),
-        phase = reorderPhases(phase)
-      )
-  }
+.prepareTrialCountData <- function(
+  dl = data_long,
+  # sd = study_design,
+  from_study_design = FALSE
+) {
+  dat <- dl |>
+    select(condition_id, participant_id, phase, stimulus, trial) |>
+    drop_na(phase, trial) |>
+    filter(phase != "int", phase != "other") |>
+    distinct() |>
+    group_by(condition_id, participant_id, stimulus, phase) |>
+    summarise(trials = max(trial)) |>
+    group_by(condition_id, phase, stimulus, trials) |>
+    summarise(n = n()) |>
+    group_by(condition_id, phase) |>
+    summarise(trials = sum(trials), n = unique(n)) |>
+    ungroup() |>
+    mutate(
+      condition_id = as.factor(condition_id),
+      phase = reorderPhases(phase) |>
+        forcats::fct_recode(
+          Hab = "hab",
+          Acq = "acq",
+          Ext = "ext",
+          RI = "rin",
+          `Re-Ext` = "rex",
+          Rev = "rev"
+        )
+    )
   return(dat)
 }
 
@@ -97,10 +89,10 @@ trialsPhaseParticipantDescriptive <- function(dl = data_long) {
 }
 
 studyDesign <- function(sd = study_design) {
-  # in "study_design" the "condition_id" is still named "study_id" and "phase" is named "name"
+  # in "study_design", "phase" is named "name"
 
   trials <- sd |>
-    drop_na(cspTrials) |>
+    drop_na(cspTrials, csmTrials) |>
     filter(name != "int", name != "other") |>
     distinct() |>
     group_by(study_id, name) |>

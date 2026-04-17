@@ -8,7 +8,8 @@ Group1 <- function(folder = "paper/", m = 3) {
     # theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) +
     labs(title = "Publication Year")
   p4 <- age(type = "r") +
-    labs(title = "Age Distribution")
+    labs(title = "Age Distribution") +
+    scale_x_continuous(breaks = seq(15, 60, 5))
   p5 <- age(type = "h") +
     theme(
       legend.position = "inside",
@@ -16,7 +17,8 @@ Group1 <- function(folder = "paper/", m = 3) {
       legend.text = element_text(size = 4 * m)
     ) +
     guides(fill = guide_legend(ncol = 2, reverse = TRUE)) +
-    labs(title = "Age Distribution")
+    labs(title = "Age Distribution") +
+    scale_x_continuous(breaks = seq(15, 60, 5))
 
   update_geom_defaults("label", list(size = 4.5 * m / .pt))
   update_geom_defaults("text", list(size = 4.5 * m / .pt))
@@ -46,10 +48,13 @@ Group2 <- function(folder = "paper/", m = 3) {
     labs(title = "Reinforcement Rate")
   p2 <- peakDetectionWindows() +
     labs(title = "SCR Response Quantification Approach") +
-    theme(legend.position = "top")
+    theme(legend.position = "top") +
+    coord_flip(ylim = c(-3, 8)) +
+    scale_y_continuous(breaks = seq(-2, 8, 2))
   p3 <- instructions() +
     labs(title = "Contingency Instruction") +
-    theme(plot.title = element_text(hjust = -1.55))
+    theme(plot.title = element_text(hjust = -1.35)) +
+    labs(x = NULL)
   p4 <- stimModality(metadata, "cs_type", "n_studies") +
     labs(title = "CS Modality") +
     guides(fill = guide_legend(position = "top", title = ""))
@@ -60,8 +65,8 @@ Group2 <- function(folder = "paper/", m = 3) {
   update_geom_defaults("label", list(size = 5 * m / .pt))
   update_geom_defaults("text", list(size = 5 * m / .pt))
 
-  plt <- (free(p2) | p1) /
-    (p3 | (p4 / p5)) +
+  plt <- (free(p2) | p1 + theme(plot.tag.position = c(.05, .99))) /
+    (p3 | ((p4 / p5) & theme(plot.tag.position = c(-.92, 1)))) +
     plot_annotation(tag_levels = 'A') &
     theme(text = element_text(size = 6 * m))
 
@@ -94,8 +99,8 @@ Group3 <- function(folder = "paper/", m = 2) {
   p4 <- p34[[2]] +
     labs(title = "Number of\nParticipants")
 
-  plt <- (p1 + p2 + plot_layout(widths = c(1, 0.5))) /
-    (p3 + p4 + plot_layout(widths = c(1, 0.5))) +
+  plt <- (p1 + p2 + plot_layout(widths = c(1, 0.6))) /
+    (p3 + p4 + plot_layout(widths = c(1, 0.6))) +
     plot_annotation(tag_levels = list(c('A', '', 'B', ''))) &
     theme(
       text = element_text(size = 11 * m),
@@ -113,39 +118,14 @@ Group3 <- function(folder = "paper/", m = 2) {
   )
 }
 
-TPPalternatives <- function(folder = "paper/TPPalternatives/", m = 2) {
+TPPalternatives <- function(folder = "paper/", m = 2) {
   ggsave(
-    filename = file.path(folder, "1.png"),
+    filename = file.path(folder, "trialsPerPhase.png"),
     plot = trialsPhaseParticipant(y_axis = "s") +
       theme(
         text = element_text(size = 14 * m)
       ) +
-      labs(title = "Phase Lengths 1"),
-    width = 6,
-    height = 7,
-    scale = m,
-    dpi = 96 * m
-  )
-
-  ggsave(
-    filename = file.path(folder, "2.png"),
-    plot = trialsPhaseParticipant(y_axis = "s", alt = TRUE) +
-      theme(
-        text = element_text(size = 14 * m)
-      ) +
-      labs(title = "Phase Lengths 2"),
-    width = 6,
-    height = 7,
-    scale = m,
-    dpi = 96 * m
-  )
-  ggsave(
-    filename = file.path(folder, "3.png"),
-    plot = studyDesign(study_design) +
-      theme(
-        text = element_text(size = 14 * m)
-      ) +
-      labs(title = "Phase Lengths 3"),
+      labs(title = "Phase Lengths"),
     width = 6,
     height = 7,
     scale = m,

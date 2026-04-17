@@ -36,7 +36,7 @@ age <- function(dl = data_long, type = "histogram") {
         color = "white",
         linewidth = .2
       ) +
-      labs(x = "Age", y = "Number of Participants", fill = "Study")
+      labs(x = "Age", y = "Number of Participants", fill = "Study ID")
   } else if (tolower(type) %in% c("ridge", "density", "r", "d")) {
     age$paper_study_id <- factor(age$paper_study_id, levels = study_order)
 
@@ -48,7 +48,7 @@ age <- function(dl = data_long, type = "histogram") {
         fill = paper_study_id
       )) +
       ggridges::geom_density_ridges() +
-      labs(x = "Age", y = "Study", fill = "Study") +
+      labs(x = "Age", y = "Study ID", fill = "Study ID") +
       theme(legend.position = "none")
   } else {
     stop("unknown argument type")

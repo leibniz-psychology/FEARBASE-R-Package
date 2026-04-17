@@ -19,7 +19,7 @@ sampleSizeByStudy <- function(dl = data_long) {
     ggplot(aes(x = paper_study_id, y = n)) +
     coord_flip(ylim = c(0, max(data$n) + 10)) +
     geom_bar(stat = "identity") +
-    labs(x = "Study", y = "Number of Participants")
+    labs(x = "Study ID", y = "Number of Participants")
 
   return(graph)
 }

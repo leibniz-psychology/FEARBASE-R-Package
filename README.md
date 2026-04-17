@@ -35,7 +35,7 @@ docker compose up -d --build
 
 #### Stop the OpenCPU server
 
-```php
+```bash
 docker compose down
 ```
 
@@ -43,7 +43,7 @@ docker compose down
 
 After making changes to the fearbase package. Simply run
 
-```php
+```bash
 docker compose up -d --build
 ```
 
