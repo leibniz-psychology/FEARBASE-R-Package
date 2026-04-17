@@ -35,6 +35,8 @@ RUN R -e "install.packages('broom.mixed')"
 
 COPY . /home/opencpu/fearbase
 
+RUN Rscript /home/opencpu/fearbase/data-preprocessing.R /home/opencpu/fearbase
+
 RUN cd /home/opencpu && \
     R -e "install.packages('remotes')" && \
     R CMD build fearbase && \

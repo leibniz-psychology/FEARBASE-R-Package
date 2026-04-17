@@ -1,11 +1,3 @@
-#' @title utility functions for FEARBASE package
-updateMapping <- function() {
-  url <- 'https://docs.google.com/spreadsheets/d/1INi9MHloIm8XtaNLOoj046xf-T1Afm3vqFI-zRGKONw/edit?gid=0#gid=0'
-  mapping <- read.csv(text = gsheet::gsheet2text(url, format = 'csv'))
-  usethis::use_data(mapping, overwrite = TRUE)
-  return(mapping)
-}
-
 #' All studies
 #'
 #' @description This function returns the list of all study IDs in the metadata.
@@ -24,34 +16,6 @@ allStudies <- function(md = metadata) {
   return(studies)
 }
 
-csv_to_internal <- function(files = list.files("data", pattern = ".csv$")) {
-  mapping <- updateMapping()
-
-  # read csv and give it the file's name
-  for (f in files) {
-    assign(sub(".csv", "", f), read_csv(file.path("data", f)))
-  }
-
-  data_long <- data_long |>
-    left_join(mapping, by = c("study_id" = "condition_id")) |>
-    rename("condition_id" = "study_id", "study_id" = "study_id.y")
-  usethis::use_data(data_long, overwrite = TRUE)
-  usethis::use_data(data_wide, overwrite = TRUE)
-  usethis::use_data(codebook, overwrite = TRUE)
-  usethis::use_data(questionnaires, overwrite = TRUE)
-
-  metadata <- metadata |>
-    left_join(mapping, by = c("id" = "condition_id")) |>
-    rename("condition_id" = "id")
-  usethis::use_data(metadata, overwrite = TRUE)
-  study_design <- study_design |>
-    left_join(mapping, by = c("study_id" = "condition_id")) |>
-    rename("condition_id" = "study_id", "study_id" = "study_id.y")
-  usethis::use_data(study_design, overwrite = TRUE)
-
-  #   data_long[data_long$study_id == "98" & data_long$phase == "hab", ]
-  #   data_long |> filter(study_id == "98", phase == "hab", measure == "scr")
-}
 
 #' @title Reorder phases
 #' @description Returns a factor with standardized levels: priority phases first ("hab", "acq", "ext", "int", "rin", "rex", "rev", "other"), then others.
