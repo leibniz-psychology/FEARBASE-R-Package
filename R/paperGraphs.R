@@ -2,7 +2,7 @@ Group1 <- function(folder = "paper/", m = 3) {
   sample <- sampleSizeByStudy() +
     geom_text(aes(label = n), hjust = -.3) +
     labs(title = "Sample Size")
-  sex <- sex(data_long) +
+  sex <- sex() +
     labs(title = "Sex Distribution")
   year <- dataCollectionYear() +
     # theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) +
@@ -118,7 +118,7 @@ Group3 <- function(folder = "paper/", m = 2) {
   )
 }
 
-TPPalternatives <- function(folder = "paper/", m = 2) {
+TPP <- function(folder = "paper/", m = 2) {
   ggsave(
     filename = file.path(folder, "trialsPerPhase.png"),
     plot = trialsPhaseParticipant(y_axis = "s") +

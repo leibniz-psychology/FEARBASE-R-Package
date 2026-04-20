@@ -7,8 +7,8 @@
 #'
 #' @return A ggplot object.
 #' @export
-instructions <- function(md = metadata) {
-  graph <- data |>
+instructions <- function(dat = data_instructions) {
+  graph <- dat |>
     ggplot(aes(x = instruction_contingency, y = n)) +
     geom_bar(stat = "identity") +
     coord_flip() +
