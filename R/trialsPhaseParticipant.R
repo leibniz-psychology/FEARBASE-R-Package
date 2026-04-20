@@ -9,11 +9,9 @@
 #'
 #' @return A ggplot object visualizing the distribution of trial counts across phases.
 #' @export
-trialsPhaseParticipant <- function(dl = data_long, y_axis = "s") {
-  trials <- .prepareTrialCountData(dl = dl)
-
+trialsPhaseParticipant <- function(dat = data_trial_count, y_axis = "s") {
   if (tolower(y_axis) %in% c("n", "participant", "participants")) {
-    graph <- trials |>
+    graph <- dat |>
       ggplot(aes(
         x = trials,
         y = n,
@@ -29,7 +27,7 @@ trialsPhaseParticipant <- function(dl = data_long, y_axis = "s") {
         fill = "Study ID"
       )
   } else if (tolower(y_axis) %in% c("study", "studies", "s")) {
-    graph <- trials |>
+    graph <- dat |>
       group_by(condition_id, phase, trials) |>
       summarise(n = n()) |>
       ggplot(aes(x = trials, y = n)) +
@@ -41,37 +39,6 @@ trialsPhaseParticipant <- function(dl = data_long, y_axis = "s") {
   return(graph)
 }
 
-.prepareTrialCountData <- function(
-  dl = data_long,
-  # sd = study_design,
-  from_study_design = FALSE
-) {
-  dat <- dl |>
-    select(condition_id, participant_id, phase, stimulus, trial) |>
-    drop_na(phase, trial) |>
-    filter(phase != "int", phase != "other") |>
-    distinct() |>
-    group_by(condition_id, participant_id, stimulus, phase) |>
-    summarise(trials = max(trial)) |>
-    group_by(condition_id, phase, stimulus, trials) |>
-    summarise(n = n()) |>
-    group_by(condition_id, phase) |>
-    summarise(trials = sum(trials), n = unique(n)) |>
-    ungroup() |>
-    mutate(
-      condition_id = as.factor(condition_id),
-      phase = reorderPhases(phase) |>
-        forcats::fct_recode(
-          Hab = "hab",
-          Acq = "acq",
-          Ext = "ext",
-          RI = "rin",
-          `Re-Ext` = "rex",
-          Rev = "rev"
-        )
-    )
-  return(dat)
-}
 
 trialsPhaseParticipantDescriptive <- function(dl = data_long) {
   trials <- dl |>

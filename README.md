@@ -61,17 +61,16 @@ Check the [OpenCPU API docs](https://www.opencpu.org/api.html#api-methods) for i
 ### loading the fearbase package locally
 
 #### First Setup and Database Update
-Copy *.csv files into /data.
+Copy *.csv files into `/data-preperation/input`.
 
-in /R/utility.R load the funciton csv_to_internal and then execute it:
-```R
-csv_to_internal()
+In the root of the repository run:
+```bash
+Rscript data-preprocessing.R "."
 ```
 
-#### 
-If necessary, copy *.rda files into /data. The date is then loaded together with the package.
-
-In a R terminal with the repository's root as working directory execute this:
+#### Loading the Package
+The data in `/data` is loaded together with the package.
+In an R terminal with the repository's root as working directory execute this:
 ```R
 if(!requireNamespace("devtools")){
     install.packages("devtools")  # ensures that the devtools package is installed

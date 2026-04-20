@@ -42,6 +42,4 @@ generate_palette <- function(n_colors) {
 
   update_geom_defaults("bar", list(fill = generate_palette(1)))
   update_geom_defaults("boxplot", list(fill = generate_palette(1)))
-
-  # csv_to_internal()
 }

@@ -22,6 +22,9 @@ stimModality <- function(
     stop("level must be either 'n_studies' or 'n_subjects'")
   }
 
+  # There is still some data preperation in this function
+  # I think it is more flexible to do here than in the data preperation function
+  # and it does not take a lot of computing
   data <- md |>
     select(condition_id, study_id, n_subjects, us_type, cs_type) |>
     group_by(.data[[type]]) |>

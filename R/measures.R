@@ -3,7 +3,7 @@
 #' @description This function returns the measures available for a given study.
 #'
 #' @param dl The data in long format.
-#' @param study_id The ID of the study for which to retrieve measures.
+#' @param study_id (optional) The ID of the study for which to retrieve measures.
 #'
 #' @return A character vector of measures.
 #' @export
