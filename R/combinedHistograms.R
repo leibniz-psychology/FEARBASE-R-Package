@@ -5,13 +5,8 @@
 #'
 #' @return A ggplot object (patchwork).
 #' @export
-measuresHeatmap <- function() {
-  plots <- prepMeasuresHeatmap()
-  .arrange_histogram_layout(plots[[1]], plots[[2]])
-}
-prepMeasuresHeatmap <- function(dat = data_measures) {
-  # Heatmap
-  hm <- .plot_co_occurrence_heatmap(
+measuresHeatmap <- function(dat = data_measures) {
+  hm <- plot_co_occurrence_heatmap(
     dat$heatmap_data,
     "measure",
     "measure2",
@@ -20,15 +15,13 @@ prepMeasuresHeatmap <- function(dat = data_measures) {
   )
 
   # Bar plot
-  bp <- .plot_horizontal_bar(
+  bp <- plot_horizontal_bar(
     dat$barplot_data,
     "measure",
     "used",
     fill_var = "type"
   )
-
-  # Combine
-  return(c(hm, bp))
+  arrange_histogram_layout(hm, bp)
 }
 
 #' Phases heatmap
@@ -38,14 +31,9 @@ prepMeasuresHeatmap <- function(dat = data_measures) {
 #'
 #' @return A ggplot object (patchwork).
 #' @export
-phasesHeatmap <- function() {
-  plots <- prepPhasesHeatmap(data_phases)
-  .arrange_histogram_layout(plots[[1]], plots[[2]])
-}
-
-prepPhasesHeatmap <- function(dat = data_phases) {
+phasesHeatmap <- function(dat = data_phases) {
   # Heatmap
-  hm <- .plot_co_occurrence_heatmap(
+  hm <- plot_co_occurrence_heatmap(
     dat$heatmap_data,
     "phase",
     "phase2",
@@ -54,14 +42,13 @@ prepPhasesHeatmap <- function(dat = data_phases) {
   )
 
   # Bar plot
-  bp <- .plot_horizontal_bar(dat$barplot_data, "phase", "used")
-
-  # Combine
-  return(c(hm, bp))
+  bp <- plot_horizontal_bar(dat$barplot_data, "phase", "used")
+  arrange_histogram_layout(hm, bp)
 }
 
-# --- Internal Helper Functions ---
-.plot_co_occurrence_heatmap <- function(
+
+#' @export
+plot_co_occurrence_heatmap <- function(
   df,
   x_var,
   y_var,
@@ -131,7 +118,8 @@ prepPhasesHeatmap <- function(dat = data_phases) {
     )
 }
 
-.plot_horizontal_bar <- function(df, cat_var, count_var, fill_var = NULL) {
+#' @export
+plot_horizontal_bar <- function(df, cat_var, count_var, fill_var = NULL) {
   p <- ggplot(
     df,
     aes(x = .data[[cat_var]], y = .data[[count_var]])
@@ -160,6 +148,6 @@ prepPhasesHeatmap <- function(dat = data_phases) {
     )
 }
 
-.arrange_histogram_layout <- function(hm, bp) {
+arrange_histogram_layout <- function(hm, bp) {
   hm + bp + plot_layout(widths = c(1, 0.5))
 }
