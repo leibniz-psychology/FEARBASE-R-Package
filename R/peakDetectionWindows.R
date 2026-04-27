@@ -30,7 +30,7 @@ peakDetectionWindows <- function(
     ) +
     coord_flip() + # TODO: set limits dynamically
     geom_text(
-      aes(y = -3, label = scr_scoring_approach),
+      aes(y = -3, label = physiological_measure_scr_scoring_approach),
       color = "black",
       hjust = 0,
       size = 3

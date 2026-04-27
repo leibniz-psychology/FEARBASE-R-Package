@@ -176,22 +176,25 @@ preparePeakDetectionWindowData <- function(md, path) {
     select(
       paper_study_id,
       study_id,
-      scr_scoring_approach,
-      scr_baseline_window_start,
-      scr_baseline_window_end,
-      scr_peak_detection_window_min,
-      scr_peak_detection_window_max
+      physiological_measure_scr_scoring_approach,
+      physiological_measure_scr_baseline_window_start,
+      physiological_measure_scr_baseline_window_end,
+      physiological_measure_scr_peak_detection_window_min,
+      physiological_measure_scr_peak_detection_window_max
     ) |>
-    drop_na(scr_peak_detection_window_max) |>
+    drop_na(physiological_measure_scr_peak_detection_window_max) |>
     distinct() |>
     arrange(
-      scr_scoring_approach,
-      desc(scr_peak_detection_window_min),
-      desc(scr_peak_detection_window_max)
+      physiological_measure_scr_scoring_approach,
+      desc(physiological_measure_scr_peak_detection_window_min),
+      desc(physiological_measure_scr_peak_detection_window_max)
     ) |>
     mutate(across(any_of(grouping_variables), as.factor)) |>
     pivot_longer(
-      cols = -c(any_of(grouping_variables), scr_scoring_approach),
+      cols = -c(
+        any_of(grouping_variables),
+        physiological_measure_scr_scoring_approach
+      ),
       names_to = c("measure", "window", "timepoint"),
       names_pattern = "(scr)_(.*)_window_(.*)"
     ) |>
@@ -203,16 +206,18 @@ preparePeakDetectionWindowData <- function(md, path) {
       values_from = value
     ) |>
     mutate(
-      scr_scoring_approach = forcats::fct_recode(
-        scr_scoring_approach,
+      physiological_measure_scr_scoring_approach = forcats::fct_recode(
+        physiological_measure_scr_scoring_approach,
         "BLC" = "baseline_correction",
         "TTP" = "trough-to-peak"
       ),
       window = case_when(
-        scr_scoring_approach != "BLC" ~ "Trough Detection",
-        scr_scoring_approach == "BLC" &
+        physiological_measure_scr_scoring_approach !=
+          "BLC" ~ "Trough Detection",
+        physiological_measure_scr_scoring_approach == "BLC" &
           window == "peak_detection" ~ "Peak Detection",
-        scr_scoring_approach == "BLC" & window == "baseline" ~ "Baseline",
+        physiological_measure_scr_scoring_approach == "BLC" &
+          window == "baseline" ~ "Baseline",
         TRUE ~ window
       ) |>
         factor(levels = c("Baseline", "Peak Detection", "Trough Detection"))
