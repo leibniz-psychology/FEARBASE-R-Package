@@ -4,12 +4,16 @@
 #' Generates a graph of the SCR Scoring Windows
 #'
 #' @param md The metadata.
+#' @param grouping_variable A string specifying the variable to group by (allowed values: "study_id" or "paper_study_id").
 #'
 #' @return A ggplot object.
 #' @export
-peakDetectionWindows <- function(dat = data_peak_detection_window) {
+peakDetectionWindows <- function(
+  dat = data_peak_detection_window,
+  grouping_variable = "study_id"
+) {
   graph <- dat |>
-    ggplot(aes(x = paper_study_id)) +
+    ggplot(aes(x = .data[[grouping_variable]])) +
     geom_segment(
       aes(
         y = start,

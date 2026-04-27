@@ -4,6 +4,12 @@ library(tidyr)
 
 args = commandArgs(trailingOnly = TRUE)
 root_path <- args[1] # root_path <- "."
+grouping_variables <- c(
+  "condition_id",
+  "study_id",
+  "paper_cond_id",
+  "paper_study_id"
+)
 
 updateMapping <- function(path) {
   url <- 'https://docs.google.com/spreadsheets/d/1INi9MHloIm8XtaNLOoj046xf-T1Afm3vqFI-zRGKONw/edit?gid=0#gid=0'
@@ -59,10 +65,10 @@ csv_to_internal <- function(path) {
 prepareAgeData <- function(dl, path) {
   data_age <- dl |>
     filter(measure == "age") |>
-    select(paper_study_id, participant_id, value, measure) |>
+    select(all_of(grouping_variables), participant_id, value, measure) |>
     mutate(
       age = as.numeric(value),
-      paper_study_id = as.factor(paper_study_id)
+      across(all_of(grouping_variables), as.factor)
     ) |>
     filter(!is.na(age))
   save(
@@ -124,15 +130,26 @@ prepareTrialCountData <- function(
   path
 ) {
   data_trial_count <- dl |>
-    select(condition_id, participant_id, phase, stimulus, trial) |>
+    select(
+      all_of(grouping_variables),
+      participant_id,
+      phase,
+      stimulus,
+      trial
+    ) |>
     drop_na(phase, trial) |>
     filter(phase != "int", phase != "other") |>
     distinct() |>
-    group_by(condition_id, participant_id, stimulus, phase) |>
+    group_by(
+      across(all_of(grouping_variables)),
+      participant_id,
+      phase,
+      stimulus
+    ) |>
     summarise(trials = max(trial)) |>
-    group_by(condition_id, phase, stimulus, trials) |>
+    group_by(across(all_of(grouping_variables)), phase, stimulus, trials) |>
     summarise(n = n()) |>
-    group_by(condition_id, phase) |>
+    group_by(across(all_of(grouping_variables)), phase) |>
     summarise(trials = sum(trials), n = unique(n)) |>
     ungroup() |>
     mutate(
@@ -158,6 +175,7 @@ preparePeakDetectionWindowData <- function(md, path) {
   data_peak_detection_window <- md |>
     select(
       paper_study_id,
+      study_id,
       scr_scoring_approach,
       scr_baseline_window_start,
       scr_baseline_window_end,
@@ -171,9 +189,9 @@ preparePeakDetectionWindowData <- function(md, path) {
       desc(scr_peak_detection_window_min),
       desc(scr_peak_detection_window_max)
     ) |>
-    mutate(paper_study_id = factor(paper_study_id, levels = paper_study_id)) |>
+    mutate(across(any_of(grouping_variables), as.factor)) |>
     pivot_longer(
-      cols = -c(paper_study_id, scr_scoring_approach),
+      cols = -c(any_of(grouping_variables), scr_scoring_approach),
       names_to = c("measure", "window", "timepoint"),
       names_pattern = "(scr)_(.*)_window_(.*)"
     ) |>
@@ -208,12 +226,12 @@ preparePeakDetectionWindowData <- function(md, path) {
 
 prepareSampleSizeData <- function(dl, path) {
   data_sample_size <- dl |>
-    select(paper_study_id, participant_id) |>
+    select(paper_study_id, study_id, participant_id) |>
     unique() |>
-    group_by(paper_study_id) |>
+    group_by(paper_study_id, study_id) |>
     summarise(n = n()) |>
     arrange(desc(n)) |>
-    mutate(paper_study_id = factor(paper_study_id, levels = paper_study_id))
+    mutate(across(any_of(grouping_variables), as.factor))
 
   save(
     data_sample_size,
