@@ -13,7 +13,10 @@ sampleSizeByStudy <- function(
   grouping_variable = "study_id"
 ) {
   graph <- dat |>
-    ggplot(aes(x = .data[[grouping_variable]], y = n)) +
+    ggplot(aes(
+      x = forcats::fct_reorder(.data[[grouping_variable]], n, .desc = TRUE),
+      y = n
+    )) +
     coord_flip(ylim = c(0, max(dat$n) + 10)) +
     geom_bar(stat = "identity") +
     labs(x = "Study ID", y = "Number of Participants")

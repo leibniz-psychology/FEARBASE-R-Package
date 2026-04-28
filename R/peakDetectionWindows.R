@@ -13,7 +13,12 @@ peakDetectionWindows <- function(
   grouping_variable = "study_id"
 ) {
   graph <- dat |>
-    ggplot(aes(x = .data[[grouping_variable]])) +
+    ggplot(aes(
+      x = forcats::fct_reorder(
+        .data[[grouping_variable]],
+        as.numeric(as.factor(physiological_measure_scr_scoring_approach))
+      )
+    )) +
     geom_segment(
       aes(
         y = start,
