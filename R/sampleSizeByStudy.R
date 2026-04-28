@@ -14,7 +14,11 @@ sampleSizeByStudy <- function(
 ) {
   graph <- dat |>
     ggplot(aes(
-      x = forcats::fct_reorder(.data[[grouping_variable]], n, .desc = TRUE),
+      x = forcats::fct_reorder(
+        .data[[grouping_variable]],
+        .x = `n`,
+        .desc = TRUE
+      ),
       y = n
     )) +
     coord_flip(ylim = c(0, max(dat$n) + 10)) +
