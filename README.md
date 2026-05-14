@@ -58,29 +58,6 @@ Open [http://localhost/ocpu/](http://localhost:80/ocpu/) in your browser to acce
 In the interface you can run any functions and access included data of the fearbase package by making requests in `../library/fearbase/`.
 Check the [OpenCPU API docs](https://www.opencpu.org/api.html#api-methods) for information on how to use the OpenCPU API Explorer
 
-### loading the fearbase package locally
-
-#### First Setup and Database Update
-Copy *.csv files into `/data-preperation/input`.
-
-In the root of the repository run:
-```bash
-Rscript data-preprocessing.R "."
-```
-
-#### Loading the Package
-The data in `/data` is loaded together with the package.
-In an R terminal with the repository's root as working directory execute this:
-```R
-if(!requireNamespace("devtools")){
-    install.packages("devtools")  # ensures that the devtools package is installed
-}
-
-devtools::load_all() # load all content of the fearbase package
-
-age() # execute a function of the fearbase package
-```
-
 ### useful Links
 
 #### Book on R Packages

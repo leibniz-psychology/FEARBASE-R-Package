@@ -4,18 +4,65 @@
 #' Generates a graph of the SCR Scoring Windows
 #'
 #' @param md The metadata.
-#' @param grouping_variable A string specifying the variable to group by (allowed values: "study_id" or "paper_study_id").
 #'
 #' @return A ggplot object.
 #' @export
-peakDetectionWindows <- function(
-  dat = data_peak_detection_window,
-  grouping_variable = "study_id"
-) {
-  graph <- dat |>
+peakDetectionWindows <- function(md) {
+  data_peak_detection_window <- md |>
+    select(
+      id,
+      physiological_measure_scr_scoring_approach,
+      physiological_measure_scr_baseline_window_start,
+      physiological_measure_scr_baseline_window_end,
+      physiological_measure_scr_peak_detection_window_min,
+      physiological_measure_scr_peak_detection_window_max
+    ) |>
+    drop_na(physiological_measure_scr_peak_detection_window_max) |>
+    distinct() |>
+    arrange(
+      physiological_measure_scr_scoring_approach,
+      desc(physiological_measure_scr_peak_detection_window_min),
+      desc(physiological_measure_scr_peak_detection_window_max)
+    ) |>
+    mutate(across(id, as.factor)) |>
+    pivot_longer(
+      cols = -c(
+        id,
+        physiological_measure_scr_scoring_approach
+      ),
+      names_to = c("measure", "window", "timepoint"),
+      names_pattern = "(scr)_(.*)_window_(.*)"
+    ) |>
+    mutate(
+      timepoint = forcats::fct_recode(timepoint, start = "min", end = "max")
+    ) |>
+    pivot_wider(
+      names_from = timepoint,
+      values_from = value
+    ) |>
+    mutate(
+      physiological_measure_scr_scoring_approach = forcats::fct_recode(
+        physiological_measure_scr_scoring_approach,
+        "BLC" = "baseline_correction",
+        "TTP" = "trough-to-peak"
+      ),
+      window = case_when(
+        physiological_measure_scr_scoring_approach !=
+          "BLC" ~ "Trough Detection",
+        physiological_measure_scr_scoring_approach == "BLC" &
+          window == "peak_detection" ~ "Peak Detection",
+        physiological_measure_scr_scoring_approach == "BLC" &
+          window == "baseline" ~ "Baseline",
+        TRUE ~ window
+      ) |>
+        factor(levels = c("Baseline", "Peak Detection", "Trough Detection"))
+    )
+
+  # Plot
+  graph <- data_peak_detection_window |>
     ggplot(aes(
       x = forcats::fct_reorder(
-        .data[[grouping_variable]],
+        .data[['id']],
         as.numeric(as.factor(physiological_measure_scr_scoring_approach))
       )
     )) +

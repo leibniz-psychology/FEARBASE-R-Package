@@ -1,11 +1,17 @@
 #' Data collection year
 #'
-#' @param dat a dataframe: data_collection_year
+#' @param md metadata
 #'
 #' @return A ggplot object.
 #' @export
-dataCollectionYear <- function(dat = data_collection_year) {
-  graph <- dat |>
+dataCollectionYear <- function(md) {
+  data_collection_year <- md |>
+    select(year) |>
+    table() |>
+    as_tibble() |>
+    mutate(year = as.numeric(year))
+
+  graph <- data_collection_year |>
     ggplot(aes(x = year, y = n)) +
     geom_col(fill = "#0032A0") +
     labs(x = "Year of Publication", y = "Number of Studies") +

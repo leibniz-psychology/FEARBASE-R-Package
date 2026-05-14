@@ -3,7 +3,8 @@
 #' Visualizes the distribution of a specific measure's values across different experimental phases.
 #' @param measure_name The name of the measure to visualize (e.g., "scr", "expect", "fear")
 #'
-phaseResponseDistribution <- function(dl = data_long, measure_name = "scr") {
+phaseResponseDistribution <- function(dl, measure_name = "scr") {
+  measure_name <- tolower(measure_name)
   plot_data <- dl |>
     filter(measure == measure_name) |>
     filter(!is.na(phase), !is.na(value)) |>

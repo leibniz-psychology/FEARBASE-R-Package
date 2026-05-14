@@ -5,9 +5,106 @@
 #'
 #' @return A ggplot object (patchwork).
 #' @export
-measuresHeatmap <- function(dat = data_measures) {
+measuresHeatmap <- function(dl, md) {
+  # Data Processing
+  fulld <- dl |>
+    left_join(md, by = c("study_id" = "id"))
+
+    # Define categories
+    quest_measures <- c(
+      "stais",
+      "stait",
+      "neo-ffi",
+      "asi",
+      "promis",
+      "ius",
+      "pswq"
+    )
+    phys_measures <- c("scr", "scl", "ps", "fps", "hr")
+    rate_measures <- c("anx", "arous", "aware", "expect", "fear", "val", "stress")
+
+    # Categorize and deduplicate
+    measure_data <- fulld |>
+      filter(
+        measure %in% c(quest_measures, phys_measures, rate_measures)
+      ) |>
+      mutate(
+        type = case_when(
+          measure %in% quest_measures ~ "questionnaire",
+          measure %in% phys_measures ~ "physiological",
+          measure %in% rate_measures ~ "rating"
+        )
+      ) |>
+      mutate(
+        measure = forcats::fct_recode(
+          measure,
+          SCR = "scr",
+          FPS = "fps",
+          PD = "ps",
+          Expectancy = "expect",
+          Fear = "fear",
+          Awareness = "aware",
+          Arousal = "arous",
+          Valence = "val",
+          `STAI-T` = "stait",
+          IUS = "ius",
+          `STAI-S` = "stais",
+          ASI = "asi"
+        )
+      ) |>
+      mutate(
+        type = factor(
+          type,
+          levels = c("physiological", "rating", "questionnaire")
+        )
+      ) |>
+      select(study_id, participant_id, measure, type) |>
+      distinct()
+
+    # Prepare summary for bar plot
+    measure_cat <- measure_data |>
+      group_by(measure, type) |>
+      summarise(used = n(), .groups = "drop") |>
+      arrange(type, desc(used))
+
+    # Set the order of measures based on the arranged summary
+    measure_levels <- measure_cat$measure
+    measure_cat$measure <- factor(
+      measure_cat$measure,
+      levels = rev(measure_levels)
+    )
+
+    # Compute co-occurrence
+    co_data <- measure_data |>
+      group_by(study_id, measure) |>
+      summarise(n = n(), .groups = "drop")
+
+    crosstable_long <- .get_co_occurrence_data(
+      co_data,
+      "measure",
+      "study_id",
+      "n"
+    )
+
+    # Apply the same levels to the heatmap data
+    # x-axis from left to right, y-axis from top to bottom
+    crosstable_long$measure <- factor(
+      crosstable_long$measure,
+      levels = measure_levels
+    )
+    crosstable_long$measure2 <- factor(
+      crosstable_long$measure2,
+      levels = rev(measure_levels)
+    )
+
+    data_measures <- list(
+      heatmap_data = crosstable_long,
+      barplot_data = measure_cat
+    )
+
+  # Heatmap
   hm <- plot_co_occurrence_heatmap(
-    dat$heatmap_data,
+    data_measures$heatmap_data,
     "measure",
     "measure2",
     "value",
@@ -16,7 +113,7 @@ measuresHeatmap <- function(dat = data_measures) {
 
   # Bar plot
   bp <- plot_horizontal_bar(
-    dat$barplot_data,
+    data_measures$barplot_data,
     "measure",
     "used",
     fill_var = "type"
@@ -31,10 +128,64 @@ measuresHeatmap <- function(dat = data_measures) {
 #'
 #' @return A ggplot object (patchwork).
 #' @export
-phasesHeatmap <- function(dat = data_phases) {
+phasesHeatmap <- function(dl) {
+  # Data Processing
+  # Prepare phase data
+  phase_data <- dl |>
+    select(study_id, participant_id, phase) |>
+    distinct() |>
+    drop_na(phase) |>
+    filter(phase != "int", phase != "other") |>
+    group_by(study_id, phase) |>
+    summarise(used = n(), .groups = "drop")
+
+    # Summary for bar plot
+  data_phases_barplot <- phase_data |>
+    group_by(phase) |>
+    summarise(used = sum(used), .groups = "drop")
+
+  data_phases_barplot$phase <- forcats::fct_rev(reorderPhases(
+    data_phases_barplot$phase
+  ))
+
+  # Compute co-occurrence
+  data_phases_heatmap <- .get_co_occurrence_data(
+    phase_data,
+    "phase",
+    "study_id",
+    "used"
+  )
+
+  # Apply the same levels to the heatmap data
+  data_phases_heatmap$phase <- reorderPhases(data_phases_heatmap$phase) |>
+    forcats::fct_recode(
+      Hab = "hab",
+      Acq = "acq",
+      Ext = "ext",
+      RI = "rin",
+      `Re-Ext` = "rex",
+      Rev = "rev"
+    )
+  data_phases_heatmap$phase2 <- forcats::fct_rev(reorderPhases(
+    data_phases_heatmap$phase2
+  )) |>
+    forcats::fct_recode(
+      Hab = "hab",
+      Acq = "acq",
+      Ext = "ext",
+      RI = "rin",
+      `Re-Ext` = "rex",
+      Rev = "rev"
+    )
+
+  data_phases <- list(
+    heatmap_data = data_phases_heatmap,
+    barplot_data = data_phases_barplot
+  )
+
   # Heatmap
   hm <- plot_co_occurrence_heatmap(
-    dat$heatmap_data,
+    data_phases$heatmap_data,
     "phase",
     "phase2",
     "value",
@@ -42,7 +193,7 @@ phasesHeatmap <- function(dat = data_phases) {
   )
 
   # Bar plot
-  bp <- plot_horizontal_bar(dat$barplot_data, "phase", "used")
+  bp <- plot_horizontal_bar(data_phases$barplot_data, "phase", "used")
   arrange_histogram_layout(hm, bp)
 }
 
@@ -150,4 +301,32 @@ plot_horizontal_bar <- function(df, cat_var, count_var, fill_var = NULL) {
 
 arrange_histogram_layout <- function(hm, bp) {
   hm + bp + plot_layout(widths = c(1, 0.5))
+}
+
+.get_co_occurrence_data <- function(df, cat_var, id_var, count_var) {
+  x_wide <- df |>
+    select(all_of(c(cat_var, id_var, count_var))) |>
+    pivot_wider(
+      names_from = all_of(id_var),
+      values_from = all_of(count_var),
+      values_fill = 0
+    )
+
+  categories <- x_wide[[cat_var]]
+  x_mat <- x_wide |> select(-all_of(cat_var)) |> as.matrix()
+
+  crosstable_mat <- x_mat %*% t(x_mat > 0)
+
+  crosstable <- as.data.frame(crosstable_mat)
+  colnames(crosstable) <- categories
+  crosstable[[cat_var]] <- categories
+
+  crosstable_long <- crosstable |>
+    pivot_longer(
+      cols = -all_of(cat_var),
+      names_to = paste0(cat_var, "2"),
+      values_to = "value"
+    )
+
+  return(crosstable_long)
 }

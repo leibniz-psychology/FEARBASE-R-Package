@@ -4,18 +4,25 @@
 #' Generates a bar plot of the sample sizes for each study.
 #'
 #' @param dl The data in long format.
-#' @param grouping_variable A string specifying the variable to group by (allowed values: "study_id" or "paper_study_id").
 #'
 #' @return A ggplot object.
 #' @export
-sampleSizeByStudy <- function(
-  dat = data_sample_size,
-  grouping_variable = "study_id"
-) {
+sampleSizeByStudy <- function(dl) {
+  # Process data
+  data_sample_size <- dl |>
+    select(study_id, participant_id) |>
+    unique() |>
+    group_by(study_id) |>
+    summarise(n = n()) |>
+    arrange(desc(n)) |>
+    mutate(across(study_id, as.factor)
+  )
+
+  # Plot
   graph <- dat |>
     ggplot(aes(
       x = forcats::fct_reorder(
-        .data[[grouping_variable]],
+        .data[['study_id']],
         .x = `n`,
         .desc = TRUE
       ),

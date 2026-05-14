@@ -22,10 +22,9 @@ Imports:
     ggridges,
     ggrepel,
     psych,
-    broom.mixed,
-    usethis
+    broom.mixed
 Depends: 
-    R (>= 3.5)
+    R (>= 4.1)
 Suggests: 
     testthat (>= 3.0.0)
 Config/testthat/edition: 3

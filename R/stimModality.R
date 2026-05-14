@@ -26,7 +26,7 @@ stimModality <- function(
   # I think it is more flexible to do here than in the data preperation function
   # and it does not take a lot of computing
   data <- md |>
-    select(condition_id, study_id, n_subjects, us_type, cs_type) |>
+    select(id, n_subjects, us_type, cs_type) |>
     group_by(.data[[type]]) |>
     summarise(n_studies = n(), n_subjects = sum(n_subjects)) |>
     mutate(!!type := factor(.data[[type]], levels = .data[[type]]))

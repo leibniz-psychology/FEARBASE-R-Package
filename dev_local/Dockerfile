@@ -32,10 +32,9 @@ RUN R -e "install.packages('ggridges')"
 RUN R -e "install.packages('ggiraph')"
 RUN R -e "install.packages('shadowtext')"
 RUN R -e "install.packages('broom.mixed')"
+RUN R -e "install.packages('ggrepel')"
 
 COPY . /home/opencpu/fearbase
-
-RUN Rscript /home/opencpu/fearbase/data-preprocessing.R /home/opencpu/fearbase
 
 RUN cd /home/opencpu && \
     R -e "install.packages('remotes')" && \
