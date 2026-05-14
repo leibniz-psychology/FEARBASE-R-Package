@@ -58,6 +58,18 @@ Open [http://localhost/ocpu/](http://localhost:80/ocpu/) in your browser to acce
 In the interface you can run any functions and access included data of the fearbase package by making requests in `../library/fearbase/`.
 Check the [OpenCPU API docs](https://www.opencpu.org/api.html#api-methods) for information on how to use the OpenCPU API Explorer
 
+#### Example Request
+
+To run `jsonSummary` on the `randomData` enter:
+* Method: `POST`
+* Endpoint: `../library/fearbase/R/jsonSummary`
+* Param Name: `d`
+* Param Value: `"randomData"`
+
+To see the result of the analysis, pick one of the links in the response and run a get request on it:
+* Method: `GET`
+* Endpoint: `/ocpu/tmp/<hash>/stdout`
+
 ### useful Links
 
 #### Book on R Packages
@@ -65,3 +77,5 @@ https://r-pkgs.org/whole-game.html
 
 #### R formatter
 https://posit-dev.github.io/air/formatter.html
+In the interface you can run any functions and access included data of the fearbase package by making requests in `../library/fearbase/`. 
+Check the [OpenCPU API docs](https://www.opencpu.org/api.html#api-methods) for information on how to use the OpenCPU API Explorer
