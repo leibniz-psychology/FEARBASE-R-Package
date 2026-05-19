@@ -5,16 +5,17 @@
 #' A \code{string} representing the dataset name that should be used.
 
 checkData <- function(d) {
-
   dat <- tryCatch(
-    {get(d)},
-    error=function(cond) {
+    {
+      get(d)
+    },
+    error = function(cond) {
       message(paste("This dataset does not exist:", d))
       message("Here's the original error message:")
       message(cond)
       stop("stopped code because of error")
     },
-    warning=function(cond) {
+    warning = function(cond) {
       message(paste("input caused a warning:", d))
       message("Here's the original warning message:")
       message(cond)

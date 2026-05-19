@@ -6,9 +6,6 @@
 #' A \code{string} representing the dataset name which json representation should be returned.
 #' @return
 #' returns a json representation of an included dataset
-#' @author
-#' @export
-#' @examples
 
 jsonSummary <- function(d) {
   requireNamespace("jsonlite")
@@ -16,8 +13,12 @@ jsonSummary <- function(d) {
   #load the in variable d defined dataset from the package
   dat <- checkData(d)
 
-  val <-jsonlite::toJSON(lapply(dat, function(x){as.list(summary(x))}), pretty = TRUE, auto_unbox = TRUE)
+  val <- jsonlite::toJSON(
+    lapply(dat, function(x) {
+      as.list(summary(x))
+    }),
+    pretty = TRUE,
+    auto_unbox = TRUE
+  )
   return(val)
-
 }
-
