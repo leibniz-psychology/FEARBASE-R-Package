@@ -34,11 +34,11 @@ jobs:
       - name: Create php image build based on main and push to a Azure Container Registry (ACR)
         if: github.ref_name == 'main' &&  success()
         run: |
-          DOCKER_BUILDKIT=1 docker build . -t ${{ secrets.ACR_NAME }}.azurecr.io/ocpu/${{ env.APP }}:${{ github.sha }} \
+          DOCKER_BUILDKIT=1 docker build . -t ${{ secrets.ACR_NAME }}.azurecr.io/${{ env.APP }}:${{ github.sha }} \
             --build-arg OCPU_PASS=${{ secrets.OCPU_PASS}} \
             --build-arg SSL_KEY=${{ secrets.SSL_KEY}} \
             --file .github/workflows/manifests/main/opencpu/Dockerfile
-          docker push ${{ secrets.ACR_NAME }}.azurecr.io/ocpu/${{ env.APP }}:${{ github.sha }}
+          docker push ${{ secrets.ACR_NAME }}.azurecr.io/${{ env.APP }}:${{ github.sha }}
 
       - name: set tag latest-prod
         run: |
