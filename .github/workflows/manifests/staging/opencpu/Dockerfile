@@ -10,8 +10,8 @@ RUN cd /home/opencpu && \
     apt-get update && \
     apt-get install -y openssl && \
     openssl req -x509 -newkey rsa:4096 -sha256 -days 3650 -nodes \
-      -keyout fearbase-ocpu_ssl.key -out fearbase-ocpu_ssl.crt -subj "/CN=fearbase-ocpu.zpid.org" \
-      -addext "subjectAltName=DNS:fearbase-ocpu.zpid.org,DNS:www.fearbase-ocpu.zpid.org,IP:127.0.0.1"
+      -keyout fearbase-ocpu_ssl.key -out fearbase-ocpu_ssl.crt -subj "/CN=fearbase-ocpu.stg.zpid.org" \
+      -addext "subjectAltName=DNS:fearbase-ocpu.stg.zpid.org,DNS:www.fearbase-ocpu.stg.zpid.org,IP:127.0.0.1"
 
 RUN cd /home/opencpu && \
     mv /home/opencpu/fearbase-ocpu_ssl.crt /etc/ssl/certs/ && \
