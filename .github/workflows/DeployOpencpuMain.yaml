@@ -43,7 +43,7 @@ jobs:
       - name: set tag latest-prod
         run: |
           docker pull ${{ secrets.ACR_NAME }}.azurecr.io/${{ env.APP }}:${{ github.sha }}
-          docker tag ${{ secrets.ACR_NAME }}.azurecr.io/${{ env.APP }}:${{ github.sha }} ${{ secrets.ACR_NAME }}.azurecr.io/${{ env.APP }}:latest-dev
+          docker tag ${{ secrets.ACR_NAME }}.azurecr.io/${{ env.APP }}:${{ github.sha }} ${{ secrets.ACR_NAME }}.azurecr.io/${{ env.APP }}:latest
           docker push ${{ secrets.ACR_NAME }}.azurecr.io/${{ env.APP }}:latest
 
   kustomize:
