@@ -1,4 +1,4 @@
-name: Deploy to AKS (dev)
+name: Deploy to AKS (stg)
 
 on:
   pull_request:
