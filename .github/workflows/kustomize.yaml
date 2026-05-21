@@ -1,0 +1,49 @@
+on:
+  workflow_call:
+    inputs:
+      build-stage:
+        type: string
+        description: 'Type: dev/stg/prod'
+        required: true
+        default: dev
+
+jobs:
+  kustomize:
+    name: kustomize
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      APP: fearbase/ocpu
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v6
+        with:
+          repository: leibniz-psychology/FEARBASE-R-gitops
+          ref: main
+          ssh-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          persist-credentials: true
+          # path: config
+
+      - name: Setup Kustomize
+        uses: imranismail/setup-kustomize@v1
+        with:
+          kustomize-version: "3.6.1"
+
+      - name: Switch out image tag
+        run: |
+          cd ${{ inputs.build-stage }}
+          kustomize edit set image crzpiddev.azurecr.io/${{ env.APP }}:${{ github.sha }}
+          cat kustomization.yaml
+
+      - name: Commit files
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git commit -am "Update docker tag "${{ github.sha }}""
+      - name: Git push
+        uses: ad-m/github-push-action@master
+        with:
+          repository: leibniz-psychology/FEARBASE-R-gitops
+          ssh: true
+          branch: main

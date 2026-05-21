@@ -20,7 +20,7 @@ jobs:
       REGISTRY: ${{ secrets.ACR_NAME }}.azurecr.io
     steps:
       -   name: Check out the repo
-          uses: actions/checkout@v2
+          uses: actions/checkout@v6
           with:
             ref: 'development'
 

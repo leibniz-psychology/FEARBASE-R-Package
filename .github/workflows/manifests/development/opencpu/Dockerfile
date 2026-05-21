@@ -19,12 +19,14 @@ RUN cd /home/opencpu && \
 
 #copy some config files
 COPY . /home/opencpu/fearbase
+COPY .github/workflows/manifests/development/opencpu/index.html  /var/www/html/index.html
 
 RUN cd /home/opencpu && \
     R -e "install.packages('remotes')" && \
     R CMD build fearbase && \
     mv fearbase_*.tar.gz fearbase_latest.tar.gz && \
-    R CMD INSTALL fearbase_latest.tar.gz --library=/usr/local/lib/R/site-library
+    R CMD INSTALL fearbase_latest.tar.gz --library=/usr/local/lib/R/site-library && \
+    chmod 755 /var/www/html/index.html
 
 # Set opencpu password
 RUN \
