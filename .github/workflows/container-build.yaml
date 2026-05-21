@@ -1,0 +1,51 @@
+on:
+  workflow_call:
+    inputs:
+      container-tag:
+        type: string
+        description: 'Container tag'
+        required: true
+      build-stage:
+        type: string
+        description: 'Type: dev/stg/prod'
+        required: true
+        default: dev
+
+jobs:
+  build:
+    name: Deploy to AKS
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      GH_BRANCH: ${{ github.ref_name }}
+      GH_SHA: ${{ github.sha }}
+      NAMESPACE: development
+      APP: fearbase/ocpu
+      REGISTRY: ${{ secrets.ACR_NAME }}.azurecr.io
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v6
+
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: "${{ secrets.AZURE_CREDENTIALS }}"
+
+      - name: Connect to Azure Container Registry (ACR)
+        run: |
+          az acr login --name ${{ secrets.ACR_NAME }}
+
+      - name: Create php image build and push to a Azure Container Registry (ACR)
+        run: |
+          DOCKER_BUILDKIT=1 docker build . -t ${{ secrets.ACR_NAME }}.azurecr.io/${{ env.APP }}:${{ github.sha }} \
+            --build-arg OCPU_PASS=${{ secrets.OCPU_PASS}} \
+            --build-arg SSL_KEY=${{ secrets.SSL_KEY}} \
+            --file .github/workflows/manifests/development/opencpu/Dockerfile
+          docker push ${{ secrets.ACR_NAME }}.azurecr.io/${{ env.APP }}:${{ github.sha }}
+
+      - name: set tag ${{ inputs.container-tag }}
+        run: |
+          docker pull ${{ secrets.ACR_NAME }}.azurecr.io/${{ env.APP }}:${{ github.sha }}
+          docker tag ${{ secrets.ACR_NAME }}.azurecr.io/${{ env.APP }}:${{ github.sha }} ${{ secrets.ACR_NAME }}.azurecr.io/${{ env.APP }}:${{ inputs.container-tag }}
+          docker push ${{ secrets.ACR_NAME }}.azurecr.io/${{ env.APP }}:${{ inputs.container-tag }}
