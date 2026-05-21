@@ -1,9 +1,10 @@
 name: Deploy to AKS (dev)
 
 on:
-  workflow_dispatch:
   push:
-    branches: [ development ]
+    branches-ignore: [ main, next ]
+  pull_request:
+    branches-ignore: [ main, next ]
 
 jobs:
   build:
@@ -19,7 +20,7 @@ jobs:
       REGISTRY: ${{ secrets.ACR_NAME }}.azurecr.io
     steps:
       - name: Check out the repo
-        uses: actions/checkout@v2
+        uses: actions/checkout@v6
         with:
           ref: 'development'
 
@@ -59,7 +60,7 @@ jobs:
       APP: fearbase/ocpu
     steps:
       - name: Check out the repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v6
         with:
           repository: leibniz-psychology/FEARBASE-R-gitops
           ref: main
