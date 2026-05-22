@@ -25,6 +25,16 @@
 You can test how any changes you make to the fearbase R package affect the deployment of the OpenCPU server by running an
 OpenCPU server locally.
 
+#### Preparation and Installation
+
+On Uni Bielefeld administrated PCs:
+
+- install Docker (not system-wide, otherwise you'll be greeted with the UAC pop-up)
+- restart and run Docker:
+- most likely Docker will open but throw an error message due to virtualization not working yada yada. By default the Uni Bi PCs have Hyper-V disabled and you have no permission/rights to enable it. Furthermore, the PCs come without WSL installed. You can check the WSL status by opening a terminal and typing `wsl --status`. This should tell you that WSL is not installed.
+  - install WSL: Just execute the command to install WSL that is shown when you run `wsl --status`. Wait for the installation to finish and restart your PC.
+- after restarting you PC, Docker should open without a warning. In that case, you're good to go (or, proceed with the next step - [Start the OpenCPU Server](#start-the-opencpu-server))
+
 #### Start the OpenCPU server
 
 In the `dev_local` directory of this repository run:
