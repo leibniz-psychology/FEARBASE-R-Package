@@ -10,10 +10,9 @@
 sex <- function(dl) {
   dl <- .apply_mapping_to_long_data(dl)
 
-  # Process data
+  # Match the local preprocessing used to derive `data_sex`.
   data_sex <- dl |>
     select(study_id, participant_id, value, measure) |>
-    mutate(value = as.character(value)) |>
     filter(measure == "sex" | measure == "gender")
 
   data_sex <- dl |>
@@ -28,19 +27,25 @@ sex <- function(dl) {
       sex = factor(
         stringr::str_split_i(tolower(value), "", 1),
         levels = c("m", "f", "n"),
-        labels = c("m", "f", "nr") # c("male", "female", "not reported")
+        labels = c("m", "f", "not reported")
       )
     )
 
-  # Plot
-  data_sex |>
+  count_data <- data_sex |>
     group_by(sex) |>
-    summarise(n = n()) |>
-    ggplot(aes(x = "", y = n, fill = sex)) +
+    summarise(n = n(), .groups = "drop")
+
+  label_data <- count_data |>
+    filter(!is.na(sex))
+
+  # Plot
+  ggplot(count_data, aes(x = "", y = n, fill = sex)) +
     geom_bar(stat = "identity", width = 1) +
     coord_polar("y", start = 0) +
+    labs(fill = "Sex") +
     theme_void() +
-    ggrepel::geom_label_repel(
+    geom_label(
+      data = label_data,
       aes(label = paste0(sex, " (", n, ")"), group = sex),
       position = position_stack(vjust = 0.5),
       fill = "white"

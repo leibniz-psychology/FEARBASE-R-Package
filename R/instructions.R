@@ -38,7 +38,7 @@ instructions <- function(md) {
 makeInstructionsDetails <- function(folder = "output/") {
   md |>
     .apply_mapping_to_metadata() |>
-    select(study_id, starts_with("instruction")) |>
+    select(condition_id, study_id, starts_with("instruction")) |>
     drop_na(instruction_contingency_details) |>
-    write_csv(file.path(folder, "instructions.csv"))
+    readr::write_csv(file.path(folder, "instructions.csv"))
 }

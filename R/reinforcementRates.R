@@ -28,7 +28,7 @@ reinforcementRates <- function(md) {
     ) +
     labs(
       x = "Reinforcement Rate",
-      y = "Studies"
+      y = "Number of Studies"
     )
 
   return(graph)
