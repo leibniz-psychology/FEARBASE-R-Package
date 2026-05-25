@@ -11,15 +11,32 @@ age <- function(
   type = "histogram",
   grouping_variable = "study_id"
 ) {
+  dl <- .apply_mapping_to_long_data(dl)
+
   # Process Data
-    data_age <- dl |>
-      filter(measure == "age") |>
-      select(study_id, participant_id, value, measure) |>
-      mutate(
-        age = as.numeric(value),
-        across(study_id, as.factor)
-      ) |>
-      filter(!is.na(age))
+  data_age <- dl |>
+    filter(measure == "age") |>
+    select(
+      any_of(c(
+        "condition_id",
+        "study_id",
+        "paper_cond_id",
+        "paper_study_id"
+      )),
+      participant_id,
+      value,
+      measure
+    ) |>
+    mutate(
+      age = as.numeric(value),
+      across(any_of(c(
+        "condition_id",
+        "study_id",
+        "paper_cond_id",
+        "paper_study_id"
+      )), as.factor)
+    ) |>
+    filter(!is.na(age))
 
   # Plot
   study_order <- data_age |>
@@ -76,6 +93,8 @@ age <- function(
 #' @return A data frame with mean, sd, min and max age.
 #' @export
 ageDescriptives <- function(dl, grouping_variable = "study_id") {
+  dl <- .apply_mapping_to_long_data(dl)
+
   age <- dl |>
     filter(measure == "age") |>
     select(.data[[grouping_variable]], participant_id, value, measure) |>

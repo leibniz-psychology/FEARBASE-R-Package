@@ -9,6 +9,9 @@
 #' @return A named vector of counts.
 #' @export
 descriptives <- function(dl = data_long, md = metadata) {
+  dl <- .apply_mapping_to_long_data(dl)
+  md <- .apply_mapping_to_metadata(md)
+
   unique(dl$measure)
 
   unique(dl[is.na(dl["measure"]), "study_id"])

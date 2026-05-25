@@ -8,21 +8,23 @@
 #' @return A ggplot object.
 #' @export
 sex <- function(dl) {
+  dl <- .apply_mapping_to_long_data(dl)
+
   # Process data
   data_sex <- dl |>
-        select(study_id, participant_id, value, measure) |>
-        mutate(value = as.character(value)) |>
-        filter(measure == "sex" | measure == "gender")
+    select(study_id, participant_id, value, measure) |>
+    mutate(value = as.character(value)) |>
+    filter(measure == "sex" | measure == "gender")
 
-    data_sex <- dl |>
-      filter(!(participant_id %in% data_sex$participant_id)) |>
-      select(study_id, participant_id) |>
-      distinct() |>
-      mutate(value = "not reported", measure = "sex") |>
-      bind_rows(data_sex)
+  data_sex <- dl |>
+    filter(!(participant_id %in% data_sex$participant_id)) |>
+    select(study_id, participant_id) |>
+    distinct() |>
+    mutate(value = "not reported", measure = "sex") |>
+    bind_rows(data_sex)
 
-    data_sex <- data_sex |>
-      mutate(
+  data_sex <- data_sex |>
+    mutate(
       sex = factor(
         stringr::str_split_i(tolower(value), "", 1),
         levels = c("m", "f", "n"),

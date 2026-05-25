@@ -4,6 +4,7 @@
 #' @param measure_name The name of the measure to visualize (e.g., "scr", "expect", "fear")
 #'
 phaseResponseDistribution <- function(dl, measure_name = "scr") {
+  dl <- .apply_mapping_to_long_data(dl)
   measure_name <- tolower(measure_name)
   plot_data <- dl |>
     filter(measure == measure_name) |>
@@ -37,6 +38,8 @@ phaseResponseDistribution <- function(dl, measure_name = "scr") {
 #' @description
 #' Visualizes the availability of different measures across all studies.
 dataDensityMatrix <- function(dl = data_long) {
+  dl <- .apply_mapping_to_long_data(dl)
+
   # Calculate percentage of participants per study/measure
   density_data <- dl |>
     group_by(study_id) |>

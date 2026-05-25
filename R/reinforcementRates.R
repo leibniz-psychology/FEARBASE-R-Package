@@ -8,15 +8,16 @@
 #' @return A ggplot object.
 #' @export
 reinforcementRates <- function(md) {
+  md <- .apply_mapping_to_metadata(md)
+
   # Process data
   data_reinforcement_rate <- md |>
-    select(id, starts_with("reinf")) |>
-    pivot_longer(cols = -id, names_to = "Reinforcement Rate") |>
+    select(study_id, starts_with("reinf")) |>
+    pivot_longer(cols = -study_id, names_to = "Reinforcement Rate") |>
     drop_na(value) |>
     mutate(value = floor(value)) |>
     group_by(value) |>
-    summarise(n = n()
-  )
+    summarise(n = n(), .groups = "drop")
 
   # Plot
   graph <- data_reinforcement_rate |>
@@ -34,6 +35,8 @@ reinforcementRates <- function(md) {
 }
 
 reinforcementRateDescriptives <- function(md = metadata) {
+  md <- .apply_mapping_to_metadata(md)
+
   md |>
     select(study_id, starts_with("reinf")) |>
     pivot_longer(cols = -study_id, names_to = "stimulus") |>

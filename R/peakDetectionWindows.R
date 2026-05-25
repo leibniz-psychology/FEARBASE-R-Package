@@ -4,31 +4,97 @@
 #' Generates a graph of the SCR Scoring Windows
 #'
 #' @param md The metadata.
+#' @param grouping_variable A string specifying the variable to group by (allowed
+#'   values: "study_id" or "paper_study_id").
 #'
 #' @return A ggplot object.
 #' @export
-peakDetectionWindows <- function(md) {
+peakDetectionWindows <- function(
+  md,
+  grouping_variable = "study_id"
+) {
+  md <- .apply_mapping_to_metadata(md)
+
+  available_grouping_variables <- intersect(
+    c("study_id", "paper_study_id"),
+    names(md)
+  )
+
+  if (length(available_grouping_variables) == 0) {
+    stop("No supported grouping variable is available in the metadata.")
+  }
+
+  if (!(grouping_variable %in% available_grouping_variables)) {
+    if (grouping_variable == "paper_study_id" && "study_id" %in% names(md)) {
+      grouping_variable <- "study_id"
+    } else {
+      stop(
+        "grouping_variable must be one of: ",
+        paste(available_grouping_variables, collapse = ", ")
+      )
+    }
+  }
+
+  if (all(c(
+    "physio_scr_scoring_approach",
+    "physio_scr_baseline_window_start",
+    "physio_scr_baseline_window_end",
+    "physio_scr_peak_detection_window_min",
+    "physio_scr_peak_detection_window_max"
+  ) %in% names(md))) {
+    scr_scoring_col <- "physio_scr_scoring_approach"
+    scr_baseline_start_col <- "physio_scr_baseline_window_start"
+    scr_baseline_end_col <- "physio_scr_baseline_window_end"
+    scr_peak_min_col <- "physio_scr_peak_detection_window_min"
+    scr_peak_max_col <- "physio_scr_peak_detection_window_max"
+  } else if (all(c(
+    "scr_scoring_approach",
+    "scr_baseline_window_start",
+    "scr_baseline_window_end",
+    "scr_peak_detection_window_min",
+    "scr_peak_detection_window_max"
+  ) %in% names(md))) {
+    scr_scoring_col <- "scr_scoring_approach"
+    scr_baseline_start_col <- "scr_baseline_window_start"
+    scr_baseline_end_col <- "scr_baseline_window_end"
+    scr_peak_min_col <- "scr_peak_detection_window_min"
+    scr_peak_max_col <- "scr_peak_detection_window_max"
+  } else {
+    stop(
+      "The metadata does not contain a supported set of SCR window columns."
+    )
+  }
+
   data_peak_detection_window <- md |>
     select(
-      id,
-      physiological_measure_scr_scoring_approach,
-      physiological_measure_scr_baseline_window_start,
-      physiological_measure_scr_baseline_window_end,
-      physiological_measure_scr_peak_detection_window_min,
-      physiological_measure_scr_peak_detection_window_max
+      any_of(c("paper_study_id", "study_id")),
+      all_of(c(
+        scr_scoring_col,
+        scr_baseline_start_col,
+        scr_baseline_end_col,
+        scr_peak_min_col,
+        scr_peak_max_col
+      ))
     ) |>
-    drop_na(physiological_measure_scr_peak_detection_window_max) |>
+    rename(
+      scr_scoring_approach = all_of(scr_scoring_col),
+      scr_baseline_window_start = all_of(scr_baseline_start_col),
+      scr_baseline_window_end = all_of(scr_baseline_end_col),
+      scr_peak_detection_window_min = all_of(scr_peak_min_col),
+      scr_peak_detection_window_max = all_of(scr_peak_max_col)
+    ) |>
+    drop_na(scr_peak_detection_window_max) |>
     distinct() |>
     arrange(
-      physiological_measure_scr_scoring_approach,
-      desc(physiological_measure_scr_peak_detection_window_min),
-      desc(physiological_measure_scr_peak_detection_window_max)
+      scr_scoring_approach,
+      desc(scr_peak_detection_window_min),
+      desc(scr_peak_detection_window_max)
     ) |>
-    mutate(across(id, as.factor)) |>
+    mutate(across(any_of(c("paper_study_id", "study_id")), as.factor)) |>
     pivot_longer(
       cols = -c(
-        id,
-        physiological_measure_scr_scoring_approach
+        any_of(c("paper_study_id", "study_id")),
+        scr_scoring_approach
       ),
       names_to = c("measure", "window", "timepoint"),
       names_pattern = "(scr)_(.*)_window_(.*)"
@@ -41,17 +107,16 @@ peakDetectionWindows <- function(md) {
       values_from = value
     ) |>
     mutate(
-      physiological_measure_scr_scoring_approach = forcats::fct_recode(
-        physiological_measure_scr_scoring_approach,
+      scr_scoring_approach = forcats::fct_recode(
+        scr_scoring_approach,
         "BLC" = "baseline_correction",
         "TTP" = "trough-to-peak"
       ),
       window = case_when(
-        physiological_measure_scr_scoring_approach !=
-          "BLC" ~ "Trough Detection",
-        physiological_measure_scr_scoring_approach == "BLC" &
+        scr_scoring_approach != "BLC" ~ "Trough Detection",
+        scr_scoring_approach == "BLC" &
           window == "peak_detection" ~ "Peak Detection",
-        physiological_measure_scr_scoring_approach == "BLC" &
+        scr_scoring_approach == "BLC" &
           window == "baseline" ~ "Baseline",
         TRUE ~ window
       ) |>
@@ -62,8 +127,8 @@ peakDetectionWindows <- function(md) {
   graph <- data_peak_detection_window |>
     ggplot(aes(
       x = forcats::fct_reorder(
-        .data[['id']],
-        as.numeric(as.factor(physiological_measure_scr_scoring_approach))
+        .data[[grouping_variable]],
+        as.numeric(as.factor(scr_scoring_approach))
       )
     )) +
     geom_segment(
@@ -82,7 +147,7 @@ peakDetectionWindows <- function(md) {
     ) +
     coord_flip() + # TODO: set limits dynamically
     geom_text(
-      aes(y = -3, label = physiological_measure_scr_scoring_approach),
+      aes(y = -3, label = scr_scoring_approach),
       color = "black",
       hjust = 0,
       size = 3

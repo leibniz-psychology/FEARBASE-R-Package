@@ -6,3 +6,4 @@ csv_to_rds.R
 .dockerignore
 .github
 data-preprocessing.R
+^data-raw$

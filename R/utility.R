@@ -7,6 +7,8 @@
 #' @return A character vector of all study IDs.
 #' @export
 allStudies <- function(md = metadata) {
+  md <- .apply_mapping_to_metadata(md)
+
   studies <- md |>
     select(study_id) |>
     distinct() |>

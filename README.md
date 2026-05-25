@@ -70,7 +70,43 @@ To see the result of the analysis, pick one of the links in the response and run
 * Method: `GET`
 * Endpoint: `/ocpu/tmp/<hash>/stdout`
 
+#### IMPORTANT
+
+If you want to use functions that require datasets (e.g. data_long or metadata), you need to provide these datasets first:
+
+- send a ``POST`` request with Endpoint `../library/fearbase/R/createCsv`
+- click `Add file`
+  - name: `file` (same as parameter of `createCsv`)
+  - browse to the csv file you want to upload
+  - send the request
+- If everything goes according to plan: you should see some entries that start with something like ``/ocpu/tmp/x0d715a6f605d54/``
+  - the part starting with ``x`` is the session key (sth. like a unique identifier) of the returned "object", e.g. ``/ocpu/tmp/``**x0d715a6f605d54**``/console``
+  - this unique session key is then the input parameter value for functions that require that csv file to run.
+
+Example: If you want to run the `age` function:
+
+- if you uploaded the long data csv file and the session key for that csv file was *x0d715a6f605d54*
+- send a ``POST`` Ajax request with Endpoint `../library/fearbase/R/age`
+  - add parameter:
+    - `param name`: dl (short for data_long)
+    - `param value`: x0d715a6f605d54 (the session key for the csv file)
+- you should again get a list with multiple values starting with `/ocpu/tmp/<new session key>/graphics/`
+  - for the age example, the actual graphic would be ``/ocpu/tmp/x0d715a6f605d54/graphics/1``
+  - to access the graphic, open a new tab with the address`localhost:8004/ocpu/tmp/x0d715a6f605d54/graphics/1`
+
 ### useful Links
+
+### Mapping maintenance
+
+The study-to-condition mapping is now part of the package itself.
+
+- The editable source file lives at `data-raw/mapping.csv`.
+- The runtime object used by the package is the internal dataset `mapping` in `R/sysdata.rda`.
+- After changing `data-raw/mapping.csv`, rebuild the internal mapping with:
+
+```bash
+"C:\\Program Files\\R\\R-4.6.0\\bin\\x64\\Rscript.exe" data-raw/build-mapping.R
+```
 
 #### Book on R Packages
 https://r-pkgs.org/whole-game.html

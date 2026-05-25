@@ -14,6 +14,8 @@ stimModality <- function(
   type = "us_type",
   level = "n_studies"
 ) {
+  md <- .apply_mapping_to_metadata(md)
+
   if (type != "us_type" & type != "cs_type") {
     stop("type must be either 'us_type' or 'cs_type'")
   }
@@ -26,7 +28,7 @@ stimModality <- function(
   # I think it is more flexible to do here than in the data preperation function
   # and it does not take a lot of computing
   data <- md |>
-    select(id, n_subjects, us_type, cs_type) |>
+    select(condition_id, study_id, n_subjects, us_type, cs_type) |>
     group_by(.data[[type]]) |>
     summarise(n_studies = n(), n_subjects = sum(n_subjects)) |>
     mutate(!!type := factor(.data[[type]], levels = .data[[type]]))

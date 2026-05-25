@@ -8,10 +8,12 @@
 #' @return A ggplot object.
 #' @export
 instructions <- function(md) {
+  md <- .apply_mapping_to_metadata(md)
+
   # Process data
   data_instructions <- md |>
-    select(id, starts_with("instruction")) |>
-    group_by(id) |>
+    select(condition_id, study_id, starts_with("instruction")) |>
+    group_by(study_id) |>
     distinct(instruction_contingency) |>
     group_by(instruction_contingency) |>
     summarise(n = n()) |>
@@ -35,6 +37,7 @@ instructions <- function(md) {
 
 makeInstructionsDetails <- function(folder = "output/") {
   md |>
+    .apply_mapping_to_metadata() |>
     select(study_id, starts_with("instruction")) |>
     drop_na(instruction_contingency_details) |>
     write_csv(file.path(folder, "instructions.csv"))

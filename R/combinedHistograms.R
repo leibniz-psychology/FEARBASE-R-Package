@@ -6,9 +6,12 @@
 #' @return A ggplot object (patchwork).
 #' @export
 measuresHeatmap <- function(dl, md) {
+  dl <- .apply_mapping_to_long_data(dl)
+  md <- .apply_mapping_to_metadata(md)
+
   # Data Processing
   fulld <- dl |>
-    left_join(md, by = c("study_id" = "id"))
+    left_join(md, by = "condition_id")
 
     # Define categories
     quest_measures <- c(
@@ -58,7 +61,7 @@ measuresHeatmap <- function(dl, md) {
           levels = c("physiological", "rating", "questionnaire")
         )
       ) |>
-      select(study_id, participant_id, measure, type) |>
+      select(condition_id, participant_id, measure, type) |>
       distinct()
 
     # Prepare summary for bar plot
@@ -76,13 +79,13 @@ measuresHeatmap <- function(dl, md) {
 
     # Compute co-occurrence
     co_data <- measure_data |>
-      group_by(study_id, measure) |>
+      group_by(condition_id, measure) |>
       summarise(n = n(), .groups = "drop")
 
     crosstable_long <- .get_co_occurrence_data(
       co_data,
       "measure",
-      "study_id",
+      "condition_id",
       "n"
     )
 
@@ -129,14 +132,16 @@ measuresHeatmap <- function(dl, md) {
 #' @return A ggplot object (patchwork).
 #' @export
 phasesHeatmap <- function(dl) {
+  dl <- .apply_mapping_to_long_data(dl)
+
   # Data Processing
   # Prepare phase data
   phase_data <- dl |>
-    select(study_id, participant_id, phase) |>
+    select(condition_id, participant_id, phase) |>
     distinct() |>
     drop_na(phase) |>
     filter(phase != "int", phase != "other") |>
-    group_by(study_id, phase) |>
+    group_by(condition_id, phase) |>
     summarise(used = n(), .groups = "drop")
 
     # Summary for bar plot
@@ -152,7 +157,7 @@ phasesHeatmap <- function(dl) {
   data_phases_heatmap <- .get_co_occurrence_data(
     phase_data,
     "phase",
-    "study_id",
+    "condition_id",
     "used"
   )
 

@@ -5,59 +5,70 @@
 #' and visualizes the distribution of trial counts across phases.
 #'
 #' @param dl A data frame in long format containing the trial data.
-#' @param level A string specifying the y-axis variable: "n" for number of participants, "s" for number of studies.
+#' @param y_axis A string specifying the y-axis variable: "n" for number of
+#'   participants, "s" for number of studies.
+#' @param grouping_variable A string specifying the variable to group by
+#'   (allowed values: "condition_id", "study_id", "paper_cond_id", or
+#'   "paper_study_id").
 #'
 #' @return A ggplot object visualizing the distribution of trial counts across phases.
 #' @export
 trialsPhaseParticipant <- function(
   dl,
-  level = "n_studies"
+  y_axis = "s",
+  grouping_variable = "condition_id"
 ) {
+  dl <- .apply_mapping_to_long_data(dl)
+
   # Process Data
   data_trial_count <- dl |>
-      select(
-        study_id,
-        participant_id,
-        phase,
-        stimulus,
-        trial
-      ) |>
-      drop_na(phase, trial) |>
-      filter(phase != "int", phase != "other") |>
-      distinct() |>
-      group_by(
-        across(study_id),
-        participant_id,
-        phase,
-        stimulus
-      ) |>
-      summarise(trials = max(trial)) |>
-      group_by(across(study_id), phase, stimulus, trials) |>
-      summarise(n = n()) |>
-      group_by(across(study_id), phase) |>
-      summarise(trials = sum(trials), n = unique(n)) |>
-      ungroup() |>
-      mutate(
-        study_id = as.factor(study_id),
-        phase = reorderPhases(phase) |>
-          forcats::fct_recode(
-            Hab = "hab",
-            Acq = "acq",
-            Ext = "ext",
-            RI = "rin",
-            `Re-Ext` = "rex",
-            Rev = "rev"
-          )
-      )
+    select(
+      any_of(c(
+        "condition_id",
+        "study_id",
+        "paper_cond_id",
+        "paper_study_id"
+      )),
+      participant_id,
+      phase,
+      stimulus,
+      trial
+    ) |>
+    drop_na(phase, trial) |>
+    filter(phase != "int", phase != "other") |>
+    distinct() |>
+    group_by(
+      .data[[grouping_variable]],
+      participant_id,
+      phase,
+      stimulus
+    ) |>
+    summarise(trials = max(trial), .groups = "drop") |>
+    group_by(.data[[grouping_variable]], phase, stimulus, trials) |>
+    summarise(n = n(), .groups = "drop") |>
+    group_by(.data[[grouping_variable]], phase) |>
+    summarise(trials = sum(trials), n = unique(n), .groups = "drop") |>
+    mutate(
+      !!grouping_variable := as.factor(.data[[grouping_variable]]),
+      phase = reorderPhases(phase) |>
+        forcats::fct_recode(
+          Hab = "hab",
+          Acq = "acq",
+          Ext = "ext",
+          RI = "rin",
+          `Re-Ext` = "rex",
+          Rev = "rev"
+        )
+    )
 
   # Plot
-  if (tolower(level) %in% c("n_subjects", "participant", "participants")) {
+  if (tolower(y_axis) %in% c("n", "participant", "participants")) {
     graph <- data_trial_count |>
       ggplot(aes(
         x = trials,
         y = n,
-        fill = .data[['study_id']],
-        group = .data[['study_id']]
+        fill = .data[[grouping_variable]],
+        group = .data[[grouping_variable]]
       )) +
       geom_bar(stat = "identity", color = "white", linewidth = .2) +
       facet_grid(rows = vars(phase), axes = "all", axis.labels = "all_x") +
@@ -67,10 +78,10 @@ trialsPhaseParticipant <- function(
         y = "Number of Participants",
         fill = "Study ID"
       )
-  } else if (tolower(level) %in% c("study", "studies", "n_studies")) {
+  } else if (tolower(y_axis) %in% c("study", "studies", "s")) {
     graph <- data_trial_count |>
-      group_by(.data[['study_id']], phase, trials) |>
-      summarise(n = n()) |>
+      group_by(.data[[grouping_variable]], phase, trials) |>
+      summarise(n = n(), .groups = "drop") |>
       ggplot(aes(x = trials, y = n)) +
       geom_bar(stat = "identity") +
       facet_grid(rows = vars(phase), axes = "all", axis.labels = "all_x") +
@@ -81,10 +92,15 @@ trialsPhaseParticipant <- function(
 }
 
 
-trialsPhaseParticipantDescriptive <- function(dl) {
+trialsPhaseParticipantDescriptive <- function(
+  dl,
+  grouping_variable = "condition_id"
+) {
+  dl <- .apply_mapping_to_long_data(dl)
+
   trials <- dl |>
     select(
-      .data[['study_id']],
+      .data[[grouping_variable]],
       participant_id,
       phase,
       stimulus,
@@ -92,17 +108,19 @@ trialsPhaseParticipantDescriptive <- function(dl) {
     ) |>
     drop_na() |>
     distinct() |>
-    group_by(.data[['study_id']], participant_id, phase) |>
-    summarise(trials = max(trial)) |>
+    group_by(.data[[grouping_variable]], participant_id, phase) |>
+    summarise(trials = max(trial), .groups = "drop") |>
     ungroup() |>
     mutate(
-      !!study_id := as.factor(.data[['study_id']]),
+      !!grouping_variable := as.factor(.data[[grouping_variable]]),
       phase = reorderPhases(phase)
     )
   psych::describeBy(trials, group = "phase")
 }
 
 studyDesign <- function(sd) {
+  sd <- .apply_mapping_to_study_design(sd)
+
   # in "study_design", "phase" is named "name"
 
   trials <- sd |>

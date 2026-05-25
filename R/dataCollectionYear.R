@@ -5,6 +5,8 @@
 #' @return A ggplot object.
 #' @export
 dataCollectionYear <- function(md) {
+  md <- .apply_mapping_to_metadata(md)
+
   data_collection_year <- md |>
     select(year) |>
     table() |>
