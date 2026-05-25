@@ -51,3 +51,5 @@ credentials/
 .DS_Store
 Thumbs.db
 dev_local/local_testing.R
+AGENTS.md
+To-Do.md
