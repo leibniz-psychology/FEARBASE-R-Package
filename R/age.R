@@ -91,28 +91,43 @@ age <- function(
 
 #' Age descriptives
 #'
-#' @param dl The data in long format.
+#' Computes descriptive statistics (mean, SD, minimum, maximum) for age.
 #'
-#' @return A data frame with mean, sd, min and max age.
+#' @param dl The data in long format.
+#' @param grouping_variable Optional character vector specifying one or more
+#'   grouping variables. If `NULL` (default), descriptives are computed across
+#'   all observations without grouping.
+#'
+#' @return A data frame containing mean age, standard deviation, minimum,
+#'   and maximum. If `grouping_variable` is provided, the summary statistics
+#'   are returned per group.
+#'
 #' @export
-ageDescriptives <- function(dl, grouping_variable = "study_id") {
+ageDescriptives <- function(dl, grouping_variable = NULL) {
+
   dl <- .apply_mapping_to_long_data(dl)
 
-  age <- dl |>
+  df <- dl |>
     filter(measure == "age") |>
-    select(.data[[grouping_variable]], participant_id, value, measure) |>
     mutate(
-      age = as.numeric(value),
-      !!grouping_variable := as.factor(.data[[grouping_variable]])
+      age = as.numeric(value)
     ) |>
-    filter(!is.na(age)) |>
-    # Todo: replace by rstatix::get_summary_stats(age)
+    filter(!is.na(age))
+
+  # Apply grouping only if provided
+  if (!is.null(grouping_variable)) {
+    df <- df |>
+      mutate(across(all_of(grouping_variable), as.factor)) |>
+      group_by(across(all_of(grouping_variable)))
+  }
+
+  df |>
     summarise(
       mean_age = mean(age),
       sd = sd(age),
       min = min(age),
-      max = max(age)
+      max = max(age),
+      .groups = "drop"
     )
-
-  return(age)
 }
+
