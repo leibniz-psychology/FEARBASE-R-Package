@@ -5,7 +5,8 @@
 #'
 #' @return A ggplot object (patchwork).
 #' @export
-measuresHeatmap <- function(dl, md) {
+measuresHeatmap <- function(dl, md, cb) {
+  # TODO: add information about if a measure is aming for the CS or the US for the measures where this is interesting
   dl <- .apply_mapping_to_long_data(dl)
   md <- .apply_mapping_to_metadata(md)
 
@@ -13,103 +14,63 @@ measuresHeatmap <- function(dl, md) {
   fulld <- dl |>
     left_join(md, by = "condition_id")
 
-    # Define categories
-    quest_measures <- c(
-      "stais",
-      "stait",
-      "neo-ffi",
-      "asi",
-      "promis",
-      "ius",
-      "pswq"
-    )
-    phys_measures <- c("scr", "scl", "ps", "fps", "hr")
-    rate_measures <- c("anx", "arous", "aware", "expect", "fear", "val", "stress")
+  measure_name_mapping <- cb |>
+    filter(attribute == "measure") |>
+    select(measure_short = abbreviation, measure_long = name) |> # measure_short for the abbreviations and measure_long for the names
+    mutate(measure_long = stringr::str_to_title(measure_long)) # TODO: clean the codebook in the database to have cleaner naming
 
-    # Categorize and deduplicate
-    measure_data <- fulld |>
-      filter(
-        measure %in% c(quest_measures, phys_measures, rate_measures)
-      ) |>
-      mutate(
-        type = case_when(
-          measure %in% quest_measures ~ "questionnaire",
-          measure %in% phys_measures ~ "physiological",
-          measure %in% rate_measures ~ "rating"
-        )
-      ) |>
-      mutate(
-        measure = forcats::fct_recode(
-          measure,
-          SCR = "scr",
-          FPS = "fps",
-          PD = "ps",
-          Expectancy = "expect",
-          Fear = "fear",
-          Awareness = "aware",
-          Arousal = "arous",
-          Valence = "val",
-          `STAI-T` = "stait",
-          IUS = "ius",
-          `STAI-S` = "stais",
-          ASI = "asi"
-        )
-      ) |>
-      mutate(
-        type = factor(
-          type,
-          levels = c("physiological", "rating", "questionnaire")
-        )
-      ) |>
-      select(condition_id, participant_id, measure, type) |>
-      distinct()
+  measure_data <- fulld |>
+    left_join(measure_name_mapping, by = c("measure" = "measure_short")) |>
+    select(condition_id, participant_id, measure_long) |>
+    distinct() |>
+    drop_na(measure_long)
 
-    # Prepare summary for bar plot
-    measure_cat <- measure_data |>
-      group_by(measure, type) |>
-      summarise(used = n(), .groups = "drop") |>
-      arrange(type, desc(used))
+  # Prepare summary for bar plot
+  measure_cat <- measure_data |>
+    group_by(measure_long) |>
+    summarise(used = n(), .groups = "drop") |>
+    arrange(desc(used))
 
-    # Set the order of measures based on the arranged summary
-    measure_levels <- measure_cat$measure
-    measure_cat$measure <- factor(
-      measure_cat$measure,
-      levels = rev(measure_levels)
-    )
+  # Set the order of measures based on the arranged summary
+  measure_levels <- measure_cat$measure_long
+  measure_cat$measure_long <- factor(
+    measure_cat$measure_long,
+    levels = rev(measure_levels)
+  )
 
-    # Compute co-occurrence
-    co_data <- measure_data |>
-      group_by(condition_id, measure) |>
-      summarise(n = n(), .groups = "drop")
+  # Compute co-occurrence
+  co_data <- measure_data |>
+    group_by(condition_id, measure_long) |>
+    summarise(n = n(), .groups = "drop")
 
-    crosstable_long <- .get_co_occurrence_data(
-      co_data,
-      "measure",
-      "condition_id",
-      "n"
-    )
+  crosstable_long <- .get_co_occurrence_data(
+    co_data,
+    "measure_long",
+    "condition_id",
+    "n"
+  )
 
-    # Apply the same levels to the heatmap data
-    # x-axis from left to right, y-axis from top to bottom
-    crosstable_long$measure <- factor(
-      crosstable_long$measure,
-      levels = measure_levels
-    )
-    crosstable_long$measure2 <- factor(
-      crosstable_long$measure2,
-      levels = rev(measure_levels)
-    )
+  # Apply the same levels to the heatmap data
+  # x-axis from left to right, y-axis from top to bottom
+  crosstable_long$measure_long <- factor(
+    crosstable_long$measure_long,
+    levels = measure_levels
+  )
+  crosstable_long$measure_long2 <- factor(
+    crosstable_long$measure_long2,
+    levels = rev(measure_levels)
+  )
 
-    data_measures <- list(
-      heatmap_data = crosstable_long,
-      barplot_data = measure_cat
-    )
+  data_measures <- list(
+    heatmap_data = crosstable_long,
+    barplot_data = measure_cat
+  )
 
   # Heatmap
   hm <- plot_co_occurrence_heatmap(
     data_measures$heatmap_data,
-    "measure",
-    "measure2",
+    "measure_long",
+    "measure_long2",
     "value",
     diag_na = TRUE
   )
@@ -117,9 +78,8 @@ measuresHeatmap <- function(dl, md) {
   # Bar plot
   bp <- plot_horizontal_bar(
     data_measures$barplot_data,
-    "measure",
-    "used",
-    fill_var = "type"
+    "measure_long",
+    "used"
   )
   arrange_histogram_layout(hm, bp)
 }
@@ -131,57 +91,63 @@ measuresHeatmap <- function(dl, md) {
 #'
 #' @return A ggplot object (patchwork).
 #' @export
-phasesHeatmap <- function(dl) {
+phasesHeatmap <- function(dl, cb) {
   dl <- .apply_mapping_to_long_data(dl)
 
   # Data Processing
+  # Prepare Phase naming using the codebook
+  phase_name_mapping <- cb |>
+    filter(attribute == "phase") |>
+    select(phase_short = abbreviation, phase_long = name) |> # phase_short for the abbreviations and phase_long for the names
+    mutate(phase_long = stringr::str_to_title(phase_long)) # TODO: clean the codebook in the database to have cleaner naming
+
   # Prepare phase data
   phase_data <- dl |>
     select(condition_id, participant_id, phase) |>
     distinct() |>
     drop_na(phase) |>
-    filter(phase != "int", phase != "other") |>
-    group_by(condition_id, phase) |>
+    left_join(phase_name_mapping, by = c("phase" = "phase_short")) |>
+    filter(phase != "int", phase != "other") |> # TODO: decide if "int" and "other" should be included
+    group_by(condition_id, phase_long) |>
     summarise(used = n(), .groups = "drop")
 
-    # Summary for bar plot
+  # Summary for bar plot
   data_phases_barplot <- phase_data |>
-    group_by(phase) |>
+    group_by(phase_long) |>
     summarise(used = sum(used), .groups = "drop")
 
-  data_phases_barplot$phase <- forcats::fct_rev(reorderPhases(
-    data_phases_barplot$phase
+  # Define the order of phases. This is still hardcoded. TODO: Decide if this can be defined somewhere else. Maybe the order after hab, acq and ext is
+  # no longer as impotant. "reorderPhase" takes the defined order and then adds any other phases that are not in the defined order at the end.
+  # This way we can ensure that the important phases are always in the same order and the other phases are still included without having to update
+  # the code every time a new phase is added.
+  defined_order <- c(
+    "Habituation",
+    "Acquisition",
+    "Extinction"
+  )
+  # Apply the fixed order of phases to the bar plot data
+  data_phases_barplot$phase_long <- forcats::fct_rev(reorderPhases(
+    data_phases_barplot$phase_long,
+    defined_order
   ))
 
   # Compute co-occurrence
   data_phases_heatmap <- .get_co_occurrence_data(
     phase_data,
-    "phase",
+    "phase_long",
     "condition_id",
     "used"
   )
 
-  # Apply the same levels to the heatmap data
-  data_phases_heatmap$phase <- reorderPhases(data_phases_heatmap$phase) |>
-    forcats::fct_recode(
-      Hab = "hab",
-      Acq = "acq",
-      Ext = "ext",
-      RI = "rin",
-      `Re-Ext` = "rex",
-      Rev = "rev"
-    )
-  data_phases_heatmap$phase2 <- forcats::fct_rev(reorderPhases(
-    data_phases_heatmap$phase2
-  )) |>
-    forcats::fct_recode(
-      Hab = "hab",
-      Acq = "acq",
-      Ext = "ext",
-      RI = "rin",
-      `Re-Ext` = "rex",
-      Rev = "rev"
-    )
+  # Apply the same order to the heatmap data
+  data_phases_heatmap$phase_long <- reorderPhases(
+    data_phases_heatmap$phase_long,
+    defined_order
+  )
+  data_phases_heatmap$phase_long2 <- forcats::fct_rev(reorderPhases(
+    data_phases_heatmap$phase_long2,
+    defined_order
+  ))
 
   data_phases <- list(
     heatmap_data = data_phases_heatmap,
@@ -191,14 +157,14 @@ phasesHeatmap <- function(dl) {
   # Heatmap
   hm <- plot_co_occurrence_heatmap(
     data_phases$heatmap_data,
-    "phase",
-    "phase2",
+    "phase_long",
+    "phase_long2",
     "value",
     diag_na = TRUE
   )
 
   # Bar plot
-  bp <- plot_horizontal_bar(data_phases$barplot_data, "phase", "used")
+  bp <- plot_horizontal_bar(data_phases$barplot_data, "phase_long", "used")
   arrange_histogram_layout(hm, bp)
 }
 

@@ -23,9 +23,9 @@ allStudies <- function(md = metadata) {
 #' @description Returns a factor with standardized levels: priority phases first ("hab", "acq", "ext", "int", "rin", "rex", "rev", "other"), then others.
 #' @param phases A vector of phases to be converted to factor levels.
 #' @return A factor with the standardized phase levels.
-reorderPhases <- function(phases) {
+reorderPhases <- function(phases, order) {
   unique_phases <- unique(as.character(phases))
-  priority_phases <- c("hab", "acq", "ext", "int", "rin", "rex", "rev", "other")
+  priority_phases <- order
   existing_priority <- priority_phases[priority_phases %in% unique_phases]
   other_phases <- setdiff(unique_phases, priority_phases)
   phase_levels <- c(existing_priority, other_phases)
@@ -126,7 +126,9 @@ traceRemovedRows <- function(
     stop(
       paste0(
         "The selected layer does not map 1:1 to the supplied `data` (",
-        nrow(source_data), " source rows vs ", nrow(built_layer),
+        nrow(source_data),
+        " source rows vs ",
+        nrow(built_layer),
         " built rows). Supply the exact per-layer input data."
       )
     )
