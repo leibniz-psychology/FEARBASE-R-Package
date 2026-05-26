@@ -21,3 +21,7 @@ dataCollectionYear <- function(md) {
 
   return(graph)
 }
+
+
+# TODO: number of studies vs. number of conditions?
+# TODO: dynamic plot y axis title (number of studies vs. number of conditions?)
