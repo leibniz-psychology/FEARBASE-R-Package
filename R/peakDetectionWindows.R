@@ -124,6 +124,11 @@ peakDetectionWindows <- function(
     )
 
   # Plot
+  y_limits <- range(
+    c(data_peak_detection_window$start, data_peak_detection_window$end, -3, 0),
+    na.rm = TRUE
+  )
+
   graph <- data_peak_detection_window |>
     ggplot(aes(
       x = forcats::fct_reorder(
@@ -145,7 +150,7 @@ peakDetectionWindows <- function(
       y = "Time (s) relative to stimulus onset",
       color = "Detection Window"
     ) +
-    coord_flip() + # TODO: set limits dynamically
+    coord_flip(ylim = y_limits) +
     geom_text(
       aes(y = -3, label = scr_scoring_approach),
       color = "black",
