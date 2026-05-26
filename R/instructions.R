@@ -82,7 +82,9 @@ instructions <- function(md) {
     ggplot2::labs(
       x = "Contingency Instruction",
       y = "Number of Studies"
-    )
+    ) +
+    scale_y_continuous(breaks = seq(from = 0, to = max(data_instructions$n), by = 2))
+    
 
   return(graph)
 }
