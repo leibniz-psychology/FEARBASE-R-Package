@@ -41,7 +41,7 @@ age <- function(
   # Plot
   study_order <- data_age |>
     group_by(.data[[grouping_variable]]) |>
-    summarise(mean_age = median(age)) |>
+    summarise(mean_age = mean(age)) |>
     arrange(desc(mean_age)) |>
     pull(.data[[grouping_variable]])
 
@@ -63,8 +63,11 @@ age <- function(
         color = "white",
         linewidth = .2
       ) +
-      labs(x = "Age", y = "Number of Participants", fill = "Study ID")
-  } else if (tolower(type) %in% c("ridge", "density", "r", "d")) {
+      labs(x = "Age", y = "Number of Participants", fill = "Study ID") +
+      scale_fill_discrete(name = "Study ID",
+                          breaks = rev(study_order))
+  }
+  else if (tolower(type) %in% c("ridge", "density", "r", "d")) {
     data_age[[grouping_variable]] <- factor(
       data_age[[grouping_variable]],
       levels = study_order
@@ -103,6 +106,7 @@ ageDescriptives <- function(dl, grouping_variable = "study_id") {
       !!grouping_variable := as.factor(.data[[grouping_variable]])
     ) |>
     filter(!is.na(age)) |>
+    # Todo: replace by rstatix::get_summary_stats(age)
     summarise(
       mean_age = mean(age),
       sd = sd(age),
