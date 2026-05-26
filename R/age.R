@@ -268,3 +268,6 @@ ageDescriptives <- function(dl, grouping_variable = NULL) {
     )
 }
 
+# Todo:
+# - plot titles
+# - (dynamic) axis labels
