@@ -87,6 +87,9 @@ age <- function(
     grouping_variable = "study_id"
 ) {
 
+  dl <- .apply_mapping_to_long_data(dl)
+
+
   # ---------------------------
   # Argument validation
   # ---------------------------
@@ -132,8 +135,6 @@ age <- function(
   # ---------------------------
   # Data preparation
   # ---------------------------
-
-  dl <- .apply_mapping_to_long_data(dl)
 
   required_cols <- c("measure", "value", "participant_id")
   missing_cols <- setdiff(required_cols, names(dl))
@@ -323,6 +324,8 @@ age <- function(
 #' @export
 ageDescriptives <- function(dl, grouping_variable = NULL) {
 
+  dl <- .apply_mapping_to_long_data(dl)
+
   # ---------------------------
   # Argument validation
   # ---------------------------
@@ -362,8 +365,6 @@ ageDescriptives <- function(dl, grouping_variable = NULL) {
   # ---------------------------
   # Data preparation
   # ---------------------------
-
-  dl <- .apply_mapping_to_long_data(dl)
 
   df <- dl |>
     dplyr::filter(.data$measure == "age") |>
@@ -414,3 +415,4 @@ ageDescriptives <- function(dl, grouping_variable = NULL) {
 # Todo:
 # - plot titles
 # - (dynamic) axis labels
+# - Fix Legend Titles
