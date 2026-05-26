@@ -1,173 +1,303 @@
-#' Peak detection windows
+#' Visualize SCR peak detection windows
 #'
-#' @description
-#' Generates a graph of the SCR Scoring Windows
+#' Creates a horizontal interval plot of skin conductance response (SCR)
+#' baseline, peak-detection, and trough-detection scoring windows by study or
+#' condition.
 #'
-#' @param md The metadata.
-#' @param grouping_variable A string specifying the variable to group by (allowed
-#'   values: "study_id" or "paper_study_id").
+#' The metadata are first passed through the package-internal metadata mapping
+#' helper. The function supports both the current `physio_scr_*` SCR window
+#' column names and the legacy `scr_*` column names.
 #'
-#' @return A ggplot object.
+#' @param md A data frame containing study-level metadata. After internal
+#'   mapping, the data must contain at least one supported grouping column
+#'   (`study_id` or `condition_id`) and one complete supported SCR window column
+#'   set. See Details.
+#' @param grouping_variable A single character string specifying the grouping
+#'   variable shown on the discrete axis. Must be either `"study_id"` or
+#'   `"condition_id"`. If `"condition_id"` is requested but only `study_id` is
+#'   available after mapping, the function falls back to `study_id`.
+#'
+#' @details
+#' The current supported SCR window column set is:
+#' \itemize{
+#'   \item `physio_scr_scoring_approach`
+#'   \item `physio_scr_baseline_window_start`
+#'   \item `physio_scr_baseline_window_end`
+#'   \item `physio_scr_peak_detection_window_min`
+#'   \item `physio_scr_peak_detection_window_max`
+#' }
+#'
+#' The legacy supported SCR window column set is:
+#' \itemize{
+#'   \item `scr_scoring_approach`
+#'   \item `scr_baseline_window_start`
+#'   \item `scr_baseline_window_end`
+#'   \item `scr_peak_detection_window_min`
+#'   \item `scr_peak_detection_window_max`
+#' }
+#'
+#' For trough-to-peak scoring, baseline windows are removed before plotting
+#' because this scoring approach uses trough detection instead of a baseline
+#' correction interval.
+#'
+#' @return A [ggplot2::ggplot()] object showing SCR scoring windows in seconds
+#'   relative to stimulus onset.
+#'
+#' @examples
+#' \dontrun{
+#' peakDetectionWindows(metadata)
+#' peakDetectionWindows(metadata, grouping_variable = "condition_id")
+#' }
+#'
+#' @importFrom rlang .data
 #' @export
 peakDetectionWindows <- function(
   md,
   grouping_variable = "study_id"
 ) {
-  md <- .apply_mapping_to_metadata(md)
-
-  available_grouping_variables <- intersect(
-    c("study_id", "paper_study_id"),
-    names(md)
-  )
-
-  if (length(available_grouping_variables) == 0) {
-    stop("No supported grouping variable is available in the metadata.")
+  if (!is.data.frame(md)) {
+    stop("`md` must be a data frame.", call. = FALSE)
   }
 
-  if (!(grouping_variable %in% available_grouping_variables)) {
-    if (grouping_variable == "paper_study_id" && "study_id" %in% names(md)) {
+  if (
+    !is.character(grouping_variable) ||
+      length(grouping_variable) != 1 ||
+      is.na(grouping_variable)
+  ) {
+    stop(
+      "`grouping_variable` must be a single non-missing character string.",
+      call. = FALSE
+    )
+  }
+
+  valid_grouping_variables <- c("study_id", "condition_id")
+
+  if (!grouping_variable %in% valid_grouping_variables) {
+    stop(
+      "`grouping_variable` must be one of: ",
+      paste(valid_grouping_variables, collapse = ", "),
+      call. = FALSE
+    )
+  }
+
+  md <- .apply_mapping_to_metadata(md)
+
+  available_grouping_variables <- intersect(valid_grouping_variables, names(md))
+
+  if (length(available_grouping_variables) == 0) {
+    stop(
+      "No supported grouping variable is available in `md` after mapping.",
+      call. = FALSE
+    )
+  }
+
+  if (!grouping_variable %in% available_grouping_variables) {
+    can_fallback_to_study <- identical(grouping_variable, "condition_id") &&
+      "study_id" %in% names(md)
+
+    if (can_fallback_to_study) {
       grouping_variable <- "study_id"
     } else {
       stop(
-        "grouping_variable must be one of: ",
-        paste(available_grouping_variables, collapse = ", ")
+        "`grouping_variable` must be one of the available columns: ",
+        paste(available_grouping_variables, collapse = ", "),
+        call. = FALSE
       )
     }
   }
 
-  if (all(c(
-    "physio_scr_scoring_approach",
-    "physio_scr_baseline_window_start",
-    "physio_scr_baseline_window_end",
-    "physio_scr_peak_detection_window_min",
-    "physio_scr_peak_detection_window_max"
-  ) %in% names(md))) {
-    scr_scoring_col <- "physio_scr_scoring_approach"
-    scr_baseline_start_col <- "physio_scr_baseline_window_start"
-    scr_baseline_end_col <- "physio_scr_baseline_window_end"
-    scr_peak_min_col <- "physio_scr_peak_detection_window_min"
-    scr_peak_max_col <- "physio_scr_peak_detection_window_max"
-  } else if (all(c(
-    "scr_scoring_approach",
-    "scr_baseline_window_start",
-    "scr_baseline_window_end",
-    "scr_peak_detection_window_min",
-    "scr_peak_detection_window_max"
-  ) %in% names(md))) {
-    scr_scoring_col <- "scr_scoring_approach"
-    scr_baseline_start_col <- "scr_baseline_window_start"
-    scr_baseline_end_col <- "scr_baseline_window_end"
-    scr_peak_min_col <- "scr_peak_detection_window_min"
-    scr_peak_max_col <- "scr_peak_detection_window_max"
+  current_scr_cols <- c(
+    scr_scoring_col = "physio_scr_scoring_approach",
+    scr_baseline_start_col = "physio_scr_baseline_window_start",
+    scr_baseline_end_col = "physio_scr_baseline_window_end",
+    scr_peak_min_col = "physio_scr_peak_detection_window_min",
+    scr_peak_max_col = "physio_scr_peak_detection_window_max"
+  )
+
+  legacy_scr_cols <- c(
+    scr_scoring_col = "scr_scoring_approach",
+    scr_baseline_start_col = "scr_baseline_window_start",
+    scr_baseline_end_col = "scr_baseline_window_end",
+    scr_peak_min_col = "scr_peak_detection_window_min",
+    scr_peak_max_col = "scr_peak_detection_window_max"
+  )
+
+  if (all(current_scr_cols %in% names(md))) {
+    scr_cols <- current_scr_cols
+  } else if (all(legacy_scr_cols %in% names(md))) {
+    scr_cols <- legacy_scr_cols
   } else {
     stop(
-      "The metadata does not contain a supported set of SCR window columns."
+      "The metadata do not contain a complete supported set of SCR window ",
+      "columns.",
+      call. = FALSE
     )
   }
 
+  # Normalize the supported current or legacy SCR schema into one internal
+  # column layout before reshaping. This keeps the plotting code independent of
+  # which metadata schema the caller supplied.
   data_peak_detection_window <- md |>
-    select(
-      any_of(c("paper_study_id", "study_id")),
-      all_of(c(
-        scr_scoring_col,
-        scr_baseline_start_col,
-        scr_baseline_end_col,
-        scr_peak_min_col,
-        scr_peak_max_col
-      ))
+    dplyr::select(
+      dplyr::all_of(available_grouping_variables),
+      dplyr::all_of(unname(scr_cols))
     ) |>
-    rename(
-      scr_scoring_approach = all_of(scr_scoring_col),
-      scr_baseline_window_start = all_of(scr_baseline_start_col),
-      scr_baseline_window_end = all_of(scr_baseline_end_col),
-      scr_peak_detection_window_min = all_of(scr_peak_min_col),
-      scr_peak_detection_window_max = all_of(scr_peak_max_col)
-    ) |>
-    drop_na(scr_peak_detection_window_max) |>
-    distinct() |>
-    arrange(
-      scr_scoring_approach,
-      desc(scr_peak_detection_window_min),
-      desc(scr_peak_detection_window_max)
-    ) |>
-    mutate(across(any_of(c("paper_study_id", "study_id")), as.factor)) |>
-    pivot_longer(
-      cols = -c(
-        any_of(c("paper_study_id", "study_id")),
-        scr_scoring_approach
+    dplyr::rename(
+      scr_scoring_approach = dplyr::all_of(scr_cols[["scr_scoring_col"]]),
+      scr_baseline_window_start = dplyr::all_of(
+        scr_cols[["scr_baseline_start_col"]]
       ),
+      scr_baseline_window_end = dplyr::all_of(
+        scr_cols[["scr_baseline_end_col"]]
+      ),
+      scr_peak_detection_window_min = dplyr::all_of(
+        scr_cols[["scr_peak_min_col"]]
+      ),
+      scr_peak_detection_window_max = dplyr::all_of(
+        scr_cols[["scr_peak_max_col"]]
+      )
+    ) |>
+    dplyr::mutate(
+      dplyr::across(
+        dplyr::all_of(c(
+          "scr_baseline_window_start",
+          "scr_baseline_window_end",
+          "scr_peak_detection_window_min",
+          "scr_peak_detection_window_max"
+        )),
+        ~ suppressWarnings(as.numeric(.x))
+      )
+    ) |>
+    tidyr::drop_na(
+      dplyr::all_of(c("scr_scoring_approach", "scr_peak_detection_window_max"))
+    ) |>
+    dplyr::distinct() |>
+    dplyr::arrange(
+      .data$scr_scoring_approach,
+      dplyr::desc(.data$scr_peak_detection_window_min),
+      dplyr::desc(.data$scr_peak_detection_window_max)
+    ) |>
+    dplyr::mutate(
+      dplyr::across(dplyr::all_of(available_grouping_variables), as.factor)
+    ) |>
+    tidyr::pivot_longer(
+      cols = -dplyr::all_of(c(
+        available_grouping_variables,
+        "scr_scoring_approach"
+      )),
       names_to = c("measure", "window", "timepoint"),
       names_pattern = "(scr)_(.*)_window_(.*)"
     ) |>
-    mutate(
-      timepoint = forcats::fct_recode(timepoint, start = "min", end = "max")
+    dplyr::mutate(
+      timepoint = forcats::fct_recode(
+        .data$timepoint,
+        start = "min",
+        end = "max"
+      )
     ) |>
-    pivot_wider(
-      names_from = timepoint,
-      values_from = value
+    tidyr::pivot_wider(
+      names_from = "timepoint",
+      values_from = "value"
     ) |>
-    mutate(
+    dplyr::filter(
+      !(
+        .data$scr_scoring_approach == "trough-to-peak" &
+          .data$window == "baseline"
+      )
+    ) |>
+    dplyr::mutate(
       scr_scoring_approach = forcats::fct_recode(
-        scr_scoring_approach,
+        .data$scr_scoring_approach,
         "BLC" = "baseline_correction",
         "TTP" = "trough-to-peak"
       ),
-      window = case_when(
-        scr_scoring_approach != "BLC" ~ "Trough Detection",
-        scr_scoring_approach == "BLC" &
-          window == "peak_detection" ~ "Peak Detection",
-        scr_scoring_approach == "BLC" &
-          window == "baseline" ~ "Baseline",
-        TRUE ~ window
+      window = dplyr::case_when(
+        .data$scr_scoring_approach != "BLC" ~ "Trough Detection",
+        .data$scr_scoring_approach == "BLC" &
+          .data$window == "peak_detection" ~ "Peak Detection",
+        .data$scr_scoring_approach == "BLC" &
+          .data$window == "baseline" ~ "Baseline",
+        TRUE ~ .data$window
       ) |>
         factor(levels = c("Baseline", "Peak Detection", "Trough Detection"))
-    )
+    ) |>
+    tidyr::drop_na(dplyr::all_of(c("start", "end")))
 
-  # Plot
+  if (nrow(data_peak_detection_window) == 0) {
+    stop(
+      "No complete SCR peak detection window rows were found in `md`.",
+      call. = FALSE
+    )
+  }
+
+  # Extend the lower limit by one second so the scoring-approach labels can sit
+  # inside the panel without overlapping the first plotted interval.
   y_limits <- range(
-    c(data_peak_detection_window$start, data_peak_detection_window$end, -3, 0),
+    c(data_peak_detection_window$start - 1, data_peak_detection_window$end),
     na.rm = TRUE
   )
 
+  if (any(!is.finite(y_limits))) {
+    stop(
+      "SCR window start and end values must contain finite numeric data.",
+      call. = FALSE
+    )
+  }
+
+  y_breaks <- seq(
+    floor(min(data_peak_detection_window$start, na.rm = TRUE)),
+    ceiling(max(data_peak_detection_window$end, na.rm = TRUE)),
+    by = 1
+  )
+
+  cs_onset_label_x <- data_peak_detection_window[[grouping_variable]] |>
+    unique() |>
+    length()
+
   graph <- data_peak_detection_window |>
-    ggplot(aes(
-      x = forcats::fct_reorder(
-        .data[[grouping_variable]],
-        as.numeric(as.factor(scr_scoring_approach))
+    ggplot2::ggplot(
+      ggplot2::aes(
+        x = forcats::fct_reorder(
+          .data[[grouping_variable]],
+          as.numeric(as.factor(.data$scr_scoring_approach))
+        )
       )
-    )) +
-    geom_segment(
-      aes(
-        y = start,
-        yend = end,
-        color = window,
-        group = window
+    ) +
+    ggplot2::geom_segment(
+      ggplot2::aes(
+        y = .data$start,
+        yend = .data$end,
+        color = .data$window,
+        group = .data$window
       ),
       linewidth = 7
     ) +
-    labs(
+    ggplot2::labs(
       x = "Study",
       y = "Time (s) relative to stimulus onset",
       color = "Detection Window"
     ) +
-    coord_flip(ylim = y_limits) +
-    geom_text(
-      aes(y = -3, label = scr_scoring_approach),
+    ggplot2::coord_flip(ylim = y_limits) +
+    ggplot2::geom_text(
+      ggplot2::aes(
+        y = min(y_limits),
+        label = .data$scr_scoring_approach
+      ),
       color = "black",
       hjust = 0,
       size = 3
     ) +
-    geom_hline(yintercept = 0) +
-    geom_text(
-      x = 16,
+    ggplot2::geom_hline(yintercept = 0) +
+    ggplot2::geom_text(
+      x = cs_onset_label_x,
       y = 0,
       angle = 90,
-      group = "none",
       label = "CS Onset",
       color = "black",
       vjust = -0.1,
       size = 5
-    )
+    ) +
+    ggplot2::scale_y_continuous(breaks = y_breaks)
 
   return(graph)
 }
