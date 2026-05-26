@@ -82,85 +82,166 @@
 #' @importFrom rlang .data
 #' @export
 age <- function(
-  dl,
-  type = "histogram",
-  grouping_variable = "study_id"
+    dl,
+    type = "histogram",
+    grouping_variable = "study_id"
 ) {
+
+  # ---------------------------
+  # Argument validation
+  # ---------------------------
+
+  if (!is.data.frame(dl)) {
+    stop("`dl` must be a data.frame.", call. = FALSE)
+  }
+
+  valid_group_vars <- c(
+    "condition_id",
+    "study_id",
+    "paper_cond_id",
+    "paper_study_id"
+  )
+
+  if (!grouping_variable %in% valid_group_vars) {
+    stop(
+      "`grouping_variable` must be one of: ",
+      paste(valid_group_vars, collapse = ", "),
+      call. = FALSE
+    )
+  }
+
+  if (!grouping_variable %in% names(dl)) {
+    stop(
+      "`grouping_variable` not found in `dl`.",
+      call. = FALSE
+    )
+  }
+
+  type <- tolower(type)
+
+  valid_hist <- c("histogram", "hist", "h")
+  valid_ridge <- c("ridge", "density", "r", "d")
+
+  if (!type %in% c(valid_hist, valid_ridge)) {
+    stop(
+      "`type` must be one of: histogram, hist, h, ridge, density, r, d.",
+      call. = FALSE
+    )
+  }
+
+  # ---------------------------
+  # Data preparation
+  # ---------------------------
+
   dl <- .apply_mapping_to_long_data(dl)
 
-  # Process Data
-  data_age <- dl |>
-    filter(measure == "age") |>
-    select(
-      any_of(c(
-        "condition_id",
-        "study_id",
-        "paper_cond_id",
-        "paper_study_id"
-      )),
-      participant_id,
-      value,
-      measure
-    ) |>
-    mutate(
-      age = as.numeric(value),
-      across(any_of(c(
-        "condition_id",
-        "study_id",
-        "paper_cond_id",
-        "paper_study_id"
-      )), as.factor)
-    ) |>
-    filter(!is.na(age))
+  required_cols <- c("measure", "value", "participant_id")
+  missing_cols <- setdiff(required_cols, names(dl))
 
-  # Plot
-  study_order <- data_age |>
-    group_by(.data[[grouping_variable]]) |>
-    summarise(mean_age = mean(age)) |>
-    arrange(desc(mean_age)) |>
-    pull(.data[[grouping_variable]])
-
-  if (tolower(type) %in% c("histogram", "hist", "h")) {
-    data_age <- data_age |>
-      group_by(age, .data[[grouping_variable]]) |>
-      summarise(n = n())
-
-    data_age[[grouping_variable]] <- factor(
-      data_age[[grouping_variable]],
-      levels = study_order
+  if (length(missing_cols) > 0) {
+    stop(
+      "Missing required column(s): ",
+      paste(missing_cols, collapse = ", "),
+      call. = FALSE
     )
+  }
 
-    graph <- data_age |>
-      ggplot(aes(x = age, y = n)) +
-      geom_bar(
-        aes(fill = .data[[grouping_variable]]),
+  data_age <- dl |>
+    dplyr::filter(.data$measure == "age") |>
+    dplyr::select(
+      dplyr::any_of(valid_group_vars),
+      .data$participant_id,
+      .data$value,
+      .data$measure
+    ) |>
+    dplyr::mutate(
+      age = suppressWarnings(as.numeric(.data$value)),
+      dplyr::across(
+        dplyr::any_of(valid_group_vars),
+        as.factor
+      )
+    ) |>
+    dplyr::filter(!is.na(.data$age))
+
+  if (nrow(data_age) == 0) {
+    stop("No valid age data found after filtering.", call. = FALSE)
+  }
+
+  # ---------------------------
+  # Order groups by mean age
+  # ---------------------------
+
+  study_order <- data_age |>
+    dplyr::group_by(.data[[grouping_variable]]) |>
+    dplyr::summarise(
+      mean_age = mean(.data$age, na.rm = TRUE),
+      .groups = "drop"
+    ) |>
+    dplyr::arrange(dplyr::desc(.data$mean_age)) |>
+    dplyr::pull(.data[[grouping_variable]])
+
+  data_age[[grouping_variable]] <- factor(
+    data_age[[grouping_variable]],
+    levels = study_order
+  )
+
+  # ---------------------------
+  # Plot
+  # ---------------------------
+
+  legend_label <- grouping_variable
+
+  if (type %in% valid_hist) {
+
+    data_age <- data_age |>
+      dplyr::group_by(
+        .data$age,
+        .data[[grouping_variable]]
+      ) |>
+      dplyr::summarise(
+        n = dplyr::n(),
+        .groups = "drop"
+      )
+
+    graph <- ggplot2::ggplot(
+      data_age,
+      ggplot2::aes(x = .data$age, y = .data$n)
+    ) +
+      ggplot2::geom_bar(
+        ggplot2::aes(fill = .data[[grouping_variable]]),
         stat = "identity",
         color = "white",
-        linewidth = .2
+        linewidth = 0.2
       ) +
-      labs(x = "Age", y = "Number of Participants", fill = "Study ID") +
-      scale_fill_discrete(name = "Study ID",
-                          breaks = rev(study_order))
-  }
-  else if (tolower(type) %in% c("ridge", "density", "r", "d")) {
-    data_age[[grouping_variable]] <- factor(
-      data_age[[grouping_variable]],
-      levels = study_order
-    )
+      ggplot2::labs(
+        x = "Age",
+        y = "Number of Participants",
+        fill = legend_label
+      ) +
+      ggplot2::scale_fill_discrete(name = legend_label)
 
-    graph <- data_age |>
-      ggplot(aes(
-        x = age,
+  } else {
+
+    graph <- ggplot2::ggplot(
+      data_age,
+      ggplot2::aes(
+        x = .data$age,
         y = .data[[grouping_variable]],
         group = .data[[grouping_variable]],
         fill = .data[[grouping_variable]]
-      )) +
+      )
+    ) +
       ggridges::geom_density_ridges() +
-      labs(x = "Age", y = "Study ID", fill = "Study ID") +
-      theme(legend.position = "none")
-  } else {
-    stop("unknown argument type")
+      ggplot2::labs(
+        x = "Age",
+        y = legend_label,
+        fill = legend_label
+      ) +
+      ggplot2::theme(
+        legend.position = "none"
+      )
   }
+
   return(graph)
 }
 
@@ -242,30 +323,92 @@ age <- function(
 #' @export
 ageDescriptives <- function(dl, grouping_variable = NULL) {
 
+  # ---------------------------
+  # Argument validation
+  # ---------------------------
+
+  if (!is.data.frame(dl)) {
+    stop("`dl` must be a data.frame.", call. = FALSE)
+  }
+
+  required_cols <- c("measure", "value")
+  missing_cols <- setdiff(required_cols, names(dl))
+
+  if (length(missing_cols) > 0) {
+    stop(
+      "Missing required column(s): ",
+      paste(missing_cols, collapse = ", "),
+      call. = FALSE
+    )
+  }
+
+  if (!is.null(grouping_variable)) {
+
+    if (!is.character(grouping_variable)) {
+      stop("`grouping_variable` must be a character vector.", call. = FALSE)
+    }
+
+    missing_group_cols <- setdiff(grouping_variable, names(dl))
+
+    if (length(missing_group_cols) > 0) {
+      stop(
+        "Grouping variable(s) not found in `dl`: ",
+        paste(missing_group_cols, collapse = ", "),
+        call. = FALSE
+      )
+    }
+  }
+
+  # ---------------------------
+  # Data preparation
+  # ---------------------------
+
   dl <- .apply_mapping_to_long_data(dl)
 
   df <- dl |>
-    filter(measure == "age") |>
-    mutate(
-      age = as.numeric(value)
+    dplyr::filter(.data$measure == "age") |>
+    dplyr::mutate(
+      age = suppressWarnings(as.numeric(.data$value))
     ) |>
-    filter(!is.na(age))
+    dplyr::filter(!is.na(.data$age))
 
-  # Apply grouping only if provided
-  if (!is.null(grouping_variable)) {
-    df <- df |>
-      mutate(across(all_of(grouping_variable), as.factor)) |>
-      group_by(across(all_of(grouping_variable)))
+  if (nrow(df) == 0) {
+    stop("No valid age data found after filtering.", call. = FALSE)
   }
 
-  df |>
-    summarise(
-      mean_age = mean(age),
-      sd = sd(age),
-      min = min(age),
-      max = max(age),
-      .groups = "drop"
+  # ---------------------------
+  # Optional grouping
+  # ---------------------------
+
+  if (!is.null(grouping_variable)) {
+
+    df <- df |>
+      dplyr::mutate(
+        dplyr::across(
+          dplyr::all_of(grouping_variable),
+          as.factor
+        )
+      ) |>
+      dplyr::group_by(
+        dplyr::across(dplyr::all_of(grouping_variable))
+      )
+  }
+
+  # ---------------------------
+  # Summary statistics
+  # ---------------------------
+
+  result <- df |>
+    dplyr::summarise(
+      mean_age = mean(.data$age, na.rm = TRUE),
+      sd_age   = stats::sd(.data$age, na.rm = TRUE),
+      min_age  = min(.data$age, na.rm = TRUE),
+      max_age  = max(.data$age, na.rm = TRUE),
+      n        = dplyr::n(),
+      .groups  = "drop"
     )
+
+  return(result)
 }
 
 # Todo:
