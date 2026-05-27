@@ -194,18 +194,6 @@ phasesHeatmap <- function(dl, cb) {
     "dl"
   )
 
-  # Translate phase abbreviations into display labels using the codebook. The
-  # lookup is intentionally small and contains only phase rows.
-  phase_name_mapping <- cb |>
-    filter(.data$attribute == "phase") |>
-    select(
-      phase_short = "abbreviation",
-      phase_long = "name"
-    ) |>
-    mutate(
-      phase_long = stringr::str_to_title(.data$phase_long)
-    )
-
   # Build the condition-level phase summary. Each participant contributes once
   # per condition and phase before aggregation, and currently excluded phase
   # codes are removed before computing co-occurrences.
@@ -217,9 +205,12 @@ phasesHeatmap <- function(dl, cb) {
     ) |>
     distinct() |>
     tidyr::drop_na("phase") |>
-    left_join(
-      phase_name_mapping,
-      by = c("phase" = "phase_short")
+    mutate(
+      phase_long = .label_phases_from_codebook(
+        .data$phase,
+        cb = cb,
+        keep_unmapped = FALSE
+      )
     ) |>
     filter(
       !.data$phase %in% c("int", "other"),

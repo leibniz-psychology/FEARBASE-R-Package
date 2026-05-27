@@ -33,6 +33,211 @@ reorderPhases <- function(phases, order) {
   return(factor(phases, levels = phase_levels))
 }
 
+#' Resolve the FEARBASE Codebook
+#'
+#' This internal helper centralizes the package convention for optional
+#' codebook arguments. Explicit user input is preferred, then an interactive
+#' caller-side object named `codebook`, and finally the package-bundled
+#' `data/codebook.csv` file.
+#'
+#' @param cb A codebook data frame supplied by the caller, or `NULL`.
+#' @param caller_env The environment to inspect for an object named `codebook`.
+#'
+#' @return A codebook data frame.
+#' @noRd
+.resolve_codebook <- function(cb = NULL, caller_env = parent.frame()) {
+  ############################################################
+  # 1) Prefer explicitly supplied data
+  ############################################################
+
+  # Explicit arguments make analyses reproducible and should always override
+  # session objects or bundled convenience files.
+  if (!is.null(cb)) {
+    return(cb)
+  }
+
+  ############################################################
+  # 2) Support interactive workflows with a caller-side codebook object
+  ############################################################
+
+  # Several package functions are used interactively with the FEARBASE data
+  # objects already loaded into the workspace. Reuse such an object when it has
+  # the rectangular structure needed by the codebook-based label helpers.
+  if (exists("codebook", envir = caller_env, inherits = TRUE)) {
+    codebook_candidate <- get(
+      "codebook",
+      envir = caller_env,
+      inherits = TRUE
+    )
+
+    if (is.data.frame(codebook_candidate)) {
+      return(codebook_candidate)
+    }
+  }
+
+  ############################################################
+  # 3) Fall back to the bundled CSV in installed and local package contexts
+  ############################################################
+
+  # Use system.file() for installed packages, then a repository-relative path
+  # for local development and test runs before the package has been installed.
+  codebook_path <- system.file(
+    "data",
+    "codebook.csv",
+    package = "fearbase",
+    mustWork = FALSE
+  )
+
+  if (
+    identical(codebook_path, "") &&
+      file.exists(file.path("data", "codebook.csv"))
+  ) {
+    codebook_path <- file.path("data", "codebook.csv")
+  }
+
+  if (identical(codebook_path, "")) {
+    stop(
+      "`cb` must be supplied, an object named `codebook` must exist ",
+      "in the calling environment, or bundled codebook data must be ",
+      "available.",
+      call. = FALSE
+    )
+  }
+
+  readr::read_csv(codebook_path, show_col_types = FALSE)
+}
+
+#' Build a Display-Label Lookup from the FEARBASE Codebook
+#'
+#' @param cb A codebook data frame.
+#' @param attribute A single codebook attribute to select.
+#' @param value_col Name of the output column containing abbreviations.
+#' @param label_col Name of the output column containing display labels.
+#' @param title_case Logical. If `TRUE`, convert labels to title case.
+#'
+#' @return A tibble with the requested abbreviation and label columns.
+#' @noRd
+.get_codebook_label_mapping <- function(
+  cb,
+  attribute,
+  value_col,
+  label_col,
+  title_case = TRUE
+) {
+  ############################################################
+  # 1) Validate the codebook contract used by all label helpers
+  ############################################################
+
+  .validate_data_frame(cb, "cb")
+  .validate_required_columns(cb, c("attribute", "abbreviation", "name"), "cb")
+  .validate_single_column_name(attribute, "attribute")
+  .validate_single_column_name(value_col, "value_col")
+  .validate_single_column_name(label_col, "label_col")
+  .validate_logical_scalar(title_case, "title_case")
+
+  ############################################################
+  # 2) Select and normalize the requested codebook rows
+  ############################################################
+
+  # Keep a compact two-column lookup so joins remain explicit at call sites.
+  # distinct() protects downstream joins from duplicated codebook rows.
+  label_mapping <- cb |>
+    filter(.data$attribute == attribute) |>
+    select(
+      "{value_col}" := "abbreviation",
+      "{label_col}" := "name"
+    ) |>
+    filter(
+      !is.na(.data[[value_col]]),
+      !is.na(.data[[label_col]])
+    ) |>
+    distinct()
+
+  if (isTRUE(title_case)) {
+    label_mapping[[label_col]] <- stringr::str_to_title(
+      label_mapping[[label_col]]
+    )
+  }
+
+  if (nrow(label_mapping) == 0L) {
+    stop(
+      "No `",
+      attribute,
+      "` rows with abbreviations and names were found in `cb`.",
+      call. = FALSE
+    )
+  }
+
+  return(label_mapping)
+}
+
+#' Build Phase Display Labels from the Codebook
+#'
+#' @param phases A vector containing FEARBASE phase abbreviations.
+#' @param cb A codebook data frame.
+#' @param defined_order Optional character vector defining priority display
+#'   labels. Values not present in the data are ignored, and additional labels
+#'   are appended after the priority labels.
+#' @param keep_unmapped Logical. If `TRUE`, phase codes absent from the
+#'   codebook are retained as display values instead of becoming `NA`.
+#'
+#' @return A factor with codebook-derived display labels.
+#' @noRd
+.label_phases_from_codebook <- function(
+  phases,
+  cb,
+  defined_order = NULL,
+  keep_unmapped = FALSE
+) {
+  ############################################################
+  # 1) Build the abbreviation-to-label lookup
+  ############################################################
+
+  # Phase names are user-facing plot labels, so the codebook `name` field is
+  # the single source of truth instead of hard-coded recode tables.
+  phase_mapping <- .get_codebook_label_mapping(
+    cb = cb,
+    attribute = "phase",
+    value_col = "phase_short",
+    label_col = "phase_long",
+    title_case = TRUE
+  )
+
+  ############################################################
+  # 2) Translate codes while preserving vector length and row order
+  ############################################################
+
+  phase_values <- as.character(phases)
+  phase_labels <- phase_mapping$phase_long[
+    match(phase_values, phase_mapping$phase_short)
+  ]
+
+  # Keeping unmapped labels is useful for exploratory plotting because newly
+  # introduced phase codes remain visible until the codebook is updated.
+  if (isTRUE(keep_unmapped)) {
+    phase_labels <- dplyr::coalesce(phase_labels, phase_values)
+  }
+
+  ############################################################
+  # 3) Apply a stable factor order for plotting
+  ############################################################
+
+  # Default to the core fear-conditioning order and append later phases from
+  # the codebook after that sequence. Callers may supply a narrower priority
+  # order when a plot intentionally highlights only a subset first.
+  if (is.null(defined_order)) {
+    defined_order <- .label_phases_from_codebook(
+      phases = c("hab", "acq", "ext", "rin", "rex", "rev"),
+      cb = cb,
+      defined_order = character(0),
+      keep_unmapped = FALSE
+    )
+    defined_order <- as.character(defined_order)
+  }
+
+  reorderPhases(phase_labels, defined_order)
+}
+
 # taken from stack overflow, see https://stackoverflow.com/questions/28562288/how-to-use-the-hsl-hue-saturation-lightness-cylindric-color-model
 hsl_to_rgb <- function(h, s, l) {
   h <- h / 360
