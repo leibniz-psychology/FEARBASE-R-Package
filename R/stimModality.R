@@ -4,7 +4,7 @@
 #' or conditioned stimulus (CS) modalities reported in FEARBASE study metadata.
 #'
 #' Metadata are first passed through the package-internal study-to-condition
-#' mapping helper so current and legacy metadata schemas expose the same
+#' mapping helper so metadata exposes the same
 #' `condition_id` and `study_id` columns before modality counts are computed.
 #'
 #' @param md A data frame containing study metadata. After internal metadata
@@ -59,9 +59,9 @@
 #' @importFrom rlang .data
 #' @export
 stimModality <- function(
-    md = NULL,
-    type = "us_type",
-    level = "n_studies"
+  md = NULL,
+  type = "us_type",
+  level = "n_studies"
 ) {
   ############################################################
   # 1) Resolve the metadata source
