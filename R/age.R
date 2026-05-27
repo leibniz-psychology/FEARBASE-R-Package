@@ -84,18 +84,28 @@ age <- function(
     type = "histogram",
     grouping_variable = "study_id"
 ) {
+  ############################################################
+  # 1) Normalize the caller's long-format data schema
+  ############################################################
 
+  # Apply the package-level mapping before validation so callers can provide
+  # either legacy identifiers or the current FEARBASE identifier columns.
   dl <- .apply_mapping_to_long_data(dl)
 
 
-  # ---------------------------
-  # Argument validation
-  # ---------------------------
+  ############################################################
+  # 2) Validate plotting inputs and supported grouping choices
+  ############################################################
 
+  # All downstream filtering, selecting, and plotting assumes a rectangular
+  # data object with named columns, so fail early for non-data-frame inputs.
   if (!is.data.frame(dl)) {
     stop("`dl` must be a data.frame.", call. = FALSE)
   }
 
+  # These are the only grouping identifiers that this visualization knows how
+  # to expose. Keep this vector close to validation because it is reused for
+  # column selection and factor conversion below.
   valid_group_vars <- c(
     "condition_id",
     "study_id",
@@ -103,6 +113,8 @@ age <- function(
     "paper_study_id"
   )
 
+  # Reject unsupported grouping names before looking in the data. This gives a
+  # clearer user-facing error when a typo or unsupported identifier is supplied.
   if (!grouping_variable %in% valid_group_vars) {
     stop(
       "`grouping_variable` must be one of: ",
@@ -111,6 +123,8 @@ age <- function(
     )
   }
 
+  # The requested grouping variable must survive the mapping step and be
+  # present in the resulting data before it can be used by dplyr or ggplot2.
   if (!grouping_variable %in% names(dl)) {
     stop(
       "`grouping_variable` not found in `dl`.",
@@ -118,11 +132,17 @@ age <- function(
     )
   }
 
+  # Match plot types case-insensitively while preserving a small set of short
+  # aliases for interactive use.
   type <- tolower(type)
 
+  # Keep the aliases explicit so the branching condition below is easy to
+  # audit when new plot types are added.
   valid_hist <- c("histogram", "hist", "h")
   valid_ridge <- c("ridge", "density", "r", "d")
 
+  # Stop before any data transformation if the requested visualization mode is
+  # not one of the supported histogram or ridge-density variants.
   if (!type %in% c(valid_hist, valid_ridge)) {
     stop(
       "`type` must be one of: histogram, hist, h, ridge, density, r, d.",
@@ -130,13 +150,18 @@ age <- function(
     )
   }
 
-  # ---------------------------
-  # Data preparation
-  # ---------------------------
+  ############################################################
+  # 3) Validate age-specific input columns and prepare plotting data
+  ############################################################
 
+  # The function needs measure/value to locate age rows and participant_id for
+  # a stable participant-level plotting contract, even though participant_id is
+  # not drawn directly in the final chart.
   required_cols <- c("measure", "value", "participant_id")
   missing_cols <- setdiff(required_cols, names(dl))
 
+  # Report all missing required columns together so callers can fix the input
+  # schema in one pass.
   if (length(missing_cols) > 0) {
     stop(
       "Missing required column(s): ",
@@ -145,14 +170,22 @@ age <- function(
     )
   }
 
+  # Build a compact age-only data set for plotting. The value column is
+  # intentionally coerced with suppressWarnings() because invalid values are
+  # removed immediately after coercion and do not need one warning per row.
   data_age <- dl |>
+    # Retain only long-format rows that actually encode participant age.
     filter(.data$measure == "age") |>
+    # Keep all supported grouping columns that are present so the selected
+    # grouping variable and any future grouping switches remain available.
     select(
       any_of(valid_group_vars),
       "participant_id",
       "value",
       "measure"
     ) |>
+    # Store the plotting value in a dedicated numeric age column and normalize
+    # grouping identifiers to factors for discrete legends and axes.
     mutate(
       age = suppressWarnings(as.numeric(.data$value)),
       across(
@@ -160,16 +193,23 @@ age <- function(
         as.factor
       )
     ) |>
+    # Drop missing and non-coercible ages before ordering groups or estimating
+    # density curves.
     filter(!is.na(.data$age))
 
+  # A plot with no numeric age observations would be misleading and would fail
+  # later in less obvious ways, so stop with a data-quality message here.
   if (nrow(data_age) == 0) {
     stop("No valid age data found after filtering.", call. = FALSE)
   }
 
-  # ---------------------------
-  # Order groups by mean age
-  # ---------------------------
+  ############################################################
+  # 4) Order groups by descending mean age for stable visual comparison
+  ############################################################
 
+  # Compute a single ordered level vector from the prepared age data. Ordering
+  # by mean age keeps both histogram legends and ridge plot axes consistent
+  # across repeated calls with the same input data.
   study_order <- data_age |>
     group_by(.data[[grouping_variable]]) |>
     summarise(
@@ -179,19 +219,27 @@ age <- function(
     arrange(desc(.data$mean_age)) |>
     pull(all_of(grouping_variable))
 
+  # Rebuild only the selected grouping factor with explicit levels. Other
+  # grouping columns can remain as ordinary factors because they are not mapped
+  # to the current plot.
   data_age[[grouping_variable]] <- factor(
     data_age[[grouping_variable]],
     levels = study_order
   )
 
-  # ---------------------------
-  # Plot
-  # ---------------------------
+  ############################################################
+  # 5) Build the requested ggplot object
+  ############################################################
 
+  # Use the raw grouping column name as the legend or axis label. This keeps the
+  # helper schema-oriented and avoids guessing at display labels.
   legend_label <- grouping_variable
 
   if (type %in% valid_hist) {
 
+    # Histograms are represented as exact age-by-group counts rather than
+    # binned continuous histograms because age is expected to be reported in
+    # interpretable units such as years.
     data_age <- data_age |>
       group_by(
         .data$age,
@@ -202,6 +250,8 @@ age <- function(
         .groups = "drop"
       )
 
+    # Draw one stacked bar per observed age value, with fill indicating the
+    # requested grouping variable.
     graph <- ggplot(
       data_age,
       aes(x = .data$age, y = .data$n)
@@ -221,6 +271,8 @@ age <- function(
 
   } else {
 
+    # Ridge plots use the unaggregated numeric ages so ggridges can estimate a
+    # density curve separately for each ordered group.
     graph <- ggplot(
       data_age,
       aes(
@@ -237,10 +289,14 @@ age <- function(
         fill = legend_label
       ) +
       theme(
+        # The group is already shown on the y-axis, so suppress the duplicate
+        # fill legend for density/ridge output.
         legend.position = "none"
       )
   }
 
+  # Return the plot without printing so callers can add layers, theme it, or
+  # pass it to ggsave().
   return(graph)
 }
 
@@ -320,20 +376,30 @@ age <- function(
 #'
 #' @export
 ageDescriptives <- function(dl, grouping_variable = NULL) {
+  ############################################################
+  # 1) Normalize the caller's long-format data schema
+  ############################################################
 
+  # Use the same mapping path as age() so descriptive summaries and plots agree
+  # on the identifier columns available after schema normalization.
   dl <- .apply_mapping_to_long_data(dl)
 
-  # ---------------------------
-  # Argument validation
-  # ---------------------------
+  ############################################################
+  # 2) Validate descriptive-statistics inputs
+  ############################################################
 
+  # dplyr verbs below require a data frame or tibble with named columns.
   if (!is.data.frame(dl)) {
     stop("`dl` must be a data.frame.", call. = FALSE)
   }
 
+  # Descriptives only require the long-format measure/value pair. Grouping
+  # columns are validated separately because they are optional.
   required_cols <- c("measure", "value")
   missing_cols <- setdiff(required_cols, names(dl))
 
+  # Return every missing required column in one message to make malformed input
+  # easier to repair.
   if (length(missing_cols) > 0) {
     stop(
       "Missing required column(s): ",
@@ -342,14 +408,21 @@ ageDescriptives <- function(dl, grouping_variable = NULL) {
     )
   }
 
+  # If grouping is requested, verify both the type of the grouping declaration
+  # and the existence of every named grouping column before any summarisation.
   if (!is.null(grouping_variable)) {
 
+    # Multiple grouping variables are allowed, but they must be supplied as
+    # column names in a character vector.
     if (!is.character(grouping_variable)) {
       stop("`grouping_variable` must be a character vector.", call. = FALSE)
     }
 
+    # Check all requested grouping columns against the mapped data schema.
     missing_group_cols <- setdiff(grouping_variable, names(dl))
 
+    # Report all missing grouping columns together so callers can correct a
+    # multi-column grouping request without repeated trial and error.
     if (length(missing_group_cols) > 0) {
       stop(
         "Grouping variable(s) not found in `dl`: ",
@@ -359,10 +432,13 @@ ageDescriptives <- function(dl, grouping_variable = NULL) {
     }
   }
 
-  # ---------------------------
-  # Data preparation
-  # ---------------------------
+  ############################################################
+  # 3) Extract and clean numeric age observations
+  ############################################################
 
+  # Keep age rows from the long-format data and coerce their values to numeric
+  # for statistical summaries. Invalid numeric conversions are filtered out
+  # after coercion.
   df <- dl |>
     filter(.data$measure == "age") |>
     mutate(
@@ -370,16 +446,20 @@ ageDescriptives <- function(dl, grouping_variable = NULL) {
     ) |>
     filter(!is.na(.data$age))
 
+  # A descriptive table with no valid observations would produce undefined
+  # summary values, so stop before returning all-NA statistics.
   if (nrow(df) == 0) {
     stop("No valid age data found after filtering.", call. = FALSE)
   }
 
-  # ---------------------------
-  # Optional grouping
-  # ---------------------------
+  ############################################################
+  # 4) Apply optional grouping for grouped summaries
+  ############################################################
 
   if (!is.null(grouping_variable)) {
 
+    # Convert grouping columns to factors so returned grouping keys use a stable
+    # discrete representation, matching the plotting helper's behavior.
     df <- df |>
       mutate(
         across(
@@ -387,15 +467,20 @@ ageDescriptives <- function(dl, grouping_variable = NULL) {
           as.factor
         )
       ) |>
+      # group_by(across()) supports one or many caller-supplied grouping
+      # variables without branching on the length of grouping_variable.
       group_by(
         across(all_of(grouping_variable))
       )
   }
 
-  # ---------------------------
-  # Summary statistics
-  # ---------------------------
+  ############################################################
+  # 5) Compute age summary statistics
+  ############################################################
 
+  # Summarise the cleaned age values either globally or within the grouping
+  # structure created above. .groups = "drop" returns an ungrouped tibble that
+  # is easier for callers to print, join, or export.
   result <- df |>
     summarise(
       mean_age = mean(.data$age, na.rm = TRUE),
@@ -406,6 +491,7 @@ ageDescriptives <- function(dl, grouping_variable = NULL) {
       .groups  = "drop"
     )
 
+  # Return the summary table to the caller without additional formatting.
   return(result)
 }
 
