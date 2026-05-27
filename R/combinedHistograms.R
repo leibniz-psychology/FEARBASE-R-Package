@@ -371,9 +371,9 @@ plot_co_occurrence_heatmap <- function(
     scale_y_discrete(position = "right") +
     geom_text(
       aes(
-        label = .data[[value_var]],
-        colour = .data$text_colour
+        label = .data[[value_var]]
       ),
+      colour = "white",
       fontface = "bold"
     ) +
     geom_tile(
