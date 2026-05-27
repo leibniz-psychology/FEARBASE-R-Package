@@ -336,6 +336,20 @@ plot_co_occurrence_heatmap <- function(
       )
   }
 
+  # Long, angled x-axis labels extend to the left of the first heatmap tile.
+  # Increase the plot margin in proportion to the longest displayed label so
+  # the leftmost label remains visible when the heatmap is rendered standalone
+  # or inside the combined patchwork layout.
+  x_axis_labels <- df[[x_var]]
+  if (is.factor(x_axis_labels)) {
+    x_axis_labels <- levels(droplevels(x_axis_labels))
+  } else {
+    x_axis_labels <- unique(as.character(x_axis_labels))
+  }
+  x_axis_labels <- x_axis_labels[!is.na(x_axis_labels)]
+  max_x_axis_label_chars <- max(nchar(x_axis_labels), 0)
+  left_plot_margin <- max(5.5, max_x_axis_label_chars * 3.5)
+
   # Pre-compute helper columns used by overlay tiles and text styling. Keeping
   # them in the data makes the ggplot layers simple and easy to inspect.
   max_value <- max(df[[value_var]], na.rm = TRUE)
@@ -398,7 +412,14 @@ plot_co_occurrence_heatmap <- function(
         margin = margin(r = 20)
       ),
       panel.background = element_rect(fill = "white"),
-      axis.title = element_blank()
+      axis.title = element_blank(),
+      plot.margin = margin(
+        t = 5.5,
+        r = 5.5,
+        b = 5.5,
+        l = left_plot_margin,
+        unit = "pt"
+      )
     )
 }
 
