@@ -31,15 +31,15 @@ generate_palette <- function(n_colors) {
 }
 
 .onLoad <- function(libname, pkgname) {
-  set_theme(theme_classic())
+  ggplot2::set_theme(ggplot2::theme_classic())
 
-  update_theme(
+  ggplot2::update_theme(
     palette.colour.discrete = generate_palette,
     palette.fill.discrete = generate_palette,
     palette.fill.continuous = generate_palette(3),
     palette.color.continuous = generate_palette(3)
   )
 
-  update_geom_defaults("bar", list(fill = generate_palette(1)))
-  update_geom_defaults("boxplot", list(fill = generate_palette(1)))
+  ggplot2::update_geom_defaults("bar", list(fill = generate_palette(1)))
+  ggplot2::update_geom_defaults("boxplot", list(fill = generate_palette(1)))
 }

@@ -1,9 +1,38 @@
-#' Measures heatmap
+#' Plot a co-occurrence heatmap for recorded outcome measures
 #'
 #' @description
-#' Builds a combined heatmap and bar plot of measures.
+#' Builds a combined heatmap and marginal bar plot showing how often outcome
+#' measures occur together across mapped experimental conditions.
 #'
-#' @return A ggplot object (patchwork).
+#' @param dl A data frame containing long-format participant-level data. The
+#'   data are passed through the package-internal mapping helper and must then
+#'   contain \code{condition_id}, \code{participant_id}, and \code{measure}.
+#' @param md A data frame containing study-level metadata. The data are passed
+#'   through the package-internal mapping helper and must then contain
+#'   \code{condition_id}.
+#' @param cb A codebook data frame with at least \code{attribute},
+#'   \code{abbreviation}, and \code{name}. Rows where
+#'   \code{attribute == "measure"} are used to translate measure abbreviations
+#'   to display labels.
+#'
+#' @details
+#' The function first maps condition and study identifiers, joins the long data
+#' to metadata by \code{condition_id}, translates measure abbreviations with the
+#' codebook, and keeps one row per participant, condition, and measure. It then
+#' computes pairwise measure co-occurrence counts across conditions and combines
+#' the heatmap with a horizontal bar plot of marginal measure frequencies.
+#'
+#' @return A \code{patchwork} object combining two
+#'   \code{\link[ggplot2:ggplot]{ggplot2::ggplot()}} plots.
+#'
+#' @seealso \code{\link{phasesHeatmap}},
+#'   \code{\link{plot_co_occurrence_heatmap}},
+#'   \code{\link{plot_horizontal_bar}}
+#'
+#' @importFrom dplyr arrange desc distinct filter group_by
+#' @importFrom dplyr left_join mutate select summarise
+#' @importFrom tidyr drop_na
+#' @importFrom rlang .data
 #' @export
 measuresHeatmap <- function(dl, md, cb) {
   # TODO: add information about if a measure is aming for the CS or the US for the measures where this is interesting
@@ -84,12 +113,37 @@ measuresHeatmap <- function(dl, md, cb) {
   arrange_histogram_layout(hm, bp)
 }
 
-#' Phases heatmap
+#' Plot a co-occurrence heatmap for experimental phases
 #'
 #' @description
-#' Builds a combined heatmap and bar plot of phases.
+#' Builds a combined heatmap and marginal bar plot showing how often
+#' experimental phases occur together across mapped experimental conditions.
 #'
-#' @return A ggplot object (patchwork).
+#' @param dl A data frame containing long-format participant-level data. The
+#'   data are passed through the package-internal mapping helper and must then
+#'   contain \code{condition_id}, \code{participant_id}, and \code{phase}.
+#' @param cb A codebook data frame with at least \code{attribute},
+#'   \code{abbreviation}, and \code{name}. Rows where
+#'   \code{attribute == "phase"} are used to translate phase abbreviations to
+#'   display labels.
+#'
+#' @details
+#' The function maps condition and study identifiers, translates phase
+#' abbreviations with the codebook, removes the currently excluded \code{int}
+#' and \code{other} phase codes, and counts phase usage per condition. The
+#' displayed order prioritizes Habituation, Acquisition, and Extinction; additional
+#' phases are appended after those priority phases.
+#'
+#' @return A \code{patchwork} object combining two
+#'   \code{\link[ggplot2:ggplot]{ggplot2::ggplot()}} plots.
+#'
+#' @seealso \code{\link{measuresHeatmap}},
+#'   \code{\link{plot_co_occurrence_heatmap}},
+#'   \code{\link{plot_horizontal_bar}}
+#'
+#' @importFrom dplyr distinct filter group_by left_join mutate select summarise
+#' @importFrom tidyr drop_na
+#' @importFrom rlang .data
 #' @export
 phasesHeatmap <- function(dl, cb) {
   dl <- .apply_mapping_to_long_data(dl)
@@ -168,7 +222,31 @@ phasesHeatmap <- function(dl, cb) {
   arrange_histogram_layout(hm, bp)
 }
 
-
+#' Plot a square co-occurrence heatmap
+#'
+#' @description
+#' Creates a tiled heatmap from long-format co-occurrence data.
+#'
+#' @param df A data frame containing one row per x/y category combination.
+#' @param x_var A string naming the column to display on the x-axis.
+#' @param y_var A string naming the column to display on the y-axis.
+#' @param value_var A string naming the numeric column used for tile fill values
+#'   and text labels.
+#' @param diag_na Logical. If \code{TRUE}, cells where \code{x_var} and
+#'   \code{y_var} have the same category are set to \code{NA} before plotting.
+#'
+#' @return A \code{\link[ggplot2:ggplot]{ggplot2::ggplot()}} object.
+#'
+#' @details
+#' Zero-valued cells are overlaid in white and diagonal \code{NA} cells are
+#' overlaid in grey when \code{diag_na = TRUE}. The text labels show the raw
+#' values from \code{value_var}.
+#'
+#' @importFrom ggplot2 aes element_blank element_rect element_text geom_text
+#' @importFrom ggplot2 geom_tile ggplot labs margin scale_alpha
+#' @importFrom ggplot2 scale_color_manual scale_y_discrete theme
+#' @importFrom grid unit
+#' @importFrom rlang .data
 #' @export
 plot_co_occurrence_heatmap <- function(
   df,
@@ -240,6 +318,23 @@ plot_co_occurrence_heatmap <- function(
     )
 }
 
+#' Plot a horizontal count bar chart
+#'
+#' @description
+#' Creates a horizontal bar chart for pre-aggregated category counts.
+#'
+#' @param df A data frame containing one row per category.
+#' @param cat_var A string naming the categorical column to plot on the
+#'   category axis.
+#' @param count_var A string naming the numeric count column.
+#' @param fill_var An optional string naming a column used for bar fill groups.
+#'   If \code{NULL}, all bars are drawn in grey.
+#'
+#' @return A \code{\link[ggplot2:ggplot]{ggplot2::ggplot()}} object.
+#'
+#' @importFrom ggplot2 aes coord_flip geom_col geom_text ggplot
+#' @importFrom ggplot2 scale_fill_discrete theme theme_void
+#' @importFrom rlang .data
 #' @export
 plot_horizontal_bar <- function(df, cat_var, count_var, fill_var = NULL) {
   p <- ggplot(
@@ -270,10 +365,34 @@ plot_horizontal_bar <- function(df, cat_var, count_var, fill_var = NULL) {
     )
 }
 
+#' Arrange a co-occurrence heatmap and marginal bar plot
+#'
+#' @param hm A \code{\link[ggplot2:ggplot]{ggplot2::ggplot()}} heatmap object.
+#' @param bp A \code{\link[ggplot2:ggplot]{ggplot2::ggplot()}} bar plot object.
+#'
+#' @return A \code{patchwork} object with the heatmap on the left and the bar
+#'   plot on the right.
+#'
+#' @importFrom patchwork plot_layout
+#' @keywords internal
 arrange_histogram_layout <- function(hm, bp) {
   hm + bp + plot_layout(widths = c(1, 0.5))
 }
 
+#' Compute long-format category co-occurrence counts
+#'
+#' @param df A data frame containing category, identifier, and count columns.
+#' @param cat_var A string naming the category column.
+#' @param id_var A string naming the identifier column across which categories
+#'   co-occur.
+#' @param count_var A string naming the numeric count column.
+#'
+#' @return A data frame with one row per category pair and a \code{value} column
+#'   with the co-occurrence count.
+#'
+#' @importFrom dplyr all_of select
+#' @importFrom tidyr pivot_longer pivot_wider
+#' @keywords internal
 .get_co_occurrence_data <- function(df, cat_var, id_var, count_var) {
   x_wide <- df |>
     select(all_of(c(cat_var, id_var, count_var))) |>

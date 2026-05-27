@@ -23,12 +23,18 @@
 #' @importFrom rlang .data
 #' @export
 instructions <- function(md) {
+  # Validate the user-facing input before applying package-internal mapping.
+  # This keeps error messages focused on the object supplied by the caller.
   if (!is.data.frame(md)) {
     stop("`md` must be a data frame.", call. = FALSE)
   }
 
+  # Normalize metadata identifiers so downstream aggregation works for both
+  # mapped metadata and raw metadata that only contain the original `id` column.
   md <- .apply_mapping_to_metadata(md)
 
+  # CRAN checks should fail with informative messages instead of surfacing a
+  # later tidy-evaluation error from inside the plotting pipeline.
   required_cols <- c("condition_id", "study_id", "instruction_contingency")
   missing_cols <- setdiff(required_cols, names(md))
 
@@ -40,14 +46,17 @@ instructions <- function(md) {
     )
   }
 
-  # Count each instruction category once per study so multi-condition studies do
-  # not inflate the study-level frequency displayed in the graph.
+  # Count each instruction category once per study. A study can have multiple
+  # mapped conditions, so the distinct study/category table prevents
+  # multi-condition studies from inflating study-level frequencies.
   data_instructions <- md |>
     dplyr::select(
       dplyr::all_of(c("condition_id", "study_id")),
       dplyr::starts_with("instruction")
     ) |>
-    #dplyr::filter(!is.na(.data$instruction_contingency)) |>
+    # Exclude missing instruction values before counting so the plot describes
+    # reported contingency-instruction categories only.
+    dplyr::filter(!is.na(.data$instruction_contingency)) |>
     dplyr::distinct(
       .data$study_id,
       .data$instruction_contingency
@@ -61,6 +70,8 @@ instructions <- function(md) {
       )
     )
 
+  # A dedicated empty-data guard gives callers a precise explanation when the
+  # metadata contain the required columns but no usable instruction values.
   if (nrow(data_instructions) == 0) {
     stop(
       "No non-missing contingency instruction values were found in `md`.",
@@ -68,8 +79,9 @@ instructions <- function(md) {
     )
   }
 
-  # Build the plot after all data validation and counting are complete. Keeping
-  # plotting separate from aggregation makes the returned object easier to test.
+  # Build the plot after validation and aggregation are complete. Keeping the
+  # plotting layer separate from the data pipeline makes the returned object
+  # easier to inspect and test.
   graph <- data_instructions |>
     ggplot2::ggplot(
       ggplot2::aes(
@@ -83,8 +95,13 @@ instructions <- function(md) {
       x = "Contingency Instruction",
       y = "Number of Studies"
     ) +
-    scale_y_continuous(breaks = seq(from = 0, to = max(data_instructions$n), by = 2))
-    
+    ggplot2::scale_y_continuous(
+      breaks = seq(
+        from = 0,
+        to = max(data_instructions$n),
+        by = 2
+      )
+    )
 
   return(graph)
 }
