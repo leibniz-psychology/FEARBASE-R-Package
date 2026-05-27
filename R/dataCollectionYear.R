@@ -42,13 +42,11 @@ dataCollectionYear <- function(md = NULL) {
   # first for a `metadata` object in the caller's environment and only then fall
   # back to the package-bundled metadata file.
   if (is.null(md)) {
-
     # Prefer the caller's in-memory metadata object when it exists because it is
     # likely to reflect the data currently being analyzed or edited.
     if (exists("metadata", envir = parent.frame(), inherits = TRUE)) {
       md <- get("metadata", envir = parent.frame(), inherits = TRUE)
     } else {
-
       # Record the installed package metadata path. `mustWork = FALSE` lets us
       # detect a missing bundled file and produce a package-specific error below.
       metadata_path <- system.file(
