@@ -25,16 +25,17 @@
   # and explicitly non-reported values are counted as "not reported".
   dplyr::case_when(
     is.na(value) | value == "" ~ "not reported",
-    value %in% c(
-      "n",
-      "na",
-      "n/a",
-      "nr",
-      "not reported",
-      "not_reported",
-      "not specified",
-      "unknown"
-    ) ~ "not reported",
+    value %in%
+      c(
+        "n",
+        "na",
+        "n/a",
+        "nr",
+        "not reported",
+        "not_reported",
+        "not specified",
+        "unknown"
+      ) ~ "not reported",
     startsWith(value, "m") ~ "m",
     startsWith(value, "f") ~ "f",
     TRUE ~ NA_character_
