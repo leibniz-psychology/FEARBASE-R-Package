@@ -48,3 +48,5 @@ stimModality <- function(
     labs(fill = title)
   return(graph)
 }
+
+# TODO: Inputparameter umbenennen (level -> count mit count = "studies" und count = "participants")
