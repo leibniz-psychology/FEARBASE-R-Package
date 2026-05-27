@@ -219,7 +219,7 @@
 #'   to global environment?
 #'
 #' @return A normalized mapping data frame.
-#' @importFrom dplyr relocate
+#' @importFrom dplyr left_join relocate
 #' @export
 updateMapping <- function(assign_global = TRUE) {
   .get_mapping(assign_global = assign_global)

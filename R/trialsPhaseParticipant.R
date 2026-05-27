@@ -99,21 +99,25 @@ trialsPhaseParticipantDescriptive <- function(
   dl <- .apply_mapping_to_long_data(dl)
 
   trials <- dl |>
-    select(
-      .data[[grouping_variable]],
-      participant_id,
-      phase,
-      stimulus,
-      trial
+    dplyr::select(
+      dplyr::all_of(grouping_variable),
+      "participant_id",
+      "phase",
+      "stimulus",
+      "trial"
     ) |>
-    drop_na() |>
-    distinct() |>
-    group_by(.data[[grouping_variable]], participant_id, phase) |>
-    summarise(trials = max(trial), .groups = "drop") |>
-    ungroup() |>
-    mutate(
+    tidyr::drop_na() |>
+    dplyr::distinct() |>
+    dplyr::group_by(
+      .data[[grouping_variable]],
+      .data$participant_id,
+      .data$phase
+    ) |>
+    dplyr::summarise(trials = max(.data$trial), .groups = "drop") |>
+    dplyr::ungroup() |>
+    dplyr::mutate(
       !!grouping_variable := as.factor(.data[[grouping_variable]]),
-      phase = reorderPhases(phase)
+      phase = reorderPhases(.data$phase)
     )
   psych::describeBy(trials, group = "phase")
 }

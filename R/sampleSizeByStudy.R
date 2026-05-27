@@ -17,16 +17,18 @@ sampleSizeByStudy <- function(
 
   # Process data
   data_sample_size <- dl |>
-    select(.data[[grouping_variable]], participant_id) |>
+    dplyr::select(dplyr::all_of(c(grouping_variable, "participant_id"))) |>
     unique() |>
-    group_by(.data[[grouping_variable]]) |>
-    summarise(n = n(), .groups = "drop") |>
-    arrange(desc(n)) |>
-    mutate(!!grouping_variable := as.factor(.data[[grouping_variable]]))
+    dplyr::group_by(.data[[grouping_variable]]) |>
+    dplyr::summarise(n = dplyr::n(), .groups = "drop") |>
+    dplyr::arrange(dplyr::desc(.data$n)) |>
+    dplyr::mutate(
+      !!grouping_variable := as.factor(.data[[grouping_variable]])
+    )
 
   # Plot
   graph <- data_sample_size |>
-    ggplot(aes(
+    ggplot2::ggplot(ggplot2::aes(
       x = forcats::fct_reorder(
         .data[[grouping_variable]],
         .x = `n`,
@@ -34,9 +36,9 @@ sampleSizeByStudy <- function(
       ),
       y = n
     )) +
-    coord_flip(ylim = c(0, max(data_sample_size$n) + 10)) +
-    geom_bar(stat = "identity") +
-    labs(x = "Study ID", y = "Number of Participants")
+    ggplot2::coord_flip(ylim = c(0, max(data_sample_size$n) + 10)) +
+    ggplot2::geom_bar(stat = "identity") +
+    ggplot2::labs(x = "Study ID", y = "Number of Participants")
 
   return(graph)
 }
@@ -49,10 +51,10 @@ sampleSizeDescriptives <- function(
   dl <- .apply_mapping_to_long_data(dl)
 
   dl |>
-    select(.data[[grouping_variable]], participant_id) |>
+    dplyr::select(dplyr::all_of(c(grouping_variable, "participant_id"))) |>
     unique() |>
-    group_by(.data[[grouping_variable]]) |>
-    summarise(n = n()) |>
-    pull(n) |>
+    dplyr::group_by(.data[[grouping_variable]]) |>
+    dplyr::summarise(n = dplyr::n()) |>
+    dplyr::pull("n") |>
     psych::describe()
 }

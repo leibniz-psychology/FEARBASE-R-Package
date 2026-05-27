@@ -151,9 +151,9 @@ age <- function(
     dplyr::filter(.data$measure == "age") |>
     dplyr::select(
       dplyr::any_of(valid_group_vars),
-      .data$participant_id,
-      .data$value,
-      .data$measure
+      "participant_id",
+      "value",
+      "measure"
     ) |>
     dplyr::mutate(
       age = suppressWarnings(as.numeric(.data$value)),
@@ -179,7 +179,7 @@ age <- function(
       .groups = "drop"
     ) |>
     dplyr::arrange(dplyr::desc(.data$mean_age)) |>
-    dplyr::pull(.data[[grouping_variable]])
+    dplyr::pull(dplyr::all_of(grouping_variable))
 
   data_age[[grouping_variable]] <- factor(
     data_age[[grouping_variable]],
