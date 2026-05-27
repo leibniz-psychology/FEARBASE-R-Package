@@ -29,48 +29,93 @@
 #'   \code{\link{plot_co_occurrence_heatmap}},
 #'   \code{\link{plot_horizontal_bar}}
 #'
-#' @importFrom dplyr arrange desc distinct filter group_by
-#' @importFrom dplyr left_join mutate select summarise
-#' @importFrom tidyr drop_na
 #' @importFrom rlang .data
 #' @export
 measuresHeatmap <- function(dl, md, cb) {
-  # TODO: add information about if a measure is aming for the CS or the US for the measures where this is interesting
+  # Validate the user-facing inputs before any internal mapping is applied.
+  # This produces clear package-level errors instead of lower-level join or
+  # tidy-evaluation errors.
+  .validate_data_frame(dl, "dl")
+  .validate_data_frame(md, "md")
+  .validate_data_frame(cb, "cb")
+  .validate_required_columns(cb, c("attribute", "abbreviation", "name"), "cb")
+
+  # Normalize study and condition identifiers with the package mapping helpers.
+  # The helper functions are intentionally called before column validation
+  # because callers may supply raw database tables that still need mapping.
   dl <- .apply_mapping_to_long_data(dl)
   md <- .apply_mapping_to_metadata(md)
 
-  # Data Processing
-  fulld <- dl |>
-    left_join(md, by = "condition_id")
+  .validate_required_columns(
+    dl,
+    c("condition_id", "participant_id", "measure"),
+    "dl"
+  )
+  .validate_required_columns(md, "condition_id", "md")
 
+  # Join participant-level observations to their mapped metadata rows. The
+  # current measure co-occurrence calculation only needs the identifiers from
+  # metadata, but the join preserves the established package data flow.
+  full_data <- dl |>
+    dplyr::left_join(md, by = "condition_id")
+
+  # Build a lookup table that turns compact measure codes into human-readable
+  # labels for plotting. The labels are title-cased here because the current
+  # codebook stores several names in database-friendly casing.
   measure_name_mapping <- cb |>
-    filter(attribute == "measure") |>
-    select(measure_short = abbreviation, measure_long = name) |> # measure_short for the abbreviations and measure_long for the names
-    mutate(measure_long = stringr::str_to_title(measure_long)) # TODO: clean the codebook in the database to have cleaner naming
+    dplyr::filter(.data$attribute == "measure") |>
+    dplyr::select(
+      measure_short = "abbreviation",
+      measure_long = "name"
+    ) |>
+    dplyr::mutate(
+      measure_long = stringr::str_to_title(.data$measure_long)
+    )
 
-  measure_data <- fulld |>
-    left_join(measure_name_mapping, by = c("measure" = "measure_short")) |>
-    select(condition_id, participant_id, measure_long) |>
-    distinct() |>
-    drop_na(measure_long)
+  # Keep one row per condition, participant, and translated measure. This
+  # prevents repeated rows for the same participant-level measure from
+  # overstating measure usage in the marginal bar plot or co-occurrence matrix.
+  measure_data <- full_data |>
+    dplyr::left_join(
+      measure_name_mapping,
+      by = c("measure" = "measure_short")
+    ) |>
+    dplyr::select(
+      "condition_id",
+      "participant_id",
+      "measure_long"
+    ) |>
+    dplyr::distinct() |>
+    tidyr::drop_na("measure_long")
 
-  # Prepare summary for bar plot
+  if (nrow(measure_data) == 0) {
+    stop(
+      "No mapped measure values were available for plotting.",
+      call. = FALSE
+    )
+  }
+
+  # Count marginal measure usage for the right-hand bar plot. Sorting here also
+  # defines the shared factor order used by both the bar plot and the heatmap.
   measure_cat <- measure_data |>
-    group_by(measure_long) |>
-    summarise(used = n(), .groups = "drop") |>
-    arrange(desc(used))
+    dplyr::group_by(.data$measure_long) |>
+    dplyr::summarise(used = dplyr::n(), .groups = "drop") |>
+    dplyr::arrange(dplyr::desc(.data$used))
 
-  # Set the order of measures based on the arranged summary
   measure_levels <- measure_cat$measure_long
   measure_cat$measure_long <- factor(
     measure_cat$measure_long,
     levels = rev(measure_levels)
   )
 
-  # Compute co-occurrence
+  # Collapse participant rows to one count per condition and measure. The
+  # helper below converts this long summary into pairwise co-occurrence counts.
   co_data <- measure_data |>
-    group_by(condition_id, measure_long) |>
-    summarise(n = n(), .groups = "drop")
+    dplyr::group_by(
+      .data$condition_id,
+      .data$measure_long
+    ) |>
+    dplyr::summarise(n = dplyr::n(), .groups = "drop")
 
   crosstable_long <- .get_co_occurrence_data(
     co_data,
@@ -79,8 +124,8 @@ measuresHeatmap <- function(dl, md, cb) {
     "n"
   )
 
-  # Apply the same levels to the heatmap data
-  # x-axis from left to right, y-axis from top to bottom
+  # Use mirrored factor levels so the x-axis reads in descending marginal
+  # frequency while the y-axis reads top-to-bottom in the same visual order.
   crosstable_long$measure_long <- factor(
     crosstable_long$measure_long,
     levels = measure_levels
@@ -90,27 +135,18 @@ measuresHeatmap <- function(dl, md, cb) {
     levels = rev(measure_levels)
   )
 
-  data_measures <- list(
-    heatmap_data = crosstable_long,
-    barplot_data = measure_cat
-  )
-
-  # Heatmap
-  hm <- plot_co_occurrence_heatmap(
-    data_measures$heatmap_data,
+  # Compose the reusable heatmap and bar plot components into the package's
+  # standard two-panel co-occurrence layout.
+  heatmap_plot <- plot_co_occurrence_heatmap(
+    crosstable_long,
     "measure_long",
     "measure_long2",
     "value",
     diag_na = TRUE
   )
+  bar_plot <- plot_horizontal_bar(measure_cat, "measure_long", "used")
 
-  # Bar plot
-  bp <- plot_horizontal_bar(
-    data_measures$barplot_data,
-    "measure_long",
-    "used"
-  )
-  arrange_histogram_layout(hm, bp)
+  arrange_histogram_layout(heatmap_plot, bar_plot)
 }
 
 #' Plot a co-occurrence heatmap for experimental phases
@@ -131,8 +167,8 @@ measuresHeatmap <- function(dl, md, cb) {
 #' The function maps condition and study identifiers, translates phase
 #' abbreviations with the codebook, removes the currently excluded \code{int}
 #' and \code{other} phase codes, and counts phase usage per condition. The
-#' displayed order prioritizes Habituation, Acquisition, and Extinction; additional
-#' phases are appended after those priority phases.
+#' displayed order prioritizes Habituation, Acquisition, and Extinction;
+#' additional phases are appended after those priority phases.
 #'
 #' @return A \code{patchwork} object combining two
 #'   \code{\link[ggplot2:ggplot]{ggplot2::ggplot()}} plots.
@@ -141,51 +177,91 @@ measuresHeatmap <- function(dl, md, cb) {
 #'   \code{\link{plot_co_occurrence_heatmap}},
 #'   \code{\link{plot_horizontal_bar}}
 #'
-#' @importFrom dplyr distinct filter group_by left_join mutate select summarise
-#' @importFrom tidyr drop_na
-#' @importFrom rlang .data
 #' @export
 phasesHeatmap <- function(dl, cb) {
+  # Validate raw inputs before the mapping step so callers get concise errors
+  # when a non-data-frame object is supplied.
+  .validate_data_frame(dl, "dl")
+  .validate_data_frame(cb, "cb")
+  .validate_required_columns(cb, c("attribute", "abbreviation", "name"), "cb")
+
+  # Normalize condition and study identifiers before validating mapped columns.
   dl <- .apply_mapping_to_long_data(dl)
 
-  # Data Processing
-  # Prepare Phase naming using the codebook
+  .validate_required_columns(
+    dl,
+    c("condition_id", "participant_id", "phase"),
+    "dl"
+  )
+
+  # Translate phase abbreviations into display labels using the codebook. The
+  # lookup is intentionally small and contains only phase rows.
   phase_name_mapping <- cb |>
-    filter(attribute == "phase") |>
-    select(phase_short = abbreviation, phase_long = name) |> # phase_short for the abbreviations and phase_long for the names
-    mutate(phase_long = stringr::str_to_title(phase_long)) # TODO: clean the codebook in the database to have cleaner naming
+    dplyr::filter(.data$attribute == "phase") |>
+    dplyr::select(
+      phase_short = "abbreviation",
+      phase_long = "name"
+    ) |>
+    dplyr::mutate(
+      phase_long = stringr::str_to_title(.data$phase_long)
+    )
 
-  # Prepare phase data
+  # Build the condition-level phase summary. Each participant contributes once
+  # per condition and phase before aggregation, and currently excluded phase
+  # codes are removed before computing co-occurrences.
   phase_data <- dl |>
-    select(condition_id, participant_id, phase) |>
-    distinct() |>
-    drop_na(phase) |>
-    left_join(phase_name_mapping, by = c("phase" = "phase_short")) |>
-    filter(phase != "int", phase != "other") |> # TODO: decide if "int" and "other" should be included
-    group_by(condition_id, phase_long) |>
-    summarise(used = n(), .groups = "drop")
+    dplyr::select(
+      "condition_id",
+      "participant_id",
+      "phase"
+    ) |>
+    dplyr::distinct() |>
+    tidyr::drop_na("phase") |>
+    dplyr::left_join(
+      phase_name_mapping,
+      by = c("phase" = "phase_short")
+    ) |>
+    dplyr::filter(
+      !.data$phase %in% c("int", "other"),
+      !is.na(.data$phase_long)
+    ) |>
+    dplyr::group_by(
+      .data$condition_id,
+      .data$phase_long
+    ) |>
+    dplyr::summarise(used = dplyr::n(), .groups = "drop")
 
-  # Summary for bar plot
+  if (nrow(phase_data) == 0) {
+    stop(
+      "No mapped phase values were available for plotting.",
+      call. = FALSE
+    )
+  }
+
+  # Count the marginal frequency of each phase across all mapped conditions for
+  # the right-hand bar plot.
   data_phases_barplot <- phase_data |>
-    group_by(phase_long) |>
-    summarise(used = sum(used), .groups = "drop")
+    dplyr::group_by(.data$phase_long) |>
+    dplyr::summarise(
+      used = sum(.data$used),
+      .groups = "drop"
+    )
 
-  # Define the order of phases. This is still hardcoded. TODO: Decide if this can be defined somewhere else. Maybe the order after hab, acq and ext is
-  # no longer as impotant. "reorderPhase" takes the defined order and then adds any other phases that are not in the defined order at the end.
-  # This way we can ensure that the important phases are always in the same order and the other phases are still included without having to update
-  # the code every time a new phase is added.
+  # Keep the core fear-conditioning sequence visually stable. Additional phase
+  # labels remain available and are appended after this priority order by
+  # reorderPhases().
   defined_order <- c(
     "Habituation",
     "Acquisition",
     "Extinction"
   )
-  # Apply the fixed order of phases to the bar plot data
-  data_phases_barplot$phase_long <- forcats::fct_rev(reorderPhases(
-    data_phases_barplot$phase_long,
-    defined_order
-  ))
 
-  # Compute co-occurrence
+  data_phases_barplot$phase_long <- forcats::fct_rev(
+    reorderPhases(data_phases_barplot$phase_long, defined_order)
+  )
+
+  # Convert condition-level phase counts into a pairwise co-occurrence table for
+  # the heatmap panel.
   data_phases_heatmap <- .get_co_occurrence_data(
     phase_data,
     "phase_long",
@@ -193,33 +269,26 @@ phasesHeatmap <- function(dl, cb) {
     "used"
   )
 
-  # Apply the same order to the heatmap data
+  # Apply the same priority phase order to both heatmap axes. The y-axis is
+  # reversed so the top row aligns with the first visible bar plot category.
   data_phases_heatmap$phase_long <- reorderPhases(
     data_phases_heatmap$phase_long,
     defined_order
   )
-  data_phases_heatmap$phase_long2 <- forcats::fct_rev(reorderPhases(
-    data_phases_heatmap$phase_long2,
-    defined_order
-  ))
-
-  data_phases <- list(
-    heatmap_data = data_phases_heatmap,
-    barplot_data = data_phases_barplot
+  data_phases_heatmap$phase_long2 <- forcats::fct_rev(
+    reorderPhases(data_phases_heatmap$phase_long2, defined_order)
   )
 
-  # Heatmap
-  hm <- plot_co_occurrence_heatmap(
-    data_phases$heatmap_data,
+  heatmap_plot <- plot_co_occurrence_heatmap(
+    data_phases_heatmap,
     "phase_long",
     "phase_long2",
     "value",
     diag_na = TRUE
   )
+  bar_plot <- plot_horizontal_bar(data_phases_barplot, "phase_long", "used")
 
-  # Bar plot
-  bp <- plot_horizontal_bar(data_phases$barplot_data, "phase_long", "used")
-  arrange_histogram_layout(hm, bp)
+  arrange_histogram_layout(heatmap_plot, bar_plot)
 }
 
 #' Plot a square co-occurrence heatmap
@@ -242,11 +311,6 @@ phasesHeatmap <- function(dl, cb) {
 #' overlaid in grey when \code{diag_na = TRUE}. The text labels show the raw
 #' values from \code{value_var}.
 #'
-#' @importFrom ggplot2 aes element_blank element_rect element_text geom_text
-#' @importFrom ggplot2 geom_tile ggplot labs margin scale_alpha
-#' @importFrom ggplot2 scale_color_manual scale_y_discrete theme
-#' @importFrom grid unit
-#' @importFrom rlang .data
 #' @export
 plot_co_occurrence_heatmap <- function(
   df,
@@ -255,24 +319,46 @@ plot_co_occurrence_heatmap <- function(
   value_var,
   diag_na = FALSE
 ) {
-  if (diag_na) {
+  # Validate plot inputs up front. These checks make the function safer to use
+  # independently from measuresHeatmap() and phasesHeatmap().
+  .validate_data_frame(df, "df")
+  .validate_single_column_name(x_var, "x_var")
+  .validate_single_column_name(y_var, "y_var")
+  .validate_single_column_name(value_var, "value_var")
+  .validate_logical_scalar(diag_na, "diag_na")
+  .validate_required_columns(df, c(x_var, y_var, value_var), "df")
+
+  if (!is.numeric(df[[value_var]])) {
+    stop("`value_var` must identify a numeric column in `df`.", call. = FALSE)
+  }
+
+  # Optionally hide the diagonal because self-co-occurrence is not informative
+  # in these summary plots.
+  if (isTRUE(diag_na)) {
     df <- df |>
-      mutate(
-        !!value_var := ifelse(
+      dplyr::mutate(
+        "{value_var}" := dplyr::if_else(
           .data[[x_var]] == .data[[y_var]],
-          NA,
+          NA_real_,
           .data[[value_var]]
         )
       )
   }
 
-  df <- df |>
-    mutate(
-      fill_white = ifelse(.data[[value_var]] > 0, 0, 1),
-      fill_gray = ifelse(is.na(.data[[value_var]]), 1, 0),
-      text_white = factor(
-        ifelse(
-          .data[[value_var]] > max(.data[[value_var]], na.rm = TRUE) / 4,
+  # Pre-compute helper columns used by overlay tiles and text styling. Keeping
+  # them in the data makes the ggplot layers simple and easy to inspect.
+  max_value <- max(df[[value_var]], na.rm = TRUE)
+  if (!is.finite(max_value)) {
+    max_value <- 0
+  }
+
+  plot_data <- df |>
+    dplyr::mutate(
+      fill_white = dplyr::if_else(.data[[value_var]] > 0, 0, 1),
+      fill_gray = dplyr::if_else(is.na(.data[[value_var]]), 1, 0),
+      text_colour = factor(
+        dplyr::if_else(
+          .data[[value_var]] > max_value / 4,
           "white",
           "black"
         ),
@@ -280,41 +366,48 @@ plot_co_occurrence_heatmap <- function(
       )
     )
 
-  ggplot(
-    df,
-    aes(
+  # Draw the heatmap in three tile layers: the value layer, a white overlay for
+  # zero counts, and a grey overlay for NA cells such as the diagonal.
+  ggplot2::ggplot(
+    plot_data,
+    ggplot2::aes(
       x = .data[[x_var]],
       y = .data[[y_var]],
       fill = .data[[value_var]]
     )
   ) +
-    geom_tile() +
-    scale_y_discrete(position = "right") +
-    geom_text(
-      aes(label = .data[[value_var]]),
-      # size = rel(3),
-      color = "white",
-      fontface = 'bold'
-      # fill = "white"
+    ggplot2::geom_tile() +
+    ggplot2::scale_y_discrete(position = "right") +
+    ggplot2::geom_text(
+      ggplot2::aes(
+        label = .data[[value_var]],
+        colour = .data$text_colour
+      ),
+      fontface = "bold"
     ) +
-    geom_tile(
-      aes(alpha = fill_white),
+    ggplot2::geom_tile(
+      ggplot2::aes(alpha = .data$fill_white),
       fill = "white"
     ) +
-    geom_tile(
-      aes(alpha = fill_gray),
+    ggplot2::geom_tile(
+      ggplot2::aes(alpha = .data$fill_gray),
       fill = "gray50"
     ) +
-    scale_color_manual(values = c("white", "black"), guide = "none") +
-    scale_alpha(guide = "none") +
-    labs(fill = "Number of Participants") +
-    theme(
-      axis.text.x = element_text(angle = 45, hjust = 1),
+    ggplot2::scale_colour_manual(
+      values = c("white" = "white", "black" = "black"),
+      guide = "none"
+    ) +
+    ggplot2::scale_alpha(guide = "none") +
+    ggplot2::labs(fill = "Number of Participants") +
+    ggplot2::theme(
+      axis.text.x = ggplot2::element_text(angle = 45, hjust = 1),
       legend.position = "top",
-      legend.key.width = unit(2, "line"),
-      legend.title = element_text(margin = margin(r = 20)),
-      panel.background = element_rect(fill = "white"),
-      axis.title = element_blank()
+      legend.key.width = grid::unit(2, "line"),
+      legend.title = ggplot2::element_text(
+        margin = ggplot2::margin(r = 20)
+      ),
+      panel.background = ggplot2::element_rect(fill = "white"),
+      axis.title = ggplot2::element_blank()
     )
 }
 
@@ -332,36 +425,65 @@ plot_co_occurrence_heatmap <- function(
 #'
 #' @return A \code{\link[ggplot2:ggplot]{ggplot2::ggplot()}} object.
 #'
-#' @importFrom ggplot2 aes coord_flip geom_col geom_text ggplot
-#' @importFrom ggplot2 scale_fill_discrete theme theme_void
-#' @importFrom rlang .data
 #' @export
 plot_horizontal_bar <- function(df, cat_var, count_var, fill_var = NULL) {
-  p <- ggplot(
-    df,
-    aes(x = .data[[cat_var]], y = .data[[count_var]])
-  )
+  # Validate inputs so this exported plotting helper fails with clear messages
+  # when it is used outside the higher-level heatmap functions.
+  .validate_data_frame(df, "df")
+  .validate_single_column_name(cat_var, "cat_var")
+  .validate_single_column_name(count_var, "count_var")
+  .validate_required_columns(df, c(cat_var, count_var), "df")
 
   if (!is.null(fill_var)) {
-    p <- p +
-      aes(fill = .data[[fill_var]]) +
-      geom_col() +
-      scale_fill_discrete(palette = scales::pal_grey())
-  } else {
-    p <- p + geom_col(fill = "gray50")
+    .validate_single_column_name(fill_var, "fill_var")
+    .validate_required_columns(df, fill_var, "df")
   }
 
-  p +
-    geom_text(
-      aes(label = .data[[count_var]]),
-      hjust = -.1,
-      color = "black",
+  if (!is.numeric(df[[count_var]])) {
+    stop("`count_var` must identify a numeric column in `df`.", call. = FALSE)
+  }
+
+  if (nrow(df) == 0) {
+    stop("`df` must contain at least one row.", call. = FALSE)
+  }
+
+  # Give the text labels a small amount of headroom to the right of the bars.
+  axis_upper_limit <- max(df[[count_var]], na.rm = TRUE) * 1.2
+  if (!is.finite(axis_upper_limit) || axis_upper_limit <= 0) {
+    axis_upper_limit <- 1
+  }
+
+  plot <- ggplot2::ggplot(
+    df,
+    ggplot2::aes(
+      x = .data[[cat_var]],
+      y = .data[[count_var]]
+    )
+  )
+
+  # Optionally map a fill variable. Without a fill variable, all bars are drawn
+  # in a neutral grey to keep the marginal plot visually subordinate.
+  if (!is.null(fill_var)) {
+    plot <- plot +
+      ggplot2::aes(fill = .data[[fill_var]]) +
+      ggplot2::geom_col() +
+      ggplot2::scale_fill_discrete(palette = scales::pal_grey())
+  } else {
+    plot <- plot +
+      ggplot2::geom_col(fill = "gray50")
+  }
+
+  plot +
+    ggplot2::geom_text(
+      ggplot2::aes(label = .data[[count_var]]),
+      hjust = -0.1,
+      color = "black"
     ) +
-    coord_flip(ylim = c(0, max(df[[count_var]]) * 1.2)) +
-    theme_void() +
-    theme(
+    ggplot2::coord_flip(ylim = c(0, axis_upper_limit)) +
+    ggplot2::theme_void() +
+    ggplot2::theme(
       legend.position = "top",
-      legend.title = element_blank()
+      legend.title = ggplot2::element_blank()
     )
 }
 
@@ -373,10 +495,11 @@ plot_horizontal_bar <- function(df, cat_var, count_var, fill_var = NULL) {
 #' @return A \code{patchwork} object with the heatmap on the left and the bar
 #'   plot on the right.
 #'
-#' @importFrom patchwork plot_layout
 #' @keywords internal
 arrange_histogram_layout <- function(hm, bp) {
-  hm + bp + plot_layout(widths = c(1, 0.5))
+  # Keep the heatmap visually dominant while reserving enough width for the
+  # marginal counts on the right.
+  hm + bp + patchwork::plot_layout(widths = c(1, 0.5))
 }
 
 #' Compute long-format category co-occurrence counts
@@ -390,33 +513,97 @@ arrange_histogram_layout <- function(hm, bp) {
 #' @return A data frame with one row per category pair and a \code{value} column
 #'   with the co-occurrence count.
 #'
-#' @importFrom dplyr all_of select
-#' @importFrom tidyr pivot_longer pivot_wider
 #' @keywords internal
 .get_co_occurrence_data <- function(df, cat_var, id_var, count_var) {
+  # Validate the summarized input before reshaping it. Matrix multiplication
+  # requires a numeric count column and stable category and identifier columns.
+  .validate_data_frame(df, "df")
+  .validate_single_column_name(cat_var, "cat_var")
+  .validate_single_column_name(id_var, "id_var")
+  .validate_single_column_name(count_var, "count_var")
+  .validate_required_columns(df, c(cat_var, id_var, count_var), "df")
+
+  if (!is.numeric(df[[count_var]])) {
+    stop("`count_var` must identify a numeric column in `df`.", call. = FALSE)
+  }
+
+  if (nrow(df) == 0) {
+    stop("`df` must contain at least one row.", call. = FALSE)
+  }
+
+  # Reshape to a category-by-identifier matrix where each cell contains the
+  # number of observations for that category in that identifier.
   x_wide <- df |>
-    select(all_of(c(cat_var, id_var, count_var))) |>
-    pivot_wider(
-      names_from = all_of(id_var),
-      values_from = all_of(count_var),
+    dplyr::select(dplyr::all_of(c(cat_var, id_var, count_var))) |>
+    tidyr::pivot_wider(
+      names_from = dplyr::all_of(id_var),
+      values_from = dplyr::all_of(count_var),
       values_fill = 0
     )
 
   categories <- x_wide[[cat_var]]
-  x_mat <- x_wide |> select(-all_of(cat_var)) |> as.matrix()
+  x_mat <- x_wide |>
+    dplyr::select(-dplyr::all_of(cat_var)) |>
+    as.matrix()
 
+  # Matrix multiplication gives pairwise co-occurrence counts. The left matrix
+  # preserves counts for the focal category, while the transposed logical matrix
+  # indicates whether the paired category appears in each identifier.
   crosstable_mat <- x_mat %*% t(x_mat > 0)
 
   crosstable <- as.data.frame(crosstable_mat)
   colnames(crosstable) <- categories
   crosstable[[cat_var]] <- categories
 
-  crosstable_long <- crosstable |>
-    pivot_longer(
-      cols = -all_of(cat_var),
+  # Return the matrix in long format so ggplot can draw one tile per pair.
+  crosstable |>
+    tidyr::pivot_longer(
+      cols = -dplyr::all_of(cat_var),
       names_to = paste0(cat_var, "2"),
       values_to = "value"
     )
+}
 
-  return(crosstable_long)
+# Validate that an argument is a data frame before it enters a tidyverse
+# pipeline. This keeps error messages tied to the public argument name.
+.validate_data_frame <- function(x, arg_name) {
+  if (!is.data.frame(x)) {
+    stop("`", arg_name, "` must be a data frame.", call. = FALSE)
+  }
+}
+
+# Validate required columns once at function boundaries. This avoids repeated
+# ad hoc checks and makes all missing-column errors consistent.
+.validate_required_columns <- function(data, required_cols, arg_name) {
+  missing_cols <- setdiff(required_cols, names(data))
+
+  if (length(missing_cols) > 0) {
+    stop(
+      "Missing required column(s) in `",
+      arg_name,
+      "`: ",
+      paste(missing_cols, collapse = ", "),
+      call. = FALSE
+    )
+  }
+}
+
+# Validate string column-name arguments used with the .data pronoun. Requiring a
+# single non-empty string prevents ambiguous tidy-evaluation behavior.
+.validate_single_column_name <- function(x, arg_name) {
+  if (!is.character(x) || length(x) != 1 || is.na(x) || identical(x, "")) {
+    stop(
+      "`",
+      arg_name,
+      "` must be a single non-empty character string.",
+      call. = FALSE
+    )
+  }
+}
+
+# Validate scalar logical flags used to alter plotting behavior.
+.validate_logical_scalar <- function(x, arg_name) {
+  if (!is.logical(x) || length(x) != 1 || is.na(x)) {
+    stop("`", arg_name, "` must be `TRUE` or `FALSE`.", call. = FALSE)
+  }
 }
