@@ -146,21 +146,21 @@ age <- function(
   }
 
   data_age <- dl |>
-    dplyr::filter(.data$measure == "age") |>
-    dplyr::select(
-      dplyr::any_of(valid_group_vars),
+    filter(.data$measure == "age") |>
+    select(
+      any_of(valid_group_vars),
       "participant_id",
       "value",
       "measure"
     ) |>
-    dplyr::mutate(
+    mutate(
       age = suppressWarnings(as.numeric(.data$value)),
-      dplyr::across(
-        dplyr::any_of(valid_group_vars),
+      across(
+        any_of(valid_group_vars),
         as.factor
       )
     ) |>
-    dplyr::filter(!is.na(.data$age))
+    filter(!is.na(.data$age))
 
   if (nrow(data_age) == 0) {
     stop("No valid age data found after filtering.", call. = FALSE)
@@ -171,13 +171,13 @@ age <- function(
   # ---------------------------
 
   study_order <- data_age |>
-    dplyr::group_by(.data[[grouping_variable]]) |>
-    dplyr::summarise(
+    group_by(.data[[grouping_variable]]) |>
+    summarise(
       mean_age = mean(.data$age, na.rm = TRUE),
       .groups = "drop"
     ) |>
-    dplyr::arrange(dplyr::desc(.data$mean_age)) |>
-    dplyr::pull(dplyr::all_of(grouping_variable))
+    arrange(desc(.data$mean_age)) |>
+    pull(all_of(grouping_variable))
 
   data_age[[grouping_variable]] <- factor(
     data_age[[grouping_variable]],
@@ -193,37 +193,37 @@ age <- function(
   if (type %in% valid_hist) {
 
     data_age <- data_age |>
-      dplyr::group_by(
+      group_by(
         .data$age,
         .data[[grouping_variable]]
       ) |>
-      dplyr::summarise(
-        n = dplyr::n(),
+      summarise(
+        n = n(),
         .groups = "drop"
       )
 
-    graph <- ggplot2::ggplot(
+    graph <- ggplot(
       data_age,
-      ggplot2::aes(x = .data$age, y = .data$n)
+      aes(x = .data$age, y = .data$n)
     ) +
-      ggplot2::geom_bar(
-        ggplot2::aes(fill = .data[[grouping_variable]]),
+      geom_bar(
+        aes(fill = .data[[grouping_variable]]),
         stat = "identity",
         color = "white",
         linewidth = 0.2
       ) +
-      ggplot2::labs(
+      labs(
         x = "Age",
         y = "Number of Participants",
         fill = legend_label
       ) +
-      ggplot2::scale_fill_discrete(name = legend_label)
+      scale_fill_discrete(name = legend_label)
 
   } else {
 
-    graph <- ggplot2::ggplot(
+    graph <- ggplot(
       data_age,
-      ggplot2::aes(
+      aes(
         x = .data$age,
         y = .data[[grouping_variable]],
         group = .data[[grouping_variable]],
@@ -231,12 +231,12 @@ age <- function(
       )
     ) +
       ggridges::geom_density_ridges() +
-      ggplot2::labs(
+      labs(
         x = "Age",
         y = legend_label,
         fill = legend_label
       ) +
-      ggplot2::theme(
+      theme(
         legend.position = "none"
       )
   }
@@ -364,11 +364,11 @@ ageDescriptives <- function(dl, grouping_variable = NULL) {
   # ---------------------------
 
   df <- dl |>
-    dplyr::filter(.data$measure == "age") |>
-    dplyr::mutate(
+    filter(.data$measure == "age") |>
+    mutate(
       age = suppressWarnings(as.numeric(.data$value))
     ) |>
-    dplyr::filter(!is.na(.data$age))
+    filter(!is.na(.data$age))
 
   if (nrow(df) == 0) {
     stop("No valid age data found after filtering.", call. = FALSE)
@@ -381,14 +381,14 @@ ageDescriptives <- function(dl, grouping_variable = NULL) {
   if (!is.null(grouping_variable)) {
 
     df <- df |>
-      dplyr::mutate(
-        dplyr::across(
-          dplyr::all_of(grouping_variable),
+      mutate(
+        across(
+          all_of(grouping_variable),
           as.factor
         )
       ) |>
-      dplyr::group_by(
-        dplyr::across(dplyr::all_of(grouping_variable))
+      group_by(
+        across(all_of(grouping_variable))
       )
   }
 
@@ -397,12 +397,12 @@ ageDescriptives <- function(dl, grouping_variable = NULL) {
   # ---------------------------
 
   result <- df |>
-    dplyr::summarise(
+    summarise(
       mean_age = mean(.data$age, na.rm = TRUE),
       sd_age   = stats::sd(.data$age, na.rm = TRUE),
       min_age  = min(.data$age, na.rm = TRUE),
       max_age  = max(.data$age, na.rm = TRUE),
-      n        = dplyr::n(),
+      n        = n(),
       .groups  = "drop"
     )
 

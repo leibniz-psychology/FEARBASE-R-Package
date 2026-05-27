@@ -40,7 +40,7 @@
 #' because this scoring approach uses trough detection instead of a baseline
 #' correction interval.
 #'
-#' @return A [ggplot2::ggplot()] object showing SCR scoring windows in seconds
+#' @return A [ggplot()] object showing SCR scoring windows in seconds
 #'   relative to stimulus onset.
 #'
 #' @examples
@@ -138,28 +138,28 @@ peakDetectionWindows <- function(
   # column layout before reshaping. This keeps the plotting code independent of
   # which metadata schema the caller supplied.
   data_peak_detection_window <- md |>
-    dplyr::select(
-      dplyr::all_of(available_grouping_variables),
-      dplyr::all_of(unname(scr_cols))
+    select(
+      all_of(available_grouping_variables),
+      all_of(unname(scr_cols))
     ) |>
-    dplyr::rename(
-      scr_scoring_approach = dplyr::all_of(scr_cols[["scr_scoring_col"]]),
-      scr_baseline_window_start = dplyr::all_of(
+    rename(
+      scr_scoring_approach = all_of(scr_cols[["scr_scoring_col"]]),
+      scr_baseline_window_start = all_of(
         scr_cols[["scr_baseline_start_col"]]
       ),
-      scr_baseline_window_end = dplyr::all_of(
+      scr_baseline_window_end = all_of(
         scr_cols[["scr_baseline_end_col"]]
       ),
-      scr_peak_detection_window_min = dplyr::all_of(
+      scr_peak_detection_window_min = all_of(
         scr_cols[["scr_peak_min_col"]]
       ),
-      scr_peak_detection_window_max = dplyr::all_of(
+      scr_peak_detection_window_max = all_of(
         scr_cols[["scr_peak_max_col"]]
       )
     ) |>
-    dplyr::mutate(
-      dplyr::across(
-        dplyr::all_of(c(
+    mutate(
+      across(
+        all_of(c(
           "scr_baseline_window_start",
           "scr_baseline_window_end",
           "scr_peak_detection_window_min",
@@ -169,26 +169,26 @@ peakDetectionWindows <- function(
       )
     ) |>
     tidyr::drop_na(
-      dplyr::all_of(c("scr_scoring_approach", "scr_peak_detection_window_max"))
+      all_of(c("scr_scoring_approach", "scr_peak_detection_window_max"))
     ) |>
-    dplyr::distinct() |>
-    dplyr::arrange(
+    distinct() |>
+    arrange(
       .data$scr_scoring_approach,
-      dplyr::desc(.data$scr_peak_detection_window_min),
-      dplyr::desc(.data$scr_peak_detection_window_max)
+      desc(.data$scr_peak_detection_window_min),
+      desc(.data$scr_peak_detection_window_max)
     ) |>
-    dplyr::mutate(
-      dplyr::across(dplyr::all_of(available_grouping_variables), as.factor)
+    mutate(
+      across(all_of(available_grouping_variables), as.factor)
     ) |>
     tidyr::pivot_longer(
-      cols = -dplyr::all_of(c(
+      cols = -all_of(c(
         available_grouping_variables,
         "scr_scoring_approach"
       )),
       names_to = c("measure", "window", "timepoint"),
       names_pattern = "(scr)_(.*)_window_(.*)"
     ) |>
-    dplyr::mutate(
+    mutate(
       timepoint = forcats::fct_recode(
         .data$timepoint,
         start = "min",
@@ -199,19 +199,19 @@ peakDetectionWindows <- function(
       names_from = "timepoint",
       values_from = "value"
     ) |>
-    dplyr::filter(
+    filter(
       !(
         .data$scr_scoring_approach == "trough-to-peak" &
           .data$window == "baseline"
       )
     ) |>
-    dplyr::mutate(
+    mutate(
       scr_scoring_approach = forcats::fct_recode(
         .data$scr_scoring_approach,
         "BLC" = "baseline_correction",
         "TTP" = "trough-to-peak"
       ),
-      window = dplyr::case_when(
+      window = case_when(
         .data$scr_scoring_approach != "BLC" ~ "Trough Detection",
         .data$scr_scoring_approach == "BLC" &
           .data$window == "peak_detection" ~ "Peak Detection",
@@ -221,7 +221,7 @@ peakDetectionWindows <- function(
       ) |>
         factor(levels = c("Baseline", "Peak Detection", "Trough Detection"))
     ) |>
-    tidyr::drop_na(dplyr::all_of(c("start", "end")))
+    tidyr::drop_na(all_of(c("start", "end")))
 
   if (nrow(data_peak_detection_window) == 0) {
     stop(
@@ -235,8 +235,8 @@ peakDetectionWindows <- function(
   # the second key orders groups within each scoring approach by their earliest
   # plotted window start.
   group_axis_levels <- data_peak_detection_window |>
-    dplyr::group_by(.data[[grouping_variable]]) |>
-    dplyr::summarise(
+    group_by(.data[[grouping_variable]]) |>
+    summarise(
       scr_scoring_approach_order = min(
         as.integer(.data$scr_scoring_approach),
         na.rm = TRUE
@@ -245,17 +245,17 @@ peakDetectionWindows <- function(
       end_order = max(.data$end, na.rm = TRUE),
       .groups = "drop"
     ) |>
-    dplyr::arrange(
+    arrange(
       .data$scr_scoring_approach_order,
       .data$start_order,
       .data$end_order,
       .data[[grouping_variable]]
     ) |>
-    dplyr::pull(dplyr::all_of(grouping_variable)) |>
+    pull(all_of(grouping_variable)) |>
     as.character()
 
   data_peak_detection_window <- data_peak_detection_window |>
-    dplyr::mutate(
+    mutate(
       plot_group = factor(
         as.character(.data[[grouping_variable]]),
         levels = group_axis_levels
@@ -287,13 +287,13 @@ peakDetectionWindows <- function(
   cs_onset_label_x <- n_groups - max(1, round(n_groups * 0.1))
 
   graph <- data_peak_detection_window |>
-    ggplot2::ggplot(
-      ggplot2::aes(
+    ggplot(
+      aes(
         x = .data$plot_group
       )
     ) +
-    ggplot2::geom_segment(
-      ggplot2::aes(
+    geom_segment(
+      aes(
         y = .data$start,
         yend = .data$end,
         color = .data$window,
@@ -301,14 +301,14 @@ peakDetectionWindows <- function(
       ),
       linewidth = 7
     ) +
-    ggplot2::labs(
+    labs(
       x = "Study",
       y = "Time (s) relative to stimulus onset",
       color = "Window:"
     ) +
-    ggplot2::coord_flip(ylim = y_limits) +
-    ggplot2::geom_text(
-      ggplot2::aes(
+    coord_flip(ylim = y_limits) +
+    geom_text(
+      aes(
         y = min(y_limits),
         label = .data$scr_scoring_approach
       ),
@@ -317,8 +317,8 @@ peakDetectionWindows <- function(
       size = 3,
       fontface=2
     ) +
-    ggplot2::geom_hline(yintercept = 0) + 
-    ggplot2::geom_text(
+    geom_hline(yintercept = 0) + 
+    geom_text(
       x = cs_onset_label_x,
       y = 0,
       angle = 90,
@@ -327,7 +327,7 @@ peakDetectionWindows <- function(
       vjust = -0.5,
       size = 5
     ) +
-    ggplot2::scale_y_continuous(breaks = y_breaks) +
+    scale_y_continuous(breaks = y_breaks) +
     theme(legend.position = "top")
 
   return(graph)

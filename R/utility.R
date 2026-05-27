@@ -119,7 +119,7 @@ traceRemovedRows <- function(
   plot_with_ids <- plot
   plot_with_ids$data <- source_data
 
-  built_plot <- ggplot2::ggplot_build(plot_with_ids)
+  built_plot <- ggplot_build(plot_with_ids)
   built_layer <- tibble::as_tibble(built_plot$data[[layer]])
 
   if (nrow(built_layer) != nrow(source_data)) {
@@ -229,12 +229,12 @@ traceRemovedRows <- function(
   built_names <- paste0(".built_", names(built_layer))
   names(built_layer) <- built_names
 
-  result <- dplyr::bind_cols(source_data, built_layer) |>
-    dplyr::mutate(
+  result <- bind_cols(source_data, built_layer) |>
+    mutate(
       .removed = lengths(reasons) > 0,
       .reason = vapply(reasons, paste, collapse = "; ", character(1))
     )
 
   result |>
-    dplyr::filter(.removed)
+    filter(.removed)
 }

@@ -23,7 +23,7 @@
 #' the heatmap with a horizontal bar plot of marginal measure frequencies.
 #'
 #' @return A \code{patchwork} object combining two
-#'   \code{\link[ggplot2:ggplot]{ggplot2::ggplot()}} plots.
+#'   \code{\link[ggplot2:ggplot]{ggplot()}} plots.
 #'
 #' @seealso \code{\link{phasesHeatmap}},
 #'   \code{\link{plot_co_occurrence_heatmap}},
@@ -57,18 +57,18 @@ measuresHeatmap <- function(dl, md, cb) {
   # current measure co-occurrence calculation only needs the identifiers from
   # metadata, but the join preserves the established package data flow.
   full_data <- dl |>
-    dplyr::left_join(md, by = "condition_id")
+    left_join(md, by = "condition_id")
 
   # Build a lookup table that turns compact measure codes into human-readable
   # labels for plotting. The labels are title-cased here because the current
   # codebook stores several names in database-friendly casing.
   measure_name_mapping <- cb |>
-    dplyr::filter(.data$attribute == "measure") |>
-    dplyr::select(
+    filter(.data$attribute == "measure") |>
+    select(
       measure_short = "abbreviation",
       measure_long = "name"
     ) |>
-    dplyr::mutate(
+    mutate(
       measure_long = stringr::str_to_title(.data$measure_long)
     )
 
@@ -76,16 +76,16 @@ measuresHeatmap <- function(dl, md, cb) {
   # prevents repeated rows for the same participant-level measure from
   # overstating measure usage in the marginal bar plot or co-occurrence matrix.
   measure_data <- full_data |>
-    dplyr::left_join(
+    left_join(
       measure_name_mapping,
       by = c("measure" = "measure_short")
     ) |>
-    dplyr::select(
+    select(
       "condition_id",
       "participant_id",
       "measure_long"
     ) |>
-    dplyr::distinct() |>
+    distinct() |>
     tidyr::drop_na("measure_long")
 
   if (nrow(measure_data) == 0) {
@@ -98,9 +98,9 @@ measuresHeatmap <- function(dl, md, cb) {
   # Count marginal measure usage for the right-hand bar plot. Sorting here also
   # defines the shared factor order used by both the bar plot and the heatmap.
   measure_cat <- measure_data |>
-    dplyr::group_by(.data$measure_long) |>
-    dplyr::summarise(used = dplyr::n(), .groups = "drop") |>
-    dplyr::arrange(dplyr::desc(.data$used))
+    group_by(.data$measure_long) |>
+    summarise(used = n(), .groups = "drop") |>
+    arrange(desc(.data$used))
 
   measure_levels <- measure_cat$measure_long
   measure_cat$measure_long <- factor(
@@ -111,11 +111,11 @@ measuresHeatmap <- function(dl, md, cb) {
   # Collapse participant rows to one count per condition and measure. The
   # helper below converts this long summary into pairwise co-occurrence counts.
   co_data <- measure_data |>
-    dplyr::group_by(
+    group_by(
       .data$condition_id,
       .data$measure_long
     ) |>
-    dplyr::summarise(n = dplyr::n(), .groups = "drop")
+    summarise(n = n(), .groups = "drop")
 
   crosstable_long <- .get_co_occurrence_data(
     co_data,
@@ -171,7 +171,7 @@ measuresHeatmap <- function(dl, md, cb) {
 #' additional phases are appended after those priority phases.
 #'
 #' @return A \code{patchwork} object combining two
-#'   \code{\link[ggplot2:ggplot]{ggplot2::ggplot()}} plots.
+#'   \code{\link[ggplot2:ggplot]{ggplot()}} plots.
 #'
 #' @seealso \code{\link{measuresHeatmap}},
 #'   \code{\link{plot_co_occurrence_heatmap}},
@@ -197,12 +197,12 @@ phasesHeatmap <- function(dl, cb) {
   # Translate phase abbreviations into display labels using the codebook. The
   # lookup is intentionally small and contains only phase rows.
   phase_name_mapping <- cb |>
-    dplyr::filter(.data$attribute == "phase") |>
-    dplyr::select(
+    filter(.data$attribute == "phase") |>
+    select(
       phase_short = "abbreviation",
       phase_long = "name"
     ) |>
-    dplyr::mutate(
+    mutate(
       phase_long = stringr::str_to_title(.data$phase_long)
     )
 
@@ -210,26 +210,26 @@ phasesHeatmap <- function(dl, cb) {
   # per condition and phase before aggregation, and currently excluded phase
   # codes are removed before computing co-occurrences.
   phase_data <- dl |>
-    dplyr::select(
+    select(
       "condition_id",
       "participant_id",
       "phase"
     ) |>
-    dplyr::distinct() |>
+    distinct() |>
     tidyr::drop_na("phase") |>
-    dplyr::left_join(
+    left_join(
       phase_name_mapping,
       by = c("phase" = "phase_short")
     ) |>
-    dplyr::filter(
+    filter(
       !.data$phase %in% c("int", "other"),
       !is.na(.data$phase_long)
     ) |>
-    dplyr::group_by(
+    group_by(
       .data$condition_id,
       .data$phase_long
     ) |>
-    dplyr::summarise(used = dplyr::n(), .groups = "drop")
+    summarise(used = n(), .groups = "drop")
 
   if (nrow(phase_data) == 0) {
     stop(
@@ -241,8 +241,8 @@ phasesHeatmap <- function(dl, cb) {
   # Count the marginal frequency of each phase across all mapped conditions for
   # the right-hand bar plot.
   data_phases_barplot <- phase_data |>
-    dplyr::group_by(.data$phase_long) |>
-    dplyr::summarise(
+    group_by(.data$phase_long) |>
+    summarise(
       used = sum(.data$used),
       .groups = "drop"
     )
@@ -304,7 +304,7 @@ phasesHeatmap <- function(dl, cb) {
 #' @param diag_na Logical. If \code{TRUE}, cells where \code{x_var} and
 #'   \code{y_var} have the same category are set to \code{NA} before plotting.
 #'
-#' @return A \code{\link[ggplot2:ggplot]{ggplot2::ggplot()}} object.
+#' @return A \code{\link[ggplot2:ggplot]{ggplot()}} object.
 #'
 #' @details
 #' Zero-valued cells are overlaid in white and diagonal \code{NA} cells are
@@ -336,8 +336,8 @@ plot_co_occurrence_heatmap <- function(
   # in these summary plots.
   if (isTRUE(diag_na)) {
     df <- df |>
-      dplyr::mutate(
-        "{value_var}" := dplyr::if_else(
+      mutate(
+        "{value_var}" := if_else(
           .data[[x_var]] == .data[[y_var]],
           NA_real_,
           .data[[value_var]]
@@ -353,11 +353,11 @@ plot_co_occurrence_heatmap <- function(
   }
 
   plot_data <- df |>
-    dplyr::mutate(
-      fill_white = dplyr::if_else(.data[[value_var]] > 0, 0, 1),
-      fill_gray = dplyr::if_else(is.na(.data[[value_var]]), 1, 0),
+    mutate(
+      fill_white = if_else(.data[[value_var]] > 0, 0, 1),
+      fill_gray = if_else(is.na(.data[[value_var]]), 1, 0),
       text_colour = factor(
-        dplyr::if_else(
+        if_else(
           .data[[value_var]] > max_value / 4,
           "white",
           "black"
@@ -368,46 +368,46 @@ plot_co_occurrence_heatmap <- function(
 
   # Draw the heatmap in three tile layers: the value layer, a white overlay for
   # zero counts, and a grey overlay for NA cells such as the diagonal.
-  ggplot2::ggplot(
+  ggplot(
     plot_data,
-    ggplot2::aes(
+    aes(
       x = .data[[x_var]],
       y = .data[[y_var]],
       fill = .data[[value_var]]
     )
   ) +
-    ggplot2::geom_tile() +
-    ggplot2::scale_y_discrete(position = "right") +
-    ggplot2::geom_text(
-      ggplot2::aes(
+    geom_tile() +
+    scale_y_discrete(position = "right") +
+    geom_text(
+      aes(
         label = .data[[value_var]],
         colour = .data$text_colour
       ),
       fontface = "bold"
     ) +
-    ggplot2::geom_tile(
-      ggplot2::aes(alpha = .data$fill_white),
+    geom_tile(
+      aes(alpha = .data$fill_white),
       fill = "white"
     ) +
-    ggplot2::geom_tile(
-      ggplot2::aes(alpha = .data$fill_gray),
+    geom_tile(
+      aes(alpha = .data$fill_gray),
       fill = "gray50"
     ) +
-    ggplot2::scale_colour_manual(
+    scale_colour_manual(
       values = c("white" = "white", "black" = "black"),
       guide = "none"
     ) +
-    ggplot2::scale_alpha(guide = "none") +
-    ggplot2::labs(fill = "Number of Participants") +
-    ggplot2::theme(
-      axis.text.x = ggplot2::element_text(angle = 45, hjust = 1),
+    scale_alpha(guide = "none") +
+    labs(fill = "Number of Participants") +
+    theme(
+      axis.text.x = element_text(angle = 45, hjust = 1),
       legend.position = "top",
       legend.key.width = grid::unit(2, "line"),
-      legend.title = ggplot2::element_text(
-        margin = ggplot2::margin(r = 20)
+      legend.title = element_text(
+        margin = margin(r = 20)
       ),
-      panel.background = ggplot2::element_rect(fill = "white"),
-      axis.title = ggplot2::element_blank()
+      panel.background = element_rect(fill = "white"),
+      axis.title = element_blank()
     )
 }
 
@@ -423,7 +423,7 @@ plot_co_occurrence_heatmap <- function(
 #' @param fill_var An optional string naming a column used for bar fill groups.
 #'   If \code{NULL}, all bars are drawn in grey.
 #'
-#' @return A \code{\link[ggplot2:ggplot]{ggplot2::ggplot()}} object.
+#' @return A \code{\link[ggplot2:ggplot]{ggplot()}} object.
 #'
 #' @export
 plot_horizontal_bar <- function(df, cat_var, count_var, fill_var = NULL) {
@@ -453,9 +453,9 @@ plot_horizontal_bar <- function(df, cat_var, count_var, fill_var = NULL) {
     axis_upper_limit <- 1
   }
 
-  plot <- ggplot2::ggplot(
+  plot <- ggplot(
     df,
-    ggplot2::aes(
+    aes(
       x = .data[[cat_var]],
       y = .data[[count_var]]
     )
@@ -465,32 +465,32 @@ plot_horizontal_bar <- function(df, cat_var, count_var, fill_var = NULL) {
   # in a neutral grey to keep the marginal plot visually subordinate.
   if (!is.null(fill_var)) {
     plot <- plot +
-      ggplot2::aes(fill = .data[[fill_var]]) +
-      ggplot2::geom_col() +
-      ggplot2::scale_fill_discrete(palette = scales::pal_grey())
+      aes(fill = .data[[fill_var]]) +
+      geom_col() +
+      scale_fill_discrete(palette = scales::pal_grey())
   } else {
     plot <- plot +
-      ggplot2::geom_col(fill = "gray50")
+      geom_col(fill = "gray50")
   }
 
   plot +
-    ggplot2::geom_text(
-      ggplot2::aes(label = .data[[count_var]]),
+    geom_text(
+      aes(label = .data[[count_var]]),
       hjust = -0.1,
       color = "black"
     ) +
-    ggplot2::coord_flip(ylim = c(0, axis_upper_limit)) +
-    ggplot2::theme_void() +
-    ggplot2::theme(
+    coord_flip(ylim = c(0, axis_upper_limit)) +
+    theme_void() +
+    theme(
       legend.position = "top",
-      legend.title = ggplot2::element_blank()
+      legend.title = element_blank()
     )
 }
 
 #' Arrange a co-occurrence heatmap and marginal bar plot
 #'
-#' @param hm A \code{\link[ggplot2:ggplot]{ggplot2::ggplot()}} heatmap object.
-#' @param bp A \code{\link[ggplot2:ggplot]{ggplot2::ggplot()}} bar plot object.
+#' @param hm A \code{\link[ggplot2:ggplot]{ggplot()}} heatmap object.
+#' @param bp A \code{\link[ggplot2:ggplot]{ggplot()}} bar plot object.
 #'
 #' @return A \code{patchwork} object with the heatmap on the left and the bar
 #'   plot on the right.
@@ -499,7 +499,7 @@ plot_horizontal_bar <- function(df, cat_var, count_var, fill_var = NULL) {
 arrange_histogram_layout <- function(hm, bp) {
   # Keep the heatmap visually dominant while reserving enough width for the
   # marginal counts on the right.
-  hm + bp + patchwork::plot_layout(widths = c(1, 0.5))
+  hm + bp + plot_layout(widths = c(1, 0.5))
 }
 
 #' Compute long-format category co-occurrence counts
@@ -534,16 +534,16 @@ arrange_histogram_layout <- function(hm, bp) {
   # Reshape to a category-by-identifier matrix where each cell contains the
   # number of observations for that category in that identifier.
   x_wide <- df |>
-    dplyr::select(dplyr::all_of(c(cat_var, id_var, count_var))) |>
+    select(all_of(c(cat_var, id_var, count_var))) |>
     tidyr::pivot_wider(
-      names_from = dplyr::all_of(id_var),
-      values_from = dplyr::all_of(count_var),
+      names_from = all_of(id_var),
+      values_from = all_of(count_var),
       values_fill = 0
     )
 
   categories <- x_wide[[cat_var]]
   x_mat <- x_wide |>
-    dplyr::select(-dplyr::all_of(cat_var)) |>
+    select(-all_of(cat_var)) |>
     as.matrix()
 
   # Matrix multiplication gives pairwise co-occurrence counts. The left matrix
@@ -558,7 +558,7 @@ arrange_histogram_layout <- function(hm, bp) {
   # Return the matrix in long format so ggplot can draw one tile per pair.
   crosstable |>
     tidyr::pivot_longer(
-      cols = -dplyr::all_of(cat_var),
+      cols = -all_of(cat_var),
       names_to = paste0(cat_var, "2"),
       values_to = "value"
     )

@@ -112,15 +112,15 @@ dataCollectionYear <- function(md = NULL) {
   )
 
   graph <- data_collection_year |>
-    ggplot2::ggplot(
-      ggplot2::aes(
+    ggplot(
+      aes(
         x = !!rlang::sym("year"),
         y = !!rlang::sym("n")
       )
     ) +
-    ggplot2::geom_col(fill = "#0032A0") +
-    ggplot2::labs(x = "Year of Publication", y = "Number of Studies") +
-    ggplot2::scale_x_continuous(breaks = year_breaks)
+    geom_col(fill = "#0032A0") +
+    labs(x = "Year of Publication", y = "Number of Studies") +
+    scale_x_continuous(breaks = year_breaks)
 
   return(graph)
 }

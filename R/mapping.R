@@ -37,7 +37,7 @@
     "paper_study_id"
   )
 
-  # Use dplyr::mutate with across()
+  # Use mutate with across()
   # any_of() ensures no error if a column is missing
   # as.character ensures consistent type
   mapping |>
@@ -258,7 +258,7 @@ updateMapping <- function(assign_global = TRUE) {
     # Reconstruct identifiers
     mutate(
       condition_id = .data$study_id,
-      study_id = dplyr::coalesce(
+      study_id = coalesce(
         .data$mapped_study_id,
         .data$study_id
       )
@@ -302,7 +302,7 @@ updateMapping <- function(assign_global = TRUE) {
 
     mutate(
       condition_id = .data$id,
-      study_id = dplyr::coalesce(
+      study_id = coalesce(
         .data$study_id,
         .data$id
       )
@@ -340,7 +340,7 @@ updateMapping <- function(assign_global = TRUE) {
 
     mutate(
       condition_id = .data$study_id,
-      study_id = dplyr::coalesce(
+      study_id = coalesce(
         .data$mapped_study_id,
         .data$study_id
       )

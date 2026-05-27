@@ -99,23 +99,23 @@ trialsPhaseParticipantDescriptive <- function(
   dl <- .apply_mapping_to_long_data(dl)
 
   trials <- dl |>
-    dplyr::select(
-      dplyr::all_of(grouping_variable),
+    select(
+      all_of(grouping_variable),
       "participant_id",
       "phase",
       "stimulus",
       "trial"
     ) |>
     tidyr::drop_na() |>
-    dplyr::distinct() |>
-    dplyr::group_by(
+    distinct() |>
+    group_by(
       .data[[grouping_variable]],
       .data$participant_id,
       .data$phase
     ) |>
-    dplyr::summarise(trials = max(.data$trial), .groups = "drop") |>
-    dplyr::ungroup() |>
-    dplyr::mutate(
+    summarise(trials = max(.data$trial), .groups = "drop") |>
+    ungroup() |>
+    mutate(
       !!grouping_variable := as.factor(.data[[grouping_variable]]),
       phase = reorderPhases(.data$phase)
     )

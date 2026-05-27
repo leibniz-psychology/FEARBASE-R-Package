@@ -12,7 +12,7 @@
 #'   mapping, the data must contain the columns `condition_id`, `study_id`, and
 #'   `instruction_contingency`.
 #'
-#' @return A [ggplot2::ggplot()] object with contingency instruction categories
+#' @return A [ggplot()] object with contingency instruction categories
 #'   on the y-axis and the number of studies on the x-axis.
 #'
 #' @examples
@@ -50,20 +50,20 @@ instructions <- function(md) {
   # mapped conditions, so the distinct study/category table prevents
   # multi-condition studies from inflating study-level frequencies.
   data_instructions <- md |>
-    dplyr::select(
-      dplyr::all_of(c("condition_id", "study_id")),
-      dplyr::starts_with("instruction")
+    select(
+      all_of(c("condition_id", "study_id")),
+      starts_with("instruction")
     ) |>
     # Exclude missing instruction values before counting so the plot describes
     # reported contingency-instruction categories only.
-    dplyr::filter(!is.na(.data$instruction_contingency)) |>
-    dplyr::distinct(
+    filter(!is.na(.data$instruction_contingency)) |>
+    distinct(
       .data$study_id,
       .data$instruction_contingency
     ) |>
-    dplyr::count(.data$instruction_contingency, name = "n") |>
-    dplyr::arrange(.data$n) |>
-    dplyr::mutate(
+    count(.data$instruction_contingency, name = "n") |>
+    arrange(.data$n) |>
+    mutate(
       instruction_contingency = factor(
         .data$instruction_contingency,
         levels = .data$instruction_contingency
@@ -83,19 +83,19 @@ instructions <- function(md) {
   # plotting layer separate from the data pipeline makes the returned object
   # easier to inspect and test.
   graph <- data_instructions |>
-    ggplot2::ggplot(
-      ggplot2::aes(
+    ggplot(
+      aes(
         x = .data$instruction_contingency,
         y = .data$n
       )
     ) +
-    ggplot2::geom_bar(stat = "identity") +
-    ggplot2::coord_flip() +
-    ggplot2::labs(
+    geom_bar(stat = "identity") +
+    coord_flip() +
+    labs(
       x = "Contingency Instruction",
       y = "Number of Studies"
     ) +
-    ggplot2::scale_y_continuous(
+    scale_y_continuous(
       breaks = seq(
         from = 0,
         to = max(data_instructions$n),
