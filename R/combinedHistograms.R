@@ -348,7 +348,7 @@ plot_co_occurrence_heatmap <- function(
   }
   x_axis_labels <- x_axis_labels[!is.na(x_axis_labels)]
   max_x_axis_label_chars <- max(nchar(x_axis_labels), 0)
-  left_plot_margin <- max(5.5, max_x_axis_label_chars * 3.5)
+  left_plot_margin <- max(5.5, max_x_axis_label_chars * 1.5)
 
   # Pre-compute helper columns used by overlay tiles and text styling. Keeping
   # them in the data makes the ggplot layers simple and easy to inspect.
