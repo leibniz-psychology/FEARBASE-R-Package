@@ -77,8 +77,6 @@
 #' age(dl, type = "ridge", grouping_variable = "condition_id")
 #' }
 #'
-#' @importFrom dplyr filter select mutate across group_by summarise arrange pull any_of
-#' @importFrom ggplot2 ggplot aes geom_bar labs scale_fill_discrete theme
 #' @importFrom rlang .data
 #' @export
 age <- function(
@@ -320,7 +318,6 @@ age <- function(
 #' ageDescriptives(dl, grouping_variable = c("study_id", "condition_id"))
 #' }
 #'
-#' @importFrom dplyr filter mutate group_by summarise across all_of
 #' @export
 ageDescriptives <- function(dl, grouping_variable = NULL) {
 
