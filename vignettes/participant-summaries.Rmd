@@ -1,0 +1,97 @@
+---
+title: "Participant Summaries"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Participant Summaries}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  eval = FALSE
+)
+```
+
+## Load Long-Format Data
+
+```{r setup}
+library(fearbase)
+library(readr)
+
+data_long <- read_csv("data/data_long.csv", show_col_types = FALSE)
+```
+
+## Age Plots
+
+`age()` extracts rows where `measure == "age"`, coerces `value` to numeric, and
+returns either a stacked histogram or a ridge-density plot.
+
+```{r age-histogram}
+age(
+  data_long,
+  type = "histogram",
+  grouping_variable = "study_id"
+)
+```
+
+```{r age-ridge}
+age(
+  data_long,
+  type = "ridge",
+  grouping_variable = "condition_id"
+)
+```
+
+Supported grouping variables are:
+
+- `condition_id`;
+- `study_id`;
+- `paper_cond_id`;
+- `paper_study_id`.
+
+## Age Descriptives
+
+`ageDescriptives()` computes mean, standard deviation, minimum, maximum, and
+count for valid age rows. You can compute global or grouped summaries.
+
+```{r age-descriptives}
+ageDescriptives(data_long)
+
+ageDescriptives(
+  data_long,
+  grouping_variable = c("study_id", "condition_id")
+)
+```
+
+## Sex Distribution
+
+`sex()` builds a participant-level pie chart from `measure == "sex"` or
+`measure == "gender"` rows. Participants without a reported sex or gender value
+are counted as `not reported`.
+
+```{r sex}
+sex(data_long)
+```
+
+The function accepts common encodings beginning with `m` or `f`, plus common
+missing-value labels such as `not reported`, `unknown`, `n/a`, and `nr`.
+Contradictory non-missing participant values stop with an error.
+
+## Sample Size by Study
+
+`sampleSizeByStudy()` counts distinct participants per study-level grouping.
+Repeated long-format rows for the same participant do not inflate counts.
+
+```{r sample-size}
+sampleSizeByStudy(data_long)
+
+sampleSizeByStudy(
+  data_long,
+  grouping_variable = "paper_study_id"
+)
+```
+
+Supported grouping variables are `study_id` and `paper_study_id`.

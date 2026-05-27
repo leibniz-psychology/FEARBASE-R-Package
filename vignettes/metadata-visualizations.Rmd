@@ -1,0 +1,103 @@
+---
+title: "Metadata Visualizations"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Metadata Visualizations}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  eval = FALSE
+)
+```
+
+## Load Metadata
+
+```{r setup}
+library(fearbase)
+library(readr)
+
+metadata <- read_csv("data/metadata.csv", show_col_types = FALSE)
+```
+
+## Data Collection Year
+
+`dataCollectionYear()` counts studies or metadata records per valid year after
+mapping metadata identifiers.
+
+```{r data-collection-year}
+dataCollectionYear(metadata)
+```
+
+Non-missing `year` values must be numeric or coercible to numeric.
+
+## Instructions
+
+`instructions()` counts contingency-instruction categories once per study. This
+prevents multi-condition studies from being counted multiple times for the same
+instruction category.
+
+```{r instructions}
+instructions(metadata)
+```
+
+The mapped metadata must contain `condition_id`, `study_id`, and
+`instruction_contingency`.
+
+## Stimulus Modality
+
+`stimModality()` creates a pie chart for unconditioned stimulus modality
+(`us_type`) or conditioned stimulus modality (`cs_type`). Slice sizes can count
+studies or participants.
+
+```{r stim-modality}
+stimModality(
+  metadata,
+  type = "us_type",
+  level = "n_studies"
+)
+
+stimModality(
+  metadata,
+  type = "cs_type",
+  level = "n_subjects"
+)
+```
+
+Missing or blank modality labels are shown as `not reported`. Missing
+`n_subjects` values are treated as zero for participant totals.
+
+## Reinforcement Rates
+
+`reinforcementRates()` searches for metadata columns whose names begin with
+`reinf`, reshapes those columns to long format, validates numeric values, and
+plots whole-number reinforcement-rate counts.
+
+```{r reinforcement-rates}
+reinforcementRates(metadata)
+```
+
+## SCR Peak Detection Windows
+
+`peakDetectionWindows()` plots SCR baseline, peak-detection, and
+trough-detection scoring windows in seconds relative to stimulus onset.
+
+```{r peak-detection-windows}
+peakDetectionWindows(
+  metadata,
+  grouping_variable = "study_id"
+)
+
+peakDetectionWindows(
+  metadata,
+  grouping_variable = "condition_id"
+)
+```
+
+The function supports current `physio_scr_*` columns and legacy `scr_*` columns.
+For trough-to-peak scoring, baseline windows are removed because trough
+detection replaces baseline correction.

@@ -1,0 +1,104 @@
+---
+title: "Data Mapping and Validation"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Data Mapping and Validation}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  eval = FALSE
+)
+```
+
+## Load Inputs
+
+```{r setup}
+library(fearbase)
+library(readr)
+
+data_long <- read_csv("data/data_long.csv", show_col_types = FALSE)
+metadata <- read_csv("data/metadata.csv", show_col_types = FALSE)
+```
+
+## Mapping
+
+`updateMapping()` loads the integrated condition-to-study mapping. By default it
+also assigns `mapping` in the global environment for compatibility with older
+interactive workflows. Use `assign_global = FALSE` in scripts when you want a
+pure return value.
+
+```{r update-mapping}
+mapping <- updateMapping(assign_global = FALSE)
+str(mapping)
+```
+
+Most public functions apply the relevant mapping internally, so normal users do
+not need to call internal mapping helpers directly.
+
+## Study Lists
+
+`allStudies()` maps metadata and returns sorted study identifiers.
+
+```{r all-studies}
+studies <- allStudies(metadata)
+head(studies)
+length(studies)
+```
+
+## Strict Object Lookup
+
+`checkData()` retrieves a named object from an environment and gives explicit
+errors when the object cannot be found or when invalid arguments are supplied.
+This is useful for OpenCPU-style workflows where object names arrive as strings.
+
+```{r check-data}
+example_data <- data.frame(x = 1:5, y = letters[1:5])
+
+checkData("example_data")
+checkData("example_data", inherits = TRUE)
+```
+
+## Diagnosing Removed Plot Rows
+
+`traceRemovedRows()` helps identify rows that a ggplot layer is likely to drop
+because required aesthetics are missing or coordinates fall outside the trained
+panel range.
+
+```{r trace-removed-rows}
+plot_data <- data.frame(
+  x = c(1, 2, NA, 100),
+  y = c(1, 3, 4, 5)
+)
+
+plot <- ggplot2::ggplot(plot_data, ggplot2::aes(x, y)) +
+  ggplot2::geom_point() +
+  ggplot2::xlim(0, 10)
+
+traceRemovedRows(plot, data = plot_data)
+```
+
+## OpenCPU CSV Loading
+
+`createCsv()` reads an uploaded CSV file and returns a data frame. In local R
+scripts, prefer `readr::read_csv()` or `utils::read.csv()` directly. In OpenCPU
+workflows, upload the file to `createCsv()` first and pass the resulting session
+object to downstream functions.
+
+```{r create-csv}
+uploaded_data <- createCsv("data/metadata.csv")
+head(uploaded_data)
+```
+
+## JSON Summaries
+
+`jsonSummary()` converts a named object to a JSON summary. The named object must
+be visible to `checkData()`.
+
+```{r json-summary}
+jsonSummary("example_data")
+```

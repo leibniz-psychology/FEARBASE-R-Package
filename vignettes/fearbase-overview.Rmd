@@ -1,0 +1,115 @@
+---
+title: "FEARBASE Package Overview"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{FEARBASE Package Overview}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  eval = FALSE
+)
+```
+
+## Purpose
+
+The `fearbase` package provides analysis and visualization helpers for data
+exported from the FEARBASE database. Most functions return `ggplot2` objects so
+you can print, modify, combine, or save the result.
+
+```{r setup}
+library(fearbase)
+library(readr)
+
+data_long <- read_csv("data/data_long.csv", show_col_types = FALSE)
+metadata <- read_csv("data/metadata.csv", show_col_types = FALSE)
+codebook <- read_csv("data/codebook.csv", show_col_types = FALSE)
+study_design <- read_csv("data/study_design.csv", show_col_types = FALSE)
+```
+
+## Main Data Inputs
+
+The package works with four recurring FEARBASE tables:
+
+- long-format participant data, usually passed as `dl`;
+- study metadata, usually passed as `md`;
+- the codebook, usually passed as `cb`;
+- study-design data, usually passed as `sd`.
+
+The package can also resolve common objects named `data_long`, `metadata`,
+`codebook`, and `study_design` from the calling environment for interactive use.
+Explicit arguments are preferred for reproducible scripts.
+
+## Identifier Mapping
+
+Many functions call internal mapping helpers before analysis. The mapping
+normalizes legacy condition identifiers into current `condition_id` and
+`study_id` columns.
+
+```{r mapping}
+mapping <- updateMapping(assign_global = FALSE)
+head(mapping)
+
+allStudies(metadata)
+```
+
+## Function Families
+
+Participant summaries:
+
+```{r participant-functions}
+age(data_long, type = "histogram", grouping_variable = "study_id")
+age(data_long, type = "ridge", grouping_variable = "condition_id")
+ageDescriptives(data_long, grouping_variable = "study_id")
+sex(data_long)
+sampleSizeByStudy(data_long)
+```
+
+Metadata summaries:
+
+```{r metadata-functions}
+dataCollectionYear(metadata)
+instructions(metadata)
+stimModality(metadata, type = "us_type", level = "n_studies")
+stimModality(metadata, type = "cs_type", level = "n_subjects")
+reinforcementRates(metadata)
+peakDetectionWindows(metadata, grouping_variable = "study_id")
+```
+
+Trial and phase summaries:
+
+```{r trial-functions}
+trialsPhaseParticipant(
+  data_long,
+  y_axis = "studies",
+  grouping_variable = "condition_id",
+  cb = codebook
+)
+
+trialsPhaseParticipant(
+  data_long,
+  y_axis = "participants",
+  grouping_variable = "study_id",
+  cb = codebook
+)
+```
+
+Heatmaps:
+
+```{r heatmap-functions}
+phasesHeatmap(data_long, codebook)
+measuresHeatmap(data_long, metadata, codebook)
+```
+
+## Saving Results
+
+Because plots are returned as objects, save them with `ggplot2::ggsave()`.
+
+```{r save-plot}
+plot <- sampleSizeByStudy(data_long)
+ggplot2::ggsave("sample-size-by-study.png", plot, width = 8, height = 5)
+```

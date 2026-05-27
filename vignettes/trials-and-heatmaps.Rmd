@@ -1,0 +1,124 @@
+---
+title: "Trials, Phases, and Heatmaps"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Trials, Phases, and Heatmaps}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  eval = FALSE
+)
+```
+
+## Load Data
+
+```{r setup}
+library(fearbase)
+library(readr)
+
+data_long <- read_csv("data/data_long.csv", show_col_types = FALSE)
+metadata <- read_csv("data/metadata.csv", show_col_types = FALSE)
+codebook <- read_csv("data/codebook.csv", show_col_types = FALSE)
+```
+
+## Trial Counts per Phase and Participant
+
+`trialsPhaseParticipant()` computes participant-level phase trial counts from
+long-format data. It counts the maximum trial index within each participant,
+phase, and stimulus stream, then sums across stimulus streams for each
+participant-phase pair.
+
+```{r trials-studies}
+trialsPhaseParticipant(
+  data_long,
+  y_axis = "studies",
+  grouping_variable = "condition_id",
+  cb = codebook
+)
+```
+
+Use `y_axis = "participants"` to show participant counts at each observed trial
+count and fill by the selected grouping variable.
+
+```{r trials-participants}
+trialsPhaseParticipant(
+  data_long,
+  y_axis = "participants",
+  grouping_variable = "study_id",
+  cb = codebook
+)
+```
+
+Supported grouping variables are:
+
+- `condition_id`;
+- `study_id`;
+- `paper_cond_id`;
+- `paper_study_id`.
+
+The `int` and `other` phase codes are currently excluded. Phase labels come
+from the codebook rows where `attribute == "phase"`.
+
+## Phase Heatmap
+
+`phasesHeatmap()` shows phase co-occurrence across mapped conditions with a
+marginal bar chart of phase usage.
+
+```{r phases-heatmap}
+phasesHeatmap(data_long, codebook)
+```
+
+The function maps identifiers, labels phase abbreviations through the codebook,
+removes `int` and `other`, and counts co-occurrence across `condition_id`.
+
+## Measure Heatmap
+
+`measuresHeatmap()` shows outcome-measure co-occurrence across mapped
+conditions with a marginal bar chart.
+
+```{r measures-heatmap}
+measuresHeatmap(
+  data_long,
+  metadata,
+  codebook
+)
+```
+
+Measure labels come from the codebook rows where `attribute == "measure"`.
+
+## Reusable Heatmap Helpers
+
+You can use `plot_co_occurrence_heatmap()` and `plot_horizontal_bar()` with
+precomputed data.
+
+```{r reusable-helpers}
+heatmap_data <- data.frame(
+  measure_x = c("SCR", "SCR", "Startle", "Startle"),
+  measure_y = c("SCR", "Startle", "SCR", "Startle"),
+  value = c(NA_real_, 12, 12, NA_real_)
+)
+
+plot_co_occurrence_heatmap(
+  heatmap_data,
+  x_var = "measure_x",
+  y_var = "measure_y",
+  value_var = "value",
+  diag_na = TRUE
+)
+
+bar_data <- data.frame(
+  measure = c("SCR", "Startle"),
+  used = c(30, 18)
+)
+
+plot_horizontal_bar(
+  bar_data,
+  cat_var = "measure",
+  count_var = "used"
+)
+```
