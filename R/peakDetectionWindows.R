@@ -230,6 +230,38 @@ peakDetectionWindows <- function(
     )
   }
 
+  # Build the discrete plotting order once so every layer uses the same group
+  # positions. The first key keeps BLC rows below TTP rows after coord_flip();
+  # the second key orders groups within each scoring approach by their earliest
+  # plotted window start.
+  group_axis_levels <- data_peak_detection_window |>
+    dplyr::group_by(.data[[grouping_variable]]) |>
+    dplyr::summarise(
+      scr_scoring_approach_order = min(
+        as.integer(.data$scr_scoring_approach),
+        na.rm = TRUE
+      ),
+      start_order = min(.data$start, na.rm = TRUE),
+      end_order = max(.data$end, na.rm = TRUE),
+      .groups = "drop"
+    ) |>
+    dplyr::arrange(
+      .data$scr_scoring_approach_order,
+      .data$start_order,
+      .data$end_order,
+      .data[[grouping_variable]]
+    ) |>
+    dplyr::pull(dplyr::all_of(grouping_variable)) |>
+    as.character()
+
+  data_peak_detection_window <- data_peak_detection_window |>
+    dplyr::mutate(
+      plot_group = factor(
+        as.character(.data[[grouping_variable]]),
+        levels = group_axis_levels
+      )
+    )
+
   # Extend the lower limit by one second so the scoring-approach labels can sit
   # inside the panel without overlapping the first plotted interval.
   y_limits <- range(
@@ -250,17 +282,14 @@ peakDetectionWindows <- function(
     by = 1
   )
 
-  cs_onset_label_x <- data_peak_detection_window[[grouping_variable]] |>
-    unique() |>
-    length()
+  n_groups <- nlevels(droplevels(data_peak_detection_window[[grouping_variable]]))
+
+  cs_onset_label_x <- n_groups - max(1, round(n_groups * 0.1))
 
   graph <- data_peak_detection_window |>
     ggplot2::ggplot(
       ggplot2::aes(
-        x = forcats::fct_reorder(
-          .data[[grouping_variable]],
-          as.numeric(as.factor(.data$scr_scoring_approach))
-        )
+        x = .data$plot_group
       )
     ) +
     ggplot2::geom_segment(
@@ -275,7 +304,7 @@ peakDetectionWindows <- function(
     ggplot2::labs(
       x = "Study",
       y = "Time (s) relative to stimulus onset",
-      color = "Detection Window"
+      color = "Window:"
     ) +
     ggplot2::coord_flip(ylim = y_limits) +
     ggplot2::geom_text(
@@ -285,19 +314,21 @@ peakDetectionWindows <- function(
       ),
       color = "black",
       hjust = 0,
-      size = 3
+      size = 3,
+      fontface=2
     ) +
-    ggplot2::geom_hline(yintercept = 0) +
+    ggplot2::geom_hline(yintercept = 0) + 
     ggplot2::geom_text(
       x = cs_onset_label_x,
       y = 0,
       angle = 90,
       label = "CS Onset",
       color = "black",
-      vjust = -0.1,
+      vjust = -0.5,
       size = 5
     ) +
-    ggplot2::scale_y_continuous(breaks = y_breaks)
+    ggplot2::scale_y_continuous(breaks = y_breaks) +
+    theme(legend.position = "top")
 
   return(graph)
 }
