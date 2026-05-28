@@ -126,12 +126,15 @@
   # The downstream tidy-evaluation code expects exactly one string because the
   # plot and descriptives both aggregate by a single identifier column.
   if (!is.character(grouping_variable) || length(grouping_variable) != 1L) {
-    stop("`grouping_variable` must be a single character string.", call. = FALSE)
+    stop(
+      "`grouping_variable` must be a single character string.",
+      call. = FALSE
+    )
   }
 
   # Restrict the public contract to study-level identifiers. Condition-level
   # identifiers would answer a different question than sample size by study.
-  valid_group_vars <- c("study_id", "paper_study_id")
+  valid_group_vars <- c("study_id", "condition_id")
 
   # Reject unsupported grouping names before checking the data columns so typos
   # and conceptually unsupported identifiers receive a clear error.
@@ -175,8 +178,8 @@
 #'   the number of distinct participants in that group.
 #' @noRd
 .prepare_sample_size_by_study <- function(
-    dl = NULL,
-    grouping_variable = "study_id"
+  dl = NULL,
+  grouping_variable = "study_id"
 ) {
   ############################################################
   # 1) Resolve, validate, and normalize the long-format data
@@ -255,7 +258,7 @@
 #'   `data_long` from the calling environment and then falls back to the
 #'   package-bundled `data/data_long.csv` file.
 #' @param grouping_variable A single character string specifying the study-level
-#'   grouping column. Must be one of `"study_id"` or `"paper_study_id"`.
+#'   grouping column. Must be one of `"study_id"` or `"condition_id"`.
 #'
 #' @details
 #' Processing steps:
@@ -283,14 +286,14 @@
 #' @examples
 #' \dontrun{
 #' sampleSizeByStudy(data_long)
-#' sampleSizeByStudy(data_long, grouping_variable = "paper_study_id")
+#' sampleSizeByStudy(data_long, grouping_variable = "condition_id")
 #' }
 #'
 #' @importFrom rlang .data
 #' @export
 sampleSizeByStudy <- function(
-    dl = NULL,
-    grouping_variable = "study_id"
+  dl = NULL,
+  grouping_variable = "study_id"
 ) {
   ############################################################
   # 1) Prepare validated sample-size counts
@@ -310,6 +313,12 @@ sampleSizeByStudy <- function(
   # Give the y-axis a small amount of headroom so the largest bar does not sit
   # flush against the panel boundary.
   y_upper_limit <- max(data_sample_size$n) + 10L
+
+  y_axis_title <- if (identical(grouping_variable, "study_id")) {
+    "Study ID"
+  } else {
+    "Condition ID"
+  }
 
   # Build the plot from pre-aggregated participant counts. geom_col() is used
   # instead of geom_bar(stat = "identity") for clearer ggplot2 intent.
@@ -351,7 +360,7 @@ sampleSizeByStudy <- function(
 #'   `data_long` from the calling environment and then falls back to the
 #'   package-bundled `data/data_long.csv` file.
 #' @param grouping_variable A single character string specifying the study-level
-#'   grouping column. Must be one of `"study_id"` or `"paper_study_id"`.
+#'   grouping column. Must be one of `"study_id"` or `"condition_id"`.
 #'
 #' @details
 #' Processing steps:
@@ -374,11 +383,11 @@ sampleSizeByStudy <- function(
 #' @examples
 #' \dontrun{
 #' sampleSizeDescriptives(data_long)
-#' sampleSizeDescriptives(data_long, grouping_variable = "paper_study_id")
+#' sampleSizeDescriptives(data_long, grouping_variable = "condition_id")
 #' }
 sampleSizeDescriptives <- function(
-    dl = NULL,
-    grouping_variable = "study_id"
+  dl = NULL,
+  grouping_variable = "study_id"
 ) {
   ############################################################
   # 1) Prepare validated sample-size counts
