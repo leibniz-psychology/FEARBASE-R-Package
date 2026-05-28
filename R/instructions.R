@@ -17,6 +17,18 @@
 #' @param remove_na A single logical value specifying whether rows with missing
 #'   `instruction_contingency` values are removed before counting. Defaults to
 #'   `TRUE`.
+#' @param sort_by_count A single logical value specifying whether instruction
+#'   categories are ordered by their observed counts. If `TRUE`, categories are
+#'   displayed from highest to lowest count. If `FALSE`, the explicit
+#'   instruction order described below is used. Defaults to `FALSE`.
+#'
+#' @details
+#' Instruction categories are displayed from top to bottom in the following
+#' order: `"Fully instructed (whole exp)"`,
+#' `"Partially instructed (whole exp)"`,
+#' `"Different instructions in different conditions"`,
+#' `"Different instructions in different phases"`,
+#' `"Uninstructed (whole exp)"`, and `"NA"` when `remove_na = FALSE`.
 #'
 #' @return A [ggplot()] object with contingency instruction categories
 #'   on the y-axis and the number of studies or conditions on the x-axis.
@@ -26,6 +38,7 @@
 #' instructions(metadata)
 #' instructions(metadata, grouping_variable = "condition_id")
 #' instructions(metadata, remove_na = FALSE)
+#' instructions(metadata, sort_by_count = TRUE)
 #' }
 #'
 #' @importFrom rlang .data
@@ -33,7 +46,8 @@
 instructions <- function(
   md,
   grouping_variable = "study_id",
-  remove_na = TRUE
+  remove_na = TRUE,
+  sort_by_count = FALSE
 ) {
   ############################################################
   # 1) Validate user-facing inputs before schema normalization
@@ -80,6 +94,19 @@ instructions <- function(
   ) {
     stop(
       "`remove_na` must be a single non-missing logical value.",
+      call. = FALSE
+    )
+  }
+
+  # Sorting by count is an optional presentation choice. Require a scalar
+  # logical value so category ordering cannot branch ambiguously.
+  if (
+    !is.logical(sort_by_count) ||
+      length(sort_by_count) != 1L ||
+      is.na(sort_by_count)
+  ) {
+    stop(
+      "`sort_by_count` must be a single non-missing logical value.",
       call. = FALSE
     )
   }
@@ -134,14 +161,68 @@ instructions <- function(
       .data[[grouping_variable]],
       .data$instruction_contingency
     ) |>
-    count(.data$instruction_contingency, name = "n") |>
-    arrange(.data$n) |>
+    count(.data$instruction_contingency, name = "n")
+
+  # Define the visual top-to-bottom category order requested for this plot.
+  instruction_order <- c(
+    "Fully instructed (whole exp)",
+    "Partially instructed (whole exp)",
+    "Different instructions in different conditions",
+    "Different instructions in different phases",
+    "Uninstructed (whole exp)"
+  )
+
+  # Convert missing categories to an explicit display label when requested so
+  # the missing-value bar can be positioned intentionally at the bottom of the
+  # flipped plot rather than left to ggplot2's default missing-value placement.
+  if (!remove_na) {
+    data_instructions <- data_instructions |>
+      mutate(
+        instruction_contingency = if_else(
+          is.na(.data$instruction_contingency),
+          "NA",
+          as.character(.data$instruction_contingency)
+        )
+      )
+
+    instruction_order <- c(instruction_order, "NA")
+  }
+
+  if (sort_by_count) {
+    # For horizontal bars, highest-count categories should be easiest to scan at
+    # the top. Ties fall back to alphabetical order for deterministic output.
+    display_order <- data_instructions |>
+      arrange(
+        desc(.data$n),
+        .data$instruction_contingency
+      ) |>
+      pull("instruction_contingency") |>
+      as.character()
+  } else {
+    # Keep any unexpected but valid metadata labels in the plot after the known
+    # categories and before the explicit missing-value label.
+    unexpected_instruction_order <- setdiff(
+      as.character(data_instructions$instruction_contingency),
+      instruction_order
+    )
+    display_order <- c(
+      setdiff(instruction_order, "NA"),
+      unexpected_instruction_order,
+      intersect("NA", instruction_order)
+    )
+  }
+
+  # Factor levels are reversed because coord_flip() renders the first level at
+  # the bottom and the last level at the top.
+
+  data_instructions <- data_instructions |>
     mutate(
       instruction_contingency = factor(
         .data$instruction_contingency,
-        levels = .data$instruction_contingency
+        levels = rev(display_order)
       )
-    )
+    ) |>
+    arrange(.data$instruction_contingency)
 
   # A dedicated empty-data guard gives callers a precise explanation when the
   # metadata contain the required columns but no usable instruction values.
