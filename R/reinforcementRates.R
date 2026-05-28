@@ -263,7 +263,13 @@ reinforcementRates <- function(md = NULL, grouping_variable = "study_id") {
       )
     ) +
     geom_col(color = "white") +
+    geom_text(
+      stat = "identity",
+      aes(label = .data$reinforcement_rate),
+      vjust = -1
+    ) +
     scale_x_continuous(breaks = x_breaks) +
+    scale_y_continuous(expand = expansion(mult = c(0, 0.1))) +
     labs(
       x = "Reinforcement Rate",
       y = count_axis_title
