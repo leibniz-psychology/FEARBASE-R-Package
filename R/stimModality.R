@@ -226,6 +226,13 @@ stimModality <- function(
     ) |>
     arrange(desc(.data[[level]]), .data$modality) |>
     mutate(
+      modality = stringr::str_replace(
+        modality,
+        pattern = ",",
+        replacement = ", "
+      )
+    ) |>
+    mutate(
       modality = factor(.data$modality, levels = .data$modality)
     )
 
@@ -305,7 +312,8 @@ stimModality <- function(
       plot.background = element_rect(fill = "white", color = NA)
     ) +
     guides(
-      fill = guide_legend(title = paste0(legend_title, " by ", count_label))
+      fill = guide_none()
+      #fill = guide_legend(title = paste0(legend_title, " by ", count_label))
     )
 
   # Return the plot without printing so callers can add layers, themes, or save
