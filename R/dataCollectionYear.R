@@ -10,30 +10,45 @@
 #'   a `year` column. If `NULL`, the function first attempts to use an object
 #'   named `metadata` from the calling environment and then falls back to the
 #'   package-bundled `data/metadata.csv` file.
+#' @param grouping_variable A single character string specifying whether data
+#'   collection years are counted by unique studies or unique conditions. Must
+#'   be either `"study_id"` or `"condition_id"`.
+#' @param year_of A single character string specifying which year variable is
+#'   plotted. Must be either `"publication"` to use `md$year` or `"data"` to
+#'   use `md$year_data`.
 #'
 #' @details
 #' Processing steps:
 #' \enumerate{
 #'   \item Applies `.apply_mapping_to_metadata()` to `md`.
-#'   \item Validates that a `year` column is present.
-#'   \item Coerces non-missing `year` values to numeric values.
-#'   \item Counts studies per year after removing missing year values.
+#'   \item Validates that the requested year column and grouping identifier are
+#'     present.
+#'   \item Coerces non-missing selected year values to numeric values.
+#'   \item Counts unique requested grouping identifiers per year after removing
+#'     missing year values.
 #'   \item Returns a `ggplot2` column chart.
 #' }
 #'
-#' Non-missing values in `year` must be numeric or coercible to numeric. Missing
-#' values are excluded from the plot. The function raises an error if no valid
-#' year values remain after validation.
+#' Non-missing values in the selected year column must be numeric or coercible
+#' to numeric. Missing values are excluded from the plot. The function raises an
+#' error if no valid year values remain after validation.
 #'
 #' @return A `ggplot2` object showing one column per data collection year.
 #'
 #' @examples
 #' \dontrun{
 #' dataCollectionYear(metadata)
+#' dataCollectionYear(metadata, grouping_variable = "condition_id")
+#' dataCollectionYear(metadata, year_of = "data")
 #' }
 #'
+#' @importFrom rlang .data
 #' @export
-dataCollectionYear <- function(md = NULL) {
+dataCollectionYear <- function(
+  md = NULL,
+  grouping_variable = "study_id",
+  year_of = "publication"
+) {
   ############################################################
   # 1) Resolve the metadata source
   ############################################################
@@ -84,14 +99,88 @@ dataCollectionYear <- function(md = NULL) {
     stop("`md` must be a data frame.", call. = FALSE)
   }
 
-  # Apply the package's metadata mapping before validating `year` so legacy and
-  # current metadata inputs expose the same column names downstream.
+  # The grouping identifier determines the unit counted for each collection
+  # year. Require one explicit supported value so aggregation and axis labeling
+  # remain predictable.
+  if (
+    !is.character(grouping_variable) ||
+      length(grouping_variable) != 1L ||
+      is.na(grouping_variable)
+  ) {
+    stop(
+      "`grouping_variable` must be a single non-missing character string.",
+      call. = FALSE
+    )
+  }
+
+  valid_grouping_variables <- c("study_id", "condition_id")
+
+  # Match the public API used by the other metadata summary plots: study-level
+  # counts collapse mapped conditions into their parent study, whereas
+  # condition-level counts keep each condition as its own observation.
+  if (!grouping_variable %in% valid_grouping_variables) {
+    stop(
+      "`grouping_variable` must be one of: ",
+      paste(valid_grouping_variables, collapse = ", "),
+      call. = FALSE
+    )
+  }
+
+  # The year switch selects between publication-year metadata and data-upload
+  # year metadata while keeping the rest of the counting pipeline identical.
+  if (
+    !is.character(year_of) ||
+      length(year_of) != 1L ||
+      is.na(year_of)
+  ) {
+    stop(
+      "`year_of` must be a single non-missing character string.",
+      call. = FALSE
+    )
+  }
+
+  valid_year_of <- c("publication", "data")
+
+  # Restrict the selector to the two metadata columns with clearly defined plot
+  # semantics. This prevents accidental counting of unrelated year-like fields.
+  if (!year_of %in% valid_year_of) {
+    stop(
+      "`year_of` must be one of: ",
+      paste(valid_year_of, collapse = ", "),
+      call. = FALSE
+    )
+  }
+
+  year_column <- if (identical(year_of, "publication")) {
+    "year"
+  } else {
+    "year_data"
+  }
+
+  # Apply the package's metadata mapping before validating selected columns so
+  # legacy and current metadata inputs expose the same names downstream.
   md <- .apply_mapping_to_metadata(md)
 
-  # The plot is specifically organized around data collection year, so fail
-  # early if the mapped metadata does not contain that field.
-  if (!"year" %in% names(md)) {
-    stop("`md` must contain a `year` column.", call. = FALSE)
+  # The plot is organized around the requested year field, so fail early if the
+  # mapped metadata do not contain the selected source column.
+  if (!year_column %in% names(md)) {
+    stop(
+      "`md` must contain a `",
+      year_column,
+      "` column.",
+      call. = FALSE
+    )
+  }
+
+  # The requested identifier must exist after mapping because it is used to
+  # de-duplicate observations before counting each collection year.
+  if (!grouping_variable %in% names(md)) {
+    stop(
+      "`md` must contain a `",
+      grouping_variable,
+      "` column after mapping.",
+      call. = FALSE
+    )
   }
 
   ############################################################
@@ -100,7 +189,7 @@ dataCollectionYear <- function(md = NULL) {
 
   # Coerce years explicitly so the downstream scale receives numeric values and
   # malformed, non-missing years fail with a clear input-validation error.
-  raw_year <- md$year
+  raw_year <- md[[year_column]]
 
   # Preserve numeric vectors as-is apart from normalizing their storage mode;
   # otherwise coerce through character so factors and labelled values convert by
@@ -120,25 +209,30 @@ dataCollectionYear <- function(md = NULL) {
   # typo in a year should be treated as a data-quality issue.
   if (any(invalid_year)) {
     stop(
-      "All non-missing values in `md$year` must be numeric or coercible ",
+      "All non-missing values in `md$",
+      year_column,
+      "` must be numeric or coercible ",
       "to numeric.",
       call. = FALSE
     )
   }
 
-  # Store the validated numeric vector back on the metadata object so every
-  # later operation works from one normalized representation.
-  md$year <- year
+  # Store the validated numeric vector in a standardized internal column so the
+  # counting and plotting code can stay identical for publication and data
+  # upload years. The final plot data still exposes this as `year`.
+  md$selected_year <- year
 
   # Remove missing years for counting and plotting. Missing data are excluded
   # from the visualization rather than represented as a pseudo-year category.
-  valid_year <- md$year[!is.na(md$year)]
+  valid_year <- md$selected_year[!is.na(md$selected_year)]
 
   # A chart with no valid years would be empty and misleading, so stop with a
   # direct input-quality message.
   if (length(valid_year) == 0L) {
     stop(
-      "`md$year` must contain at least one non-missing value.",
+      "`md$",
+      year_column,
+      "` must contain at least one non-missing value.",
       call. = FALSE
     )
   }
@@ -147,22 +241,18 @@ dataCollectionYear <- function(md = NULL) {
   # 4) Count studies per year and prepare axis breaks
   ############################################################
 
-  # Count observations with base R to keep this helper independent from
-  # package-level imports while still returning a regular plotting data frame.
-  data_collection_year <- as.data.frame(table(valid_year))
-
-  # Rename the base `table()` output columns to plotting-friendly names.
-  names(data_collection_year) <- c("year", "n")
-
-  # `table()` stores year labels as character-like factor values; convert them
-  # back to numeric values so ggplot can use a continuous x-axis.
-  data_collection_year$year <- as.numeric(as.character(
-    data_collection_year$year
-  ))
-
-  # Counts from `table()` are integer counts conceptually. Store them explicitly
-  # as integers for clarity before plotting.
-  data_collection_year$n <- as.integer(data_collection_year$n)
+  # Count each study or condition once per year. This prevents repeated rows for
+  # the same identifier from inflating frequencies while still allowing truly
+  # distinct mapped conditions to be counted when requested.
+  data_collection_year <- md |>
+    filter(!is.na(.data$selected_year)) |>
+    distinct(
+      .data[[grouping_variable]],
+      .data$selected_year
+    ) |>
+    count(.data$selected_year, name = "n") |>
+    rename(year = all_of("selected_year")) |>
+    arrange(.data$year)
 
   # Build one tick mark per calendar year in the observed range, including
   # years with zero studies so gaps in the timeline remain visually apparent.
@@ -176,23 +266,36 @@ dataCollectionYear <- function(md = NULL) {
   # 5) Build and return the ggplot object
   ############################################################
 
-  # Use tidy evaluation with explicit symbols so the data frame can retain
-  # ordinary column names while satisfying R CMD check for package code.
+  # Match the count axis title to the identifier used for de-duplication so the
+  # graph remains self-explanatory when callers switch aggregation levels.
+  count_axis_title <- if (identical(grouping_variable, "study_id")) {
+    "Number of Studies"
+  } else {
+    "Number of Conditions"
+  }
+
+  # Keep the publication-year label unchanged for backward compatibility. The
+  # data-year label follows the requested user-facing wording.
+  year_axis_title <- if (identical(year_of, "publication")) {
+    "Year of Publication"
+  } else {
+    "Year of Data Uplod"
+  }
+
+  # Use the .data pronoun so the data frame can retain ordinary column names
+  # while satisfying R CMD check for package code.
   graph <- data_collection_year |>
     ggplot(
       aes(
-        x = !!rlang::sym("year"),
-        y = !!rlang::sym("n")
+        x = .data$year,
+        y = .data$n
       )
     ) +
     geom_col(fill = "#0032A0") +
-    labs(x = "Year of Publication", y = "Number of Studies") +
+    labs(x = year_axis_title, y = count_axis_title) +
     scale_x_continuous(breaks = year_breaks)
 
   # Return the plot object without printing it so callers can add layers,
   # change themes, or save it with ggsave().
   return(graph)
 }
-
-# TODO: number of studies vs. number of conditions?
-# TODO: dynamic plot y axis title ("Number of Studies" vs. "Number of Datasets"?)
