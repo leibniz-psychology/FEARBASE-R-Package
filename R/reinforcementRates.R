@@ -12,6 +12,9 @@
 #'   If `NULL`, the function first attempts to use an object named `metadata`
 #'   from the calling environment and then falls back to the package-bundled
 #'   `data/metadata.csv` file.
+#' @param grouping_variable A single character string specifying whether
+#'   reinforcement-rate values are counted by unique studies or unique
+#'   conditions. Must be either `"study_id"` or `"condition_id"`.
 #'
 #' @details
 #' Processing steps:
@@ -19,11 +22,11 @@
 #'   \item Resolves the metadata source if `md = NULL`.
 #'   \item Applies `.apply_mapping_to_metadata()` to normalize identifier
 #'     columns.
-#'   \item Validates that `study_id` and at least one reinforcement-rate column
-#'     are available after mapping.
+#'   \item Validates that the requested grouping identifier and at least one
+#'     reinforcement-rate column are available after mapping.
 #'   \item Converts non-missing reinforcement-rate values to numeric values.
 #'   \item Floors reinforcement rates to whole-number percentage points.
-#'   \item Counts non-missing reinforcement-rate entries per whole-number rate.
+#'   \item Counts unique requested grouping identifiers per whole-number rate.
 #'   \item Returns a `ggplot2` column chart.
 #' }
 #'
@@ -31,17 +34,18 @@
 #' numeric. Missing values are excluded from the plot. The function raises an
 #' error if no valid reinforcement-rate values remain after validation.
 #'
-#' @return A `ggplot2` object showing the number of reinforcement-rate entries
+#' @return A `ggplot2` object showing the number of studies or conditions
 #'   observed at each whole-number reinforcement rate.
 #'
 #' @examples
 #' \dontrun{
 #' reinforcementRates(metadata)
+#' reinforcementRates(metadata, grouping_variable = "condition_id")
 #' }
 #'
 #' @importFrom rlang .data
 #' @export
-reinforcementRates <- function(md = NULL) {
+reinforcementRates <- function(md = NULL, grouping_variable = "study_id") {
   ############################################################
   # 1) Resolve the metadata source
   ############################################################
@@ -91,14 +95,46 @@ reinforcementRates <- function(md = NULL) {
     stop("`md` must be a data frame.", call. = FALSE)
   }
 
+  # The grouping switch controls both de-duplication and the count axis label.
+  # Require a scalar supported identifier so tidy evaluation cannot accidentally
+  # receive a vector, missing value, or arbitrary column name.
+  if (
+    !is.character(grouping_variable) ||
+      length(grouping_variable) != 1L ||
+      is.na(grouping_variable)
+  ) {
+    stop(
+      "`grouping_variable` must be a single non-missing character string.",
+      call. = FALSE
+    )
+  }
+
+  valid_grouping_variables <- c("study_id", "condition_id")
+
+  # Keep the public API intentionally narrow: study-level counts collapse
+  # multiple conditions from the same study, whereas condition-level counts
+  # preserve each mapped condition as the unit of aggregation.
+  if (!grouping_variable %in% valid_grouping_variables) {
+    stop(
+      "`grouping_variable` must be one of: ",
+      paste(valid_grouping_variables, collapse = ", "),
+      call. = FALSE
+    )
+  }
+
   # Apply the shared FEARBASE metadata mapping before checking for study_id and
   # reinforcement-rate columns so callers may supply current or legacy schemas.
   md <- .apply_mapping_to_metadata(md)
 
-  # The plot uses study_id as the stable identifier retained during the
-  # wide-to-long transformation, so it must be present after mapping.
-  if (!"study_id" %in% names(md)) {
-    stop("`md` must contain a `study_id` column after mapping.", call. = FALSE)
+  # The requested identifier is retained during the wide-to-long transformation
+  # and then used to count unique studies or conditions per reinforcement rate.
+  if (!grouping_variable %in% names(md)) {
+    stop(
+      "`md` must contain a `",
+      grouping_variable,
+      "` column after mapping.",
+      call. = FALSE
+    )
   }
 
   # Reinforcement-rate metadata fields are currently stored in columns whose
@@ -121,10 +157,10 @@ reinforcementRates <- function(md = NULL) {
   ############################################################
 
   # Convert the selected wide reinforcement-rate columns into one value column
-  # while retaining study_id for traceability and possible downstream auditing.
+  # while retaining the requested identifier for de-duplicated aggregation.
   data_reinforcement_rate <- md |>
     select(
-      all_of(c("study_id", reinforcement_columns))
+      all_of(c(grouping_variable, reinforcement_columns))
     ) |>
     tidyr::pivot_longer(
       cols = all_of(reinforcement_columns),
@@ -142,7 +178,8 @@ reinforcementRates <- function(md = NULL) {
   # invalid. Missing values are expected in sparse metadata and are dropped.
   invalid_reinforcement_rate <- !is.na(
     data_reinforcement_rate$reinforcement_rate_raw
-  ) & is.na(reinforcement_rate)
+  ) &
+    is.na(reinforcement_rate)
 
   # Stop on malformed values instead of silently dropping them, because a
   # non-numeric reinforcement rate indicates a data-quality or import problem.
@@ -178,9 +215,16 @@ reinforcementRates <- function(md = NULL) {
 
   # Floor reinforcement rates to whole-number percentage points to preserve the
   # original function's binning behavior while making the output deterministic.
+  # De-duplicate by the selected identifier and binned rate before counting so
+  # studies or conditions with the same rate recorded in multiple reinforcement
+  # columns contribute once to that rate.
   data_reinforcement_rate <- data_reinforcement_rate |>
     mutate(
       reinforcement_rate = floor(.data$reinforcement_rate)
+    ) |>
+    distinct(
+      .data[[grouping_variable]],
+      .data$reinforcement_rate
     ) |>
     group_by(.data$reinforcement_rate) |>
     summarise(
@@ -201,6 +245,14 @@ reinforcementRates <- function(md = NULL) {
   # 5) Build and return the ggplot object
   ############################################################
 
+  # Match the count axis title to the identifier used for de-duplication so the
+  # plotted counts remain interpretable when callers switch aggregation levels.
+  count_axis_title <- if (identical(grouping_variable, "study_id")) {
+    "Number of Studies"
+  } else {
+    "Number of Conditions"
+  }
+
   # Build the plot from the aggregated counts and return the ggplot object
   # without printing so callers can add layers, themes, or save it.
   graph <- data_reinforcement_rate |>
@@ -214,7 +266,7 @@ reinforcementRates <- function(md = NULL) {
     scale_x_continuous(breaks = x_breaks) +
     labs(
       x = "Reinforcement Rate",
-      y = "Number of Reinforcement-Rate Entries"
+      y = count_axis_title
     )
 
   return(graph)
@@ -357,7 +409,8 @@ reinforcementRateDescriptives <- function(md = NULL) {
   # numbers. Missing values are dropped below and are not invalid by themselves.
   invalid_reinforcement_rate <- !is.na(
     data_reinforcement_rate$reinforcement_rate_raw
-  ) & is.na(reinforcement_rate)
+  ) &
+    is.na(reinforcement_rate)
 
   # Malformed non-missing values should fail clearly because they would make the
   # descriptive statistics depend on silent data loss.
