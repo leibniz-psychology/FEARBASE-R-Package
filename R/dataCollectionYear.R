@@ -279,7 +279,7 @@ dataCollectionYear <- function(
   year_axis_title <- if (identical(year_of, "publication")) {
     "Year of Publication"
   } else {
-    "Year of Data Uplod"
+    "Year of Data Upload"
   }
 
   # Use the .data pronoun so the data frame can retain ordinary column names
