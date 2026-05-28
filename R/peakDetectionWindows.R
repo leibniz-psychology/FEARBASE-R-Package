@@ -360,9 +360,16 @@ peakDetectionWindows <- function(
 
   # Count plotted groups after dropping unused factor levels so label placement
   # adapts to the actual chart height.
-  n_groups <- nlevels(droplevels(data_peak_detection_window[[
-    grouping_variable
-  ]]))
+  n_groups <- n_distinct(data_peak_detection_window[[grouping_variable]])
+
+  # Scale interval thickness down as more studies or conditions are plotted.
+  # This keeps sparse and medium-sized plots close to the previous fixed
+  # linewidth while still reducing overlap in dense plots. The lower bound keeps
+  # very large metadata sets readable without making intervals disappear.
+  segment_linewidth <- max(
+    3.5,
+    min(7, 90 / n_groups)
+  )
 
   # Position the CS onset label close to the top of the flipped panel, with a
   # minimum one-group offset for very small datasets.
@@ -389,7 +396,7 @@ peakDetectionWindows <- function(
         color = .data$window,
         group = .data$window
       ),
-      linewidth = 7
+      linewidth = segment_linewidth
     ) +
     # Label the final flipped plot: studies/conditions on the vertical axis and
     # time relative to stimulus onset on the horizontal axis.
