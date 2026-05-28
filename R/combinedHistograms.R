@@ -162,13 +162,17 @@ measuresHeatmap <- function(dl, md, cb) {
 #'   \code{abbreviation}, and \code{name}. Rows where
 #'   \code{attribute == "phase"} are used to translate phase abbreviations to
 #'   display labels.
+#' @param exclude A character vector of phase codes to remove before plotting,
+#'   or \code{"none"} to keep all observed phase codes. Values other than
+#'   \code{"none"} must be present in \code{dl$phase} after the package-internal
+#'   mapping step. Defaults to \code{"none"}.
 #'
 #' @details
 #' The function maps condition and study identifiers, translates phase
-#' abbreviations with the codebook, removes the currently excluded \code{int}
-#' and \code{other} phase codes, and counts phase usage per condition. The
-#' displayed order prioritizes Habituation, Acquisition, and Extinction;
-#' additional phases are appended after those priority phases.
+#' abbreviations with the codebook, optionally removes phase codes requested
+#' through \code{exclude}, and counts phase usage per condition. The displayed
+#' order prioritizes Habituation, Acquisition, and Extinction; additional
+#' phases are appended after those priority phases.
 #'
 #' @return A \code{patchwork} object combining two
 #'   \code{\link[ggplot2:ggplot]{ggplot()}} plots.
@@ -178,7 +182,7 @@ measuresHeatmap <- function(dl, md, cb) {
 #'   \code{\link{plot_horizontal_bar}}
 #'
 #' @export
-phasesHeatmap <- function(dl, cb) {
+phasesHeatmap <- function(dl, cb, exclude = "none") {
   # Validate raw inputs before the mapping step so callers get concise errors
   # when a non-data-frame object is supplied.
   .validate_data_frame(dl, "dl")
@@ -194,9 +198,17 @@ phasesHeatmap <- function(dl, cb) {
     "dl"
   )
 
+  # The special "none" value means that no phase-code filter should be applied.
+  # All other values are checked against the phase codes actually present after
+  # mapping so typos fail early instead of silently producing unchanged plots.
+  excluded_phases <- .validate_phase_exclude(
+    exclude = exclude,
+    available_phases = unique(as.character(dl$phase))
+  )
+
   # Build the condition-level phase summary. Each participant contributes once
-  # per condition and phase before aggregation, and currently excluded phase
-  # codes are removed before computing co-occurrences.
+  # per condition and phase before aggregation. Phase-code exclusion is applied
+  # only when the caller supplies one or more observed phase codes.
   phase_data <- dl |>
     select(
       "condition_id",
@@ -204,7 +216,14 @@ phasesHeatmap <- function(dl, cb) {
       "phase"
     ) |>
     distinct() |>
-    tidyr::drop_na("phase") |>
+    tidyr::drop_na("phase")
+
+  if (length(excluded_phases) > 0L) {
+    phase_data <- phase_data |>
+      filter(!.data$phase %in% excluded_phases)
+  }
+
+  phase_data <- phase_data |>
     mutate(
       phase_long = .label_phases_from_codebook(
         .data$phase,
@@ -212,10 +231,7 @@ phasesHeatmap <- function(dl, cb) {
         keep_unmapped = FALSE
       )
     ) |>
-    filter(
-      !.data$phase %in% c("int", "other"),
-      !is.na(.data$phase_long)
-    ) |>
+    filter(!is.na(.data$phase_long)) |>
     group_by(
       .data$condition_id,
       .data$phase_long
@@ -618,4 +634,58 @@ arrange_histogram_layout <- function(hm, bp) {
   if (!is.logical(x) || length(x) != 1 || is.na(x)) {
     stop("`", arg_name, "` must be `TRUE` or `FALSE`.", call. = FALSE)
   }
+}
+
+#' Validate Phase Exclusion Codes
+#'
+#' @param exclude A character vector supplied to \code{phasesHeatmap()}.
+#' @param available_phases A character vector of phase codes observed in the
+#'   mapped long-format data.
+#'
+#' @return A character vector of phase codes to exclude. The sentinel value
+#'   \code{"none"} is returned as \code{character(0)}.
+#'
+#' @keywords internal
+#' @noRd
+.validate_phase_exclude <- function(exclude, available_phases) {
+  # The sentinel value "none" is returned as an empty vector so the caller can
+  # use a simple length check to decide whether the dplyr filter should run.
+  if (
+    !is.character(exclude) ||
+      length(exclude) == 0L ||
+      any(is.na(exclude)) ||
+      any(exclude == "")
+  ) {
+    stop(
+      "`exclude` must be a non-empty character vector or the string \"none\".",
+      call. = FALSE
+    )
+  }
+
+  if (length(exclude) == 1L && identical(exclude, "none")) {
+    return(character(0))
+  }
+
+  if ("none" %in% exclude) {
+    stop(
+      "`exclude` may contain \"none\" only when no phase codes are excluded.",
+      call. = FALSE
+    )
+  }
+
+  available_phases <- unique(available_phases[!is.na(available_phases)])
+  unknown_phases <- setdiff(exclude, available_phases)
+
+  if (length(unknown_phases) > 0L) {
+    stop(
+      "`exclude` must contain only observed values from `dl$phase`. ",
+      "Unknown value(s): ",
+      paste(unknown_phases, collapse = ", "),
+      ". Available value(s): ",
+      paste(available_phases, collapse = ", "),
+      call. = FALSE
+    )
+  }
+
+  unique(exclude)
 }
