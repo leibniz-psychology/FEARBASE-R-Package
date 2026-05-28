@@ -293,7 +293,11 @@ dataCollectionYear <- function(
     ) +
     geom_col(fill = "#0032A0") +
     labs(x = year_axis_title, y = count_axis_title) +
-    scale_x_continuous(breaks = year_breaks)
+    scale_x_continuous(breaks = year_breaks) +
+    scale_y_continuous(
+      breaks = seq(0L, ceiling(max(data_collection_year$n) / 2) * 2, by = 2),
+      limits = c(0L, ceiling(max(data_collection_year$n) / 2) * 2)
+    )
 
   # Return the plot object without printing it so callers can add layers,
   # change themes, or save it with ggsave().
