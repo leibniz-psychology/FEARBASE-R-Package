@@ -80,9 +80,9 @@
 #' @importFrom rlang .data
 #' @export
 age <- function(
-    dl,
-    type = "histogram",
-    grouping_variable = "study_id"
+  dl,
+  type = "histogram",
+  grouping_variable = "study_id"
 ) {
   ############################################################
   # 1) Normalize the caller's long-format data schema
@@ -91,7 +91,6 @@ age <- function(
   # Apply the package-level mapping before validation so callers can provide
   # either legacy identifiers or the current FEARBASE identifier columns.
   dl <- .apply_mapping_to_long_data(dl)
-
 
   ############################################################
   # 2) Validate plotting inputs and supported grouping choices
@@ -216,7 +215,7 @@ age <- function(
       mean_age = mean(.data$age, na.rm = TRUE),
       .groups = "drop"
     ) |>
-    arrange(desc(.data$mean_age)) |>
+    arrange(.data$mean_age) |>
     pull(all_of(grouping_variable))
 
   # Rebuild only the selected grouping factor with explicit levels. Other
@@ -233,10 +232,11 @@ age <- function(
 
   # Use the raw grouping column name as the legend or axis label. This keeps the
   # helper schema-oriented and avoids guessing at display labels.
-  legend_label <- grouping_variable
+  legend_label <- grouping_variable |>
+    stringr::str_to_title() |>
+    stringr::str_replace(pattern = "_id", replacement = " ID")
 
   if (type %in% valid_hist) {
-
     # Histograms are represented as exact age-by-group counts rather than
     # binned continuous histograms because age is expected to be reported in
     # interpretable units such as years.
@@ -267,10 +267,9 @@ age <- function(
         y = "Number of Participants",
         fill = legend_label
       ) +
-      scale_fill_discrete(name = legend_label)
-
+      scale_fill_discrete(name = legend_label) +
+      guides(fill = guide_legend(reverse = TRUE))
   } else {
-
     # Ridge plots use the unaggregated numeric ages so ggridges can estimate a
     # density curve separately for each ordered group.
     graph <- ggplot(
@@ -288,6 +287,13 @@ age <- function(
         y = legend_label,
         fill = legend_label
       ) +
+      # # Keep the ridge fills on the package palette while reversing the color
+      # # assignment so the ordered y-axis reads from the opposite palette end.
+      # scale_fill_discrete(
+      #   palette = function(n) {
+      #     rev(generate_palette(n))
+      #   }
+      # ) +
       theme(
         # The group is already shown on the y-axis, so suppress the duplicate
         # fill legend for density/ridge output.
@@ -411,7 +417,6 @@ ageDescriptives <- function(dl, grouping_variable = NULL) {
   # If grouping is requested, verify both the type of the grouping declaration
   # and the existence of every named grouping column before any summarisation.
   if (!is.null(grouping_variable)) {
-
     # Multiple grouping variables are allowed, but they must be supplied as
     # column names in a character vector.
     if (!is.character(grouping_variable)) {
@@ -457,7 +462,6 @@ ageDescriptives <- function(dl, grouping_variable = NULL) {
   ############################################################
 
   if (!is.null(grouping_variable)) {
-
     # Convert grouping columns to factors so returned grouping keys use a stable
     # discrete representation, matching the plotting helper's behavior.
     df <- df |>
@@ -484,11 +488,11 @@ ageDescriptives <- function(dl, grouping_variable = NULL) {
   result <- df |>
     summarise(
       mean_age = mean(.data$age, na.rm = TRUE),
-      sd_age   = stats::sd(.data$age, na.rm = TRUE),
-      min_age  = min(.data$age, na.rm = TRUE),
-      max_age  = max(.data$age, na.rm = TRUE),
-      n        = n(),
-      .groups  = "drop"
+      sd_age = stats::sd(.data$age, na.rm = TRUE),
+      min_age = min(.data$age, na.rm = TRUE),
+      max_age = max(.data$age, na.rm = TRUE),
+      n = n(),
+      .groups = "drop"
     )
 
   # Return the summary table to the caller without additional formatting.

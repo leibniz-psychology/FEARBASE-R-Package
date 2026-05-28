@@ -17,7 +17,7 @@ backlog.md
 /vignettes/*.html
 /vignettes/*.pdf
 /man/*.Rd
-# Note: Some people prefer to track .Rd files, 
+# Note: Some people prefer to track .Rd files,
 # but they are auto-generated from Roxygen2 tags in your R/ files.
 
 # --- Data & Results (The Pipeline specific stuff) ---
@@ -55,3 +55,12 @@ AGENTS.md
 To-Do.md
 docs/local-graphics-sync-plan.md
 docs/DOCUMENTATION_IMPLEMENTATION_LOG.md
+
+/.quarto/
+**/*.quarto_ipynb
+.quarto/project-cache/deno-kv-file
+dev_local/all_graphs.qmd
+dev_local/all_graphs.html
+_quarto.yml
+*.png
+/dev_local/all_graphs_cache
