@@ -314,7 +314,7 @@ sampleSizeByStudy <- function(
   # flush against the panel boundary.
   y_upper_limit <- max(data_sample_size$n) + 10L
 
-  y_axis_title <- if (identical(grouping_variable, "study_id")) {
+  x_axis_title <- if (identical(grouping_variable, "study_id")) {
     "Study ID"
   } else {
     "Condition ID"
@@ -336,7 +336,7 @@ sampleSizeByStudy <- function(
     geom_col() +
     coord_flip(ylim = c(0, y_upper_limit)) +
     labs(
-      x = grouping_variable,
+      x = x_axis_title,
       y = "Number of Participants"
     )
 
