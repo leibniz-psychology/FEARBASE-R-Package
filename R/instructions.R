@@ -14,6 +14,9 @@
 #' @param grouping_variable A single character string specifying whether
 #'   contingency instruction categories are counted by unique studies or unique
 #'   conditions. Must be either `"study_id"` or `"condition_id"`.
+#' @param remove_na A single logical value specifying whether rows with missing
+#'   `instruction_contingency` values are removed before counting. Defaults to
+#'   `TRUE`.
 #'
 #' @return A [ggplot()] object with contingency instruction categories
 #'   on the y-axis and the number of studies or conditions on the x-axis.
@@ -22,13 +25,15 @@
 #' \dontrun{
 #' instructions(metadata)
 #' instructions(metadata, grouping_variable = "condition_id")
+#' instructions(metadata, remove_na = FALSE)
 #' }
 #'
 #' @importFrom rlang .data
 #' @export
 instructions <- function(
   md,
-  grouping_variable = "study_id"
+  grouping_variable = "study_id",
+  remove_na = TRUE
 ) {
   ############################################################
   # 1) Validate user-facing inputs before schema normalization
@@ -61,6 +66,20 @@ instructions <- function(
     stop(
       "`grouping_variable` must be one of: ",
       paste(valid_grouping_variables, collapse = ", "),
+      call. = FALSE
+    )
+  }
+
+  # Missing-instruction handling is a binary counting decision. Require a
+  # scalar logical so callers cannot accidentally pass vectors that would make
+  # the data pipeline branch ambiguously.
+  if (
+    !is.logical(remove_na) ||
+      length(remove_na) != 1L ||
+      is.na(remove_na)
+  ) {
+    stop(
+      "`remove_na` must be a single non-missing logical value.",
       call. = FALSE
     )
   }
@@ -98,10 +117,19 @@ instructions <- function(
     select(
       all_of(c("condition_id", "study_id")),
       starts_with("instruction")
-    ) |>
-    # Exclude missing instruction values before counting so the plot describes
-    # reported contingency-instruction categories only.
-    filter(!is.na(.data$instruction_contingency)) |>
+    )
+
+  # By default the plot describes reported contingency-instruction categories
+  # only. When remove_na = FALSE, missing instruction rows are retained and
+  # counted as their own missing category in the returned plot data.
+  if (remove_na) {
+    data_instructions <- data_instructions |>
+      filter(!is.na(.data$instruction_contingency))
+  }
+
+  data_instructions <- data_instructions |>
+    # De-duplicate before counting so repeated rows for the same study or
+    # condition do not inflate the selected aggregation level.
     distinct(
       .data[[grouping_variable]],
       .data$instruction_contingency
