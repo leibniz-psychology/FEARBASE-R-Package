@@ -1,11 +1,12 @@
 #' Normalize Sex Values for Participant-Level Counts
 #'
 #' This internal helper converts common long-format sex or gender values to the
-#' three categories used by the public `sex()` visualization.
+#' four categories used by the public `sex()` visualization.
 #'
 #' @param value A vector containing raw sex or gender values.
 #'
-#' @return A character vector with values `"m"`, `"f"`, or `"not reported"`.
+#' @return A character vector with values `"m"`, `"f"`, `"not reported"`, or
+#'   `"NA"`.
 #' @noRd
 .normalize_sex_value <- function(value) {
   ############################################################
@@ -21,14 +22,15 @@
   ############################################################
 
   # Match complete words where possible and keep first-letter support for the
-  # existing FEARBASE coding style ("m", "f", "n"). Missing, empty, unknown,
-  # and explicitly non-reported values are counted as "not reported".
+  # existing FEARBASE coding style ("m", "f", "n"). True missing values and
+  # literal "NA" values are kept separate from explicitly non-reported values
+  # so users can distinguish omitted records from missing coded observations.
   dplyr::case_when(
-    is.na(value) | value == "" ~ "not reported",
+    is.na(value) | value == "na" ~ "NA",
+    value == "" ~ "not reported",
     value %in%
       c(
         "n",
-        "na",
         "n/a",
         "nr",
         "not reported",
@@ -68,8 +70,8 @@
 #'   \item Validates that the required long-format columns are available after
 #'     mapping.
 #'   \item Extracts rows where `measure` is either `"sex"` or `"gender"`.
-#'   \item Normalizes common sex or gender values to `"m"`, `"f"`, or
-#'     `"not reported"`.
+#'   \item Normalizes common sex or gender values to `"m"`, `"f"`,
+#'     `"not reported"`, or `"NA"`.
 #'   \item Adds one `"not reported"` row for each participant without any sex
 #'     or gender record.
 #'   \item Counts one category per distinct `study_id` and `participant_id`
@@ -241,7 +243,7 @@ sex <- function(dl = NULL) {
     mutate(
       sex = factor(
         .data$sex,
-        levels = c("m", "f", "not reported")
+        levels = c("m", "f", "not reported", "NA")
       )
     )
 
@@ -252,11 +254,45 @@ sex <- function(dl = NULL) {
     summarise(
       n = n(),
       .groups = "drop"
+    ) |>
+    mutate(
+      # Store display labels on the plotting data so fills, labels, and any
+      # caller-restored legends use the requested human-readable category names.
+      sex_label = dplyr::recode(
+        as.character(.data$sex),
+        "m" = "male",
+        "f" = "female",
+        "not reported" = "not reported",
+        "NA" = "NA"
+      ),
+      sex_label = factor(
+        .data$sex_label,
+        levels = c("male", "female", "not reported", "NA")
+      )
     )
 
   # Labels should appear only for categories that are present in the data.
   label_data <- count_data |>
-    filter(.data$n > 0L)
+    filter(.data$n > 0L) |>
+    mutate(
+      label = paste0(.data$sex_label, " (", .data$n, ")")
+    )
+
+  # Small missingness categories are easier to read when pulled away from the
+  # pie. Larger binary categories stay in-place in the slice center.
+  stacked_label_data <- label_data |>
+    filter(!.data$sex %in% c("not reported", "NA"))
+
+  repelled_label_data <- label_data |>
+    filter(.data$sex %in% c("not reported", "NA"))
+
+  # The package palette is generated from light to black. Drop the black
+  # endpoint and reverse the remaining colors so the sex categories read from
+  # darkest non-black to lightest: male, female, not reported, and NA.
+  sex_fill_values <- stats::setNames(
+    rev(fearbase_palette_v2[seq_len(4L)]),
+    c("male", "female", "not reported", "NA")
+  )
 
   ############################################################
   # 7) Build and return the ggplot object
@@ -269,21 +305,36 @@ sex <- function(dl = NULL) {
     aes(
       x = "",
       y = .data$n,
-      fill = .data$sex
+      fill = .data$sex_label
     )
   ) +
     geom_col(width = 1) +
+    scale_fill_manual(
+      values = sex_fill_values,
+      drop = FALSE
+    ) +
     coord_polar("y", start = 0) +
     labs(fill = "Sex") +
     theme_void() +
     geom_label(
-      data = label_data,
+      data = stacked_label_data,
       aes(
-        label = paste0(.data$sex, " (", .data$n, ")"),
+        label = .data$label,
         group = .data$sex
       ),
       position = position_stack(vjust = 0.5),
       fill = "white"
+    ) +
+    ggrepel::geom_label_repel(
+      data = repelled_label_data,
+      aes(
+        label = .data$label,
+        group = .data$sex
+      ),
+      position = position_stack(vjust = 0.5),
+      fill = "white",
+      min.segment.length = 0,
+      show.legend = FALSE
     ) +
     theme(
       legend.position = "none",

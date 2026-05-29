@@ -64,3 +64,4 @@ dev_local/all_graphs.html
 _quarto.yml
 *.png
 /dev_local/all_graphs_cache
+dev_local/Playground.r

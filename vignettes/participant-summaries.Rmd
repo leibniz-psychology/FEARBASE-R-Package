@@ -69,15 +69,16 @@ ageDescriptives(
 ## Sex Distribution
 
 `sex()` builds a participant-level pie chart from `measure == "sex"` or
-`measure == "gender"` rows. Participants without a reported sex or gender value
-are counted as `not reported`.
+`measure == "gender"` rows. Participants without any sex or gender row are
+counted as `not reported`, while explicit `NA` sex or gender values are counted
+as `NA`.
 
 ```{r sex}
 sex(data_long)
 ```
 
 The function accepts common encodings beginning with `m` or `f`, plus common
-missing-value labels such as `not reported`, `unknown`, `n/a`, and `nr`.
+not-reported labels such as `not reported`, `unknown`, `n/a`, and `nr`.
 Contradictory non-missing participant values stop with an error.
 
 ## Sample Size by Study
