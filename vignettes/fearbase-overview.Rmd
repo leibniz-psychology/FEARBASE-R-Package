@@ -23,12 +23,43 @@ you can print, modify, combine, or save the result.
 
 ```{r setup}
 library(fearbase)
-library(readr)
 
-data_long <- read_csv("data/data_long.csv", show_col_types = FALSE)
-metadata <- read_csv("data/metadata.csv", show_col_types = FALSE)
-codebook <- read_csv("data/codebook.csv", show_col_types = FALSE)
-study_design <- read_csv("data/study_design.csv", show_col_types = FALSE)
+data_long <- tibble::tribble(
+  ~condition_id, ~study_id, ~paper_cond_id, ~paper_study_id, ~participant_id, ~measure, ~value, ~phase, ~stimulus, ~trial,
+  "c1", "s1", "pc1", "ps1", "p1", "age", "21", "hab", "cs+", 1,
+  "c1", "s1", "pc1", "ps1", "p1", "sex", "m", "hab", "cs+", 1,
+  "c1", "s1", "pc1", "ps1", "p1", "scr", "0.3", "acq", "cs+", 1,
+  "c1", "s1", "pc1", "ps1", "p2", "age", "24", "hab", "cs+", 1,
+  "c1", "s1", "pc1", "ps1", "p2", "sex", "f", "hab", "cs+", 1,
+  "c1", "s1", "pc1", "ps1", "p2", "us_exp", "40", "ext", "cs-", 1,
+  "c2", "s2", "pc2", "ps2", "p3", "age", "29", "hab", "cs+", 1,
+  "c2", "s2", "pc2", "ps2", "p3", "scr", "0.5", "acq", "cs+", 2,
+  "c2", "s2", "pc2", "ps2", "p4", "age", "31", "ext", "cs-", 1
+)
+
+metadata <- tibble::tribble(
+  ~condition_id, ~study_id, ~year, ~year_data, ~n_subjects, ~us_type, ~cs_type, ~instruction_contingency, ~reinf_acq, ~physio_scr_scoring_approach, ~physio_scr_baseline_window_start, ~physio_scr_baseline_window_end, ~physio_scr_peak_detection_window_min, ~physio_scr_peak_detection_window_max,
+  "c1", "s1", 2020, 2019, 2, "electrotactile", "visual", "Fully instructed (whole exp)", 100, "baseline_correction", -1, 0, 1, 4,
+  "c2", "s2", 2021, 2020, 2, "auditory", "visual", "Uninstructed (whole exp)", 75, "trough-to-peak", -2, 0, 2, 5
+)
+
+codebook <- tibble::tribble(
+  ~attribute, ~abbreviation, ~name,
+  "phase", "hab", "habituation",
+  "phase", "acq", "acquisition",
+  "phase", "ext", "extinction",
+  "measure", "age", "age",
+  "measure", "sex", "sex",
+  "measure", "scr", "skin conductance response",
+  "measure", "us_exp", "US expectancy"
+)
+
+study_design <- tibble::tribble(
+  ~condition_id, ~study_id, ~name, ~cspTrials, ~csmTrials,
+  "c1", "s1", "hab", 2, 2,
+  "c1", "s1", "acq", 4, 4,
+  "c2", "s2", "ext", 3, 3
+)
 ```
 
 ## Main Data Inputs
@@ -51,7 +82,10 @@ normalizes legacy condition identifiers into current `condition_id` and
 `study_id` columns.
 
 ```{r mapping}
-mapping <- updateMapping(assign_global = FALSE)
+mapping <- tibble::tibble(
+  condition_id = c("c1", "c2"),
+  study_id = c("s1", "s2")
+)
 head(mapping)
 
 allStudies(metadata)
@@ -111,5 +145,5 @@ Because plots are returned as objects, save them with `ggplot2::ggsave()`.
 
 ```{r save-plot}
 plot <- sampleSizeByStudy(data_long)
-ggplot2::ggsave("sample-size-by-study.png", plot, width = 8, height = 5)
+# ggplot2::ggsave("sample-size-by-study.png", plot, width = 8, height = 5)
 ```

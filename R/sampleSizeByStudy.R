@@ -1,110 +1,18 @@
 #' Resolve Long-Format Data for Sample-Size Helpers
 #'
 #' This internal helper keeps the public sample-size functions aligned on how
-#' omitted data are resolved. It first looks for a caller-side object named
-#' `data_long`, then falls back to the package-bundled `data/data_long.csv`
-#' file when that file is available.
+#' omitted data are resolved. It first uses explicit caller input, then looks
+#' for a caller-side object named `data_long`.
 #'
 #' @param dl A data frame supplied by the caller, or `NULL`.
 #'
 #' @return A data frame in long format.
 #' @noRd
 .resolve_sample_size_long_data <- function(dl = NULL) {
-  ############################################################
-  # 1) Return explicitly supplied data without side effects
-  ############################################################
-
-  # Explicit arguments are the most reproducible source of data, so they take
-  # precedence over session objects or package-bundled convenience data.
-  if (!is.null(dl)) {
-    return(dl)
-  }
-
-  ############################################################
-  # 2) Look for an interactive caller-side data_long object
-  ############################################################
-
-  # Preserve the package's existing interactive behavior: several helpers and
-  # tests call sample-size functions without a data argument and expect an
-  # object named `data_long` to be used when it is present.
-  if (exists("data_long", envir = parent.frame(), inherits = TRUE)) {
-    data_long_candidate <- get(
-      "data_long",
-      envir = parent.frame(),
-      inherits = TRUE
-    )
-
-    # Use a caller-side data_long object only when it already has the minimum
-    # long-format columns needed by the sample-size helpers. This avoids using
-    # malformed lazy-data objects created from raw CSV files in package checks.
-    if (
-      is.data.frame(data_long_candidate) &&
-        all(c("study_id", "participant_id") %in% names(data_long_candidate))
-    ) {
-      return(data_long_candidate)
-    }
-
-    # Raw CSV files stored in an R package `data/` directory can be exposed by
-    # lazy loading as a one-column data frame whose column name contains the
-    # original comma-separated header with dots substituted for commas. Detect
-    # that narrow shape and parse it back into a regular rectangular data frame
-    # so zero-argument calls continue to work in installed-package checks.
-    if (
-      is.data.frame(data_long_candidate) &&
-        ncol(data_long_candidate) == 1L &&
-        grepl("study_id.*participant_id", names(data_long_candidate)[1])
-    ) {
-      data_long_lines <- as.character(data_long_candidate[[1]])
-
-      # The sample-size helpers only require the first two CSV fields. Extract
-      # those fields directly to avoid warning-prone full CSV reconstruction
-      # from a lazy-data object that has already lost its original quoting.
-      return(
-        data.frame(
-          study_id = sub("^([^,]*),.*$", "\\1", data_long_lines),
-          participant_id = sub("^[^,]*,([^,]*).*$", "\\1", data_long_lines),
-          stringsAsFactors = FALSE
-        )
-      )
-    }
-  }
-
-  ############################################################
-  # 3) Fall back to the bundled CSV when available
-  ############################################################
-
-  # Resolve the data path through system.file() first so installed packages can
-  # locate bundled files independent of the current working directory.
-  data_long_path <- system.file(
-    "data",
-    "data_long.csv",
-    package = "fearbase",
-    mustWork = FALSE
-  )
-
-  # During local development the package may not be installed, so use the
-  # repository-relative path if the installed-package lookup did not succeed.
-  if (
-    identical(data_long_path, "") &&
-      file.exists(file.path("data", "data_long.csv"))
-  ) {
-    data_long_path <- file.path("data", "data_long.csv")
-  }
-
-  # Stop before readr sees an empty path, which would produce a less useful
-  # file-system error than this direct package-level message.
-  if (identical(data_long_path, "")) {
-    stop(
-      "`dl` must be supplied, an object named `data_long` must exist ",
-      "in the calling environment, or bundled long-format data must be ",
-      "available.",
-      call. = FALSE
-    )
-  }
-
-  # Read the convenience data lazily so package loading does not pay the cost
-  # of parsing the full long-format data set unless the helper is called.
-  readr::read_csv(data_long_path, show_col_types = FALSE)
+  # Explicit data remain the reproducible primary path. The caller-side lookup
+  # keeps interactive workflows convenient without silently reading ignored
+  # real-data payloads from the local repository.
+  .resolve_long_data(dl = dl, caller_env = parent.frame())
 }
 
 #' Validate Sample-Size Grouping Input
@@ -125,26 +33,14 @@
 
   # The downstream tidy-evaluation code expects exactly one string because the
   # plot and descriptives both aggregate by a single identifier column.
-  if (!is.character(grouping_variable) || length(grouping_variable) != 1L) {
-    stop(
-      "`grouping_variable` must be a single character string.",
-      call. = FALSE
-    )
-  }
-
   # Restrict the public contract to study-level identifiers. Condition-level
   # identifiers would answer a different question than sample size by study.
   valid_group_vars <- c("study_id", "condition_id")
-
-  # Reject unsupported grouping names before checking the data columns so typos
-  # and conceptually unsupported identifiers receive a clear error.
-  if (!grouping_variable %in% valid_group_vars) {
-    stop(
-      "`grouping_variable` must be one of: ",
-      paste(valid_group_vars, collapse = ", "),
-      call. = FALSE
-    )
-  }
+  grouping_variable <- .validate_choice(
+    grouping_variable,
+    "grouping_variable",
+    valid_group_vars
+  )
 
   ############################################################
   # 2) Validate the mapped data schema required for aggregation
@@ -153,15 +49,7 @@
   # The aggregation needs the requested study identifier and participant_id.
   # Report all missing columns at once to make input repair straightforward.
   required_cols <- c(grouping_variable, "participant_id")
-  missing_cols <- setdiff(required_cols, names(dl))
-
-  if (length(missing_cols) > 0L) {
-    stop(
-      "Missing required column(s): ",
-      paste(missing_cols, collapse = ", "),
-      call. = FALSE
-    )
-  }
+  .validate_required_columns(dl, required_cols, "dl")
 
   invisible(grouping_variable)
 }
@@ -186,14 +74,12 @@
   ############################################################
 
   # Resolve omitted data before validation so the public helpers can be called
-  # with either explicit data or the package's convenience data source.
+  # with either explicit data or a caller-side data_long object.
   dl <- .resolve_sample_size_long_data(dl)
 
   # Tidyverse verbs and the mapping helper require a rectangular object with
   # named columns, so reject non-data-frame inputs before schema normalization.
-  if (!is.data.frame(dl)) {
-    stop("`dl` must be a data frame.", call. = FALSE)
-  }
+  .validate_data_frame(dl, "dl")
 
   # Apply the package-level mapping before checking grouping columns so callers
   # may provide current or legacy long-format FEARBASE schemas.
@@ -255,8 +141,7 @@
 #' @param dl A data frame in long format. Must contain `participant_id` and the
 #'   selected `grouping_variable` after `.apply_mapping_to_long_data()` is
 #'   applied. If `NULL`, the function first attempts to use an object named
-#'   `data_long` from the calling environment and then falls back to the
-#'   package-bundled `data/data_long.csv` file.
+#'   `data_long` from the calling environment.
 #' @param grouping_variable A single character string specifying the study-level
 #'   grouping column. Must be one of `"study_id"` or `"condition_id"`.
 #'
@@ -357,8 +242,7 @@ sampleSizeByStudy <- function(
 #' @param dl A data frame in long format. Must contain `participant_id` and the
 #'   selected `grouping_variable` after `.apply_mapping_to_long_data()` is
 #'   applied. If `NULL`, the function first attempts to use an object named
-#'   `data_long` from the calling environment and then falls back to the
-#'   package-bundled `data/data_long.csv` file.
+#'   `data_long` from the calling environment.
 #' @param grouping_variable A single character string specifying the study-level
 #'   grouping column. Must be one of `"study_id"` or `"condition_id"`.
 #'

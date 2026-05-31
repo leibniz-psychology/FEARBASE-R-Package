@@ -2,18 +2,20 @@
 #'
 #' @description This function returns the list of all study IDs in the metadata.
 #'
-#' @param md The metadata.
+#' @param md The metadata. If `NULL`, an object named `metadata` is looked up
+#'   in the calling environment.
 #'
 #' @return A character vector of all study IDs.
 #' @export
-allStudies <- function(md = metadata) {
+allStudies <- function(md = NULL) {
+  md <- .resolve_metadata(md, caller_env = parent.frame())
   md <- .apply_mapping_to_metadata(md)
 
   studies <- md |>
-    select(study_id) |>
+    select(all_of("study_id")) |>
     distinct() |>
-    arrange(study_id) |>
-    pull(study_id)
+    arrange(.data$study_id) |>
+    pull(all_of("study_id"))
 
   return(studies)
 }
@@ -22,7 +24,9 @@ allStudies <- function(md = metadata) {
 #' @title Reorder phases
 #' @description Returns a factor with standardized levels: priority phases first ("hab", "acq", "ext", "int", "rin", "rex", "rev", "other"), then others.
 #' @param phases A vector of phases to be converted to factor levels.
+#' @param order Character vector of priority phase levels.
 #' @return A factor with the standardized phase levels.
+#' @noRd
 reorderPhases <- function(phases, order) {
   unique_phases <- unique(as.character(phases))
   priority_phases <- order
@@ -33,12 +37,251 @@ reorderPhases <- function(phases, order) {
   return(factor(phases, levels = phase_levels))
 }
 
+#' Validate a Data Frame Argument
+#'
+#' @param x Object to validate.
+#' @param arg_name Name of the user-facing argument.
+#'
+#' @return Invisibly returns `x` when validation succeeds.
+#' @noRd
+.validate_data_frame <- function(x, arg_name) {
+  if (!is.data.frame(x)) {
+    stop("`", arg_name, "` must be a data frame.", call. = FALSE)
+  }
+
+  invisible(x)
+}
+
+#' Validate Required Data Frame Columns
+#'
+#' @param data Data frame whose columns should be checked.
+#' @param required_cols Character vector of required column names.
+#' @param arg_name Name of the user-facing data argument.
+#'
+#' @return Invisibly returns `data` when validation succeeds.
+#' @noRd
+.validate_required_columns <- function(data, required_cols, arg_name) {
+  missing_cols <- setdiff(required_cols, names(data))
+
+  if (length(missing_cols) > 0L) {
+    stop(
+      "Missing required column(s) in `",
+      arg_name,
+      "`: ",
+      paste(missing_cols, collapse = ", "),
+      call. = FALSE
+    )
+  }
+
+  invisible(data)
+}
+
+#' Validate a Scalar Column Name
+#'
+#' @param x Value to validate.
+#' @param arg_name Name of the user-facing argument.
+#'
+#' @return Invisibly returns `x` when validation succeeds.
+#' @noRd
+.validate_single_column_name <- function(x, arg_name) {
+  if (!is.character(x) || length(x) != 1L || is.na(x) || identical(x, "")) {
+    stop(
+      "`",
+      arg_name,
+      "` must be a single non-empty character string.",
+      call. = FALSE
+    )
+  }
+
+  invisible(x)
+}
+
+#' Validate a Scalar Logical Flag
+#'
+#' @param x Value to validate.
+#' @param arg_name Name of the user-facing argument.
+#'
+#' @return Invisibly returns `x` when validation succeeds.
+#' @noRd
+.validate_logical_scalar <- function(x, arg_name) {
+  if (!is.logical(x) || length(x) != 1L || is.na(x)) {
+    stop("`", arg_name, "` must be `TRUE` or `FALSE`.", call. = FALSE)
+  }
+
+  invisible(x)
+}
+
+#' Validate a Scalar Character Choice
+#'
+#' @param x Value to validate.
+#' @param arg_name Name of the user-facing argument.
+#' @param choices Supported values.
+#'
+#' @return The validated scalar value.
+#' @noRd
+.validate_choice <- function(x, arg_name, choices) {
+  .validate_single_column_name(x, arg_name)
+
+  if (!x %in% choices) {
+    stop(
+      "`",
+      arg_name,
+      "` must be one of: ",
+      paste(choices, collapse = ", "),
+      ".",
+      call. = FALSE
+    )
+  }
+
+  x
+}
+
+#' Resolve Explicit or Caller-Side Data
+#'
+#' @param data Data frame supplied by the caller, or `NULL`.
+#' @param arg_name Name of the user-facing data argument.
+#' @param object_name Conventional object name to look up in `caller_env`.
+#' @param caller_env Environment to inspect.
+#'
+#' @return A data frame supplied explicitly or found in `caller_env`.
+#' @noRd
+.resolve_caller_data <- function(
+  data,
+  arg_name,
+  object_name,
+  caller_env = parent.frame()
+) {
+  if (!is.null(data)) {
+    return(data)
+  }
+
+  if (exists(object_name, envir = caller_env, inherits = TRUE)) {
+    candidate <- get(object_name, envir = caller_env, inherits = TRUE)
+
+    if (!is.data.frame(candidate)) {
+      stop(
+        "`",
+        object_name,
+        "` in the calling environment must be a data frame.",
+        call. = FALSE
+      )
+    }
+
+    return(candidate)
+  }
+
+  stop(
+    "`",
+    arg_name,
+    "` must be supplied, or an object named `",
+    object_name,
+    "` must exist in the calling environment.",
+    call. = FALSE
+  )
+}
+
+#' Resolve Long-Format FEARBASE Data
+#'
+#' @param dl A long-format data frame supplied by the caller, or `NULL`.
+#' @param caller_env Environment to inspect for `data_long`.
+#'
+#' @return A long-format data frame.
+#' @noRd
+.resolve_long_data <- function(dl = NULL, caller_env = parent.frame()) {
+  .resolve_caller_data(
+    data = dl,
+    arg_name = "dl",
+    object_name = "data_long",
+    caller_env = caller_env
+  )
+}
+
+#' Resolve FEARBASE Metadata
+#'
+#' @param md A metadata data frame supplied by the caller, or `NULL`.
+#' @param caller_env Environment to inspect for `metadata`.
+#'
+#' @return A metadata data frame.
+#' @noRd
+.resolve_metadata <- function(md = NULL, caller_env = parent.frame()) {
+  .resolve_caller_data(
+    data = md,
+    arg_name = "md",
+    object_name = "metadata",
+    caller_env = caller_env
+  )
+}
+
+#' Coerce a Vector to Numeric with Data-Quality Validation
+#'
+#' @param x Vector to coerce.
+#' @param value_label User-facing label for error messages.
+#'
+#' @return A numeric vector.
+#' @noRd
+.coerce_numeric_strict <- function(x, value_label) {
+  if (is.numeric(x)) {
+    return(as.numeric(x))
+  }
+
+  numeric_x <- suppressWarnings(as.numeric(as.character(x)))
+  invalid_x <- !is.na(x) & is.na(numeric_x)
+
+  if (any(invalid_x)) {
+    stop(
+      "All non-missing values in ",
+      value_label,
+      " must be numeric or coercible to numeric.",
+      call. = FALSE
+    )
+  }
+
+  numeric_x
+}
+
+#' Build a Count Axis Title from a Grouping Identifier
+#'
+#' @param grouping_variable Grouping identifier used for counts.
+#'
+#' @return A scalar character axis title.
+#' @noRd
+.count_axis_title <- function(grouping_variable) {
+  if (identical(grouping_variable, "study_id")) {
+    return("Number of Studies")
+  }
+
+  if (identical(grouping_variable, "condition_id")) {
+    return("Number of Conditions")
+  }
+
+  grouping_variable |>
+    stringr::str_replace_all("_", " ") |>
+    stringr::str_to_title()
+}
+
+#' Compute a Positive Upper Limit for Count Labels
+#'
+#' @param x Numeric count vector.
+#' @param multiplier Expansion multiplier applied to the maximum count.
+#' @param minimum Minimum returned limit.
+#'
+#' @return A finite positive numeric upper limit.
+#' @noRd
+.expanded_count_limit <- function(x, multiplier = 1.2, minimum = 1) {
+  upper_limit <- max(x, na.rm = TRUE) * multiplier
+
+  if (!is.finite(upper_limit) || upper_limit <= 0) {
+    return(minimum)
+  }
+
+  upper_limit
+}
+
 #' Resolve the FEARBASE Codebook
 #'
 #' This internal helper centralizes the package convention for optional
 #' codebook arguments. Explicit user input is preferred, then an interactive
-#' caller-side object named `codebook`, and finally the package-bundled
-#' `data/codebook.csv` file.
+#' caller-side object named `codebook`.
 #'
 #' @param cb A codebook data frame supplied by the caller, or `NULL`.
 #' @param caller_env The environment to inspect for an object named `codebook`.
@@ -76,35 +319,14 @@ reorderPhases <- function(phases, order) {
   }
 
   ############################################################
-  # 3) Fall back to the bundled CSV in installed and local package contexts
+  # 3) Fail clearly when no explicit or caller-side codebook exists
   ############################################################
 
-  # Use system.file() for installed packages, then a repository-relative path
-  # for local development and test runs before the package has been installed.
-  codebook_path <- system.file(
-    "data",
-    "codebook.csv",
-    package = "fearbase",
-    mustWork = FALSE
+  stop(
+    "`cb` must be supplied, or an object named `codebook` must exist ",
+    "in the calling environment.",
+    call. = FALSE
   )
-
-  if (
-    identical(codebook_path, "") &&
-      file.exists(file.path("data", "codebook.csv"))
-  ) {
-    codebook_path <- file.path("data", "codebook.csv")
-  }
-
-  if (identical(codebook_path, "")) {
-    stop(
-      "`cb` must be supplied, an object named `codebook` must exist ",
-      "in the calling environment, or bundled codebook data must be ",
-      "available.",
-      call. = FALSE
-    )
-  }
-
-  readr::read_csv(codebook_path, show_col_types = FALSE)
 }
 
 #' Build a Display-Label Lookup from the FEARBASE Codebook
@@ -144,14 +366,16 @@ reorderPhases <- function(phases, order) {
   label_mapping <- cb |>
     filter(.data$attribute == attribute) |>
     select(
-      "{value_col}" := "abbreviation",
-      "{label_col}" := "name"
+      "abbreviation",
+      "name"
     ) |>
     filter(
-      !is.na(.data[[value_col]]),
-      !is.na(.data[[label_col]])
+      !is.na(.data$abbreviation),
+      !is.na(.data$name)
     ) |>
     distinct()
+
+  names(label_mapping) <- c(value_col, label_col)
 
   if (isTRUE(title_case)) {
     label_mapping[[label_col]] <- stringr::str_to_title(
@@ -269,7 +493,7 @@ hsl_to_rgb <- function(h, s, l) {
     g <- hue_to_rgb(p, q, h)
     b <- hue_to_rgb(p, q, h - 1 / 3)
   }
-  return(rgb(r, g, b))
+  return(grDevices::rgb(r, g, b))
 }
 
 
@@ -441,5 +665,5 @@ traceRemovedRows <- function(
     )
 
   result |>
-    filter(.removed)
+    filter(.data$.removed)
 }

@@ -19,9 +19,17 @@ knitr::opts_chunk$set(
 
 ```{r setup}
 library(fearbase)
-library(readr)
 
-data_long <- read_csv("data/data_long.csv", show_col_types = FALSE)
+data_long <- tibble::tribble(
+  ~condition_id, ~study_id, ~paper_cond_id, ~paper_study_id, ~participant_id, ~measure, ~value, ~phase, ~stimulus, ~trial,
+  "c1", "s1", "pc1", "ps1", "p1", "age", "21", "hab", "cs+", 1,
+  "c1", "s1", "pc1", "ps1", "p1", "sex", "m", "hab", "cs+", 1,
+  "c1", "s1", "pc1", "ps1", "p2", "age", "24", "hab", "cs+", 1,
+  "c1", "s1", "pc1", "ps1", "p2", "sex", "f", "hab", "cs+", 1,
+  "c2", "s2", "pc2", "ps2", "p3", "age", "29", "acq", "cs+", 1,
+  "c2", "s2", "pc2", "ps2", "p3", "sex", NA_character_, "acq", "cs+", 1,
+  "c2", "s2", "pc2", "ps2", "p4", "age", "31", "ext", "cs-", 1
+)
 ```
 
 ## Age Plots
@@ -91,8 +99,8 @@ sampleSizeByStudy(data_long)
 
 sampleSizeByStudy(
   data_long,
-  grouping_variable = "paper_study_id"
+  grouping_variable = "condition_id"
 )
 ```
 
-Supported grouping variables are `study_id` and `paper_study_id`.
+Supported grouping variables are `study_id` and `condition_id`.

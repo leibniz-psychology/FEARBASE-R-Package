@@ -1,16 +1,20 @@
-#' @title JSON summary
+#' JSON Summary for a Named Object
 #'
 #' @description
-#' produces a json summary of includes dataset specified by parameter [d].
-#' @param d
-#' A \code{string} representing the dataset name which json representation should be returned.
-#' @return
-#' returns a json representation of an included dataset
-
+#' Internal OpenCPU-oriented helper that converts a named data object visible to
+#' `checkData()` into a JSON summary.
+#'
+#' @param d A single character string naming the object to summarize.
+#'
+#' @return A JSON string containing base summary output for each column.
+#' @noRd
 jsonSummary <- function(d) {
-  requireNamespace("jsonlite")
+  if (!requireNamespace("jsonlite", quietly = TRUE)) {
+    stop("Package `jsonlite` is required to build JSON summaries.", call. = FALSE)
+  }
 
-  #load the in variable d defined dataset from the package
+  # Load the named object through checkData() so lookup validation is shared
+  # with the rest of the OpenCPU-oriented helper surface.
   dat <- checkData(d)
 
   val <- jsonlite::toJSON(

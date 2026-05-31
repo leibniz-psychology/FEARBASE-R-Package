@@ -121,7 +121,7 @@ test_that("instructions rejects invalid remove_na values", {
 
   testthat::expect_error(
     instructions(md, remove_na = NA),
-    "`remove_na` must be a single non-missing logical value."
+    "`remove_na` must be `TRUE` or `FALSE`."
   )
 })
 
@@ -134,6 +134,6 @@ test_that("instructions rejects invalid sort_by_count values", {
 
   testthat::expect_error(
     instructions(md, sort_by_count = NA),
-    "`sort_by_count` must be a single non-missing logical value."
+    "`sort_by_count` must be `TRUE` or `FALSE`."
   )
 })

@@ -1,5 +1,5 @@
 test_that("reinforcement rate graph works", {
-  reinforcementRates() |> testthat::expect_s3_class("ggplot")
+  reinforcementRates(fixture_metadata()) |> testthat::expect_s3_class("ggplot")
 })
 
 test_that("reinforcement rate graph counts unique studies by default", {

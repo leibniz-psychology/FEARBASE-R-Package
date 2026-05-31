@@ -19,10 +19,19 @@ knitr::opts_chunk$set(
 
 ```{r setup}
 library(fearbase)
-library(readr)
 
-data_long <- read_csv("data/data_long.csv", show_col_types = FALSE)
-metadata <- read_csv("data/metadata.csv", show_col_types = FALSE)
+data_long <- tibble::tribble(
+  ~condition_id, ~study_id, ~participant_id, ~measure, ~value,
+  "c1", "s1", "p1", "age", "21",
+  "c1", "s1", "p2", "age", "24",
+  "c2", "s2", "p3", "age", "29"
+)
+
+metadata <- tibble::tribble(
+  ~condition_id, ~study_id, ~year,
+  "c1", "s1", 2020,
+  "c2", "s2", 2021
+)
 ```
 
 ## Mapping
@@ -33,7 +42,10 @@ interactive workflows. Use `assign_global = FALSE` in scripts when you want a
 pure return value.
 
 ```{r update-mapping}
-mapping <- updateMapping(assign_global = FALSE)
+mapping <- tibble::tibble(
+  condition_id = c("c1", "c2"),
+  study_id = c("s1", "s2")
+)
 str(mapping)
 ```
 
@@ -90,8 +102,8 @@ workflows, upload the file to `createCsv()` first and pass the resulting session
 object to downstream functions.
 
 ```{r create-csv}
-uploaded_data <- createCsv("data/metadata.csv")
-head(uploaded_data)
+# In OpenCPU this helper receives the path to the uploaded CSV file.
+# uploaded_data <- createCsv(uploaded_file)
 ```
 
 ## JSON Summaries
@@ -100,5 +112,5 @@ head(uploaded_data)
 be visible to `checkData()`.
 
 ```{r json-summary}
-jsonSummary("example_data")
+# jsonSummary("example_data")
 ```

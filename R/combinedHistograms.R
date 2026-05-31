@@ -342,14 +342,11 @@ plot_co_occurrence_heatmap <- function(
   # Optionally hide the diagonal because self-co-occurrence is not informative
   # in these summary plots.
   if (isTRUE(diag_na)) {
-    df <- df |>
-      mutate(
-        "{value_var}" := if_else(
-          .data[[x_var]] == .data[[y_var]],
-          NA_real_,
-          .data[[value_var]]
-        )
-      )
+    df[[value_var]] <- if_else(
+      df[[x_var]] == df[[y_var]],
+      NA_real_,
+      df[[value_var]]
+    )
   }
 
   # Long, angled x-axis labels extend to the left of the first heatmap tile.
@@ -476,10 +473,7 @@ plot_horizontal_bar <- function(df, cat_var, count_var, fill_var = NULL) {
   }
 
   # Give the text labels a small amount of headroom to the right of the bars.
-  axis_upper_limit <- max(df[[count_var]], na.rm = TRUE) * 1.2
-  if (!is.finite(axis_upper_limit) || axis_upper_limit <= 0) {
-    axis_upper_limit <- 1
-  }
+  axis_upper_limit <- .expanded_count_limit(df[[count_var]])
 
   plot <- ggplot(
     df,
@@ -590,50 +584,6 @@ arrange_histogram_layout <- function(hm, bp) {
       names_to = paste0(cat_var, "2"),
       values_to = "value"
     )
-}
-
-# Validate that an argument is a data frame before it enters a tidyverse
-# pipeline. This keeps error messages tied to the public argument name.
-.validate_data_frame <- function(x, arg_name) {
-  if (!is.data.frame(x)) {
-    stop("`", arg_name, "` must be a data frame.", call. = FALSE)
-  }
-}
-
-# Validate required columns once at function boundaries. This avoids repeated
-# ad hoc checks and makes all missing-column errors consistent.
-.validate_required_columns <- function(data, required_cols, arg_name) {
-  missing_cols <- setdiff(required_cols, names(data))
-
-  if (length(missing_cols) > 0) {
-    stop(
-      "Missing required column(s) in `",
-      arg_name,
-      "`: ",
-      paste(missing_cols, collapse = ", "),
-      call. = FALSE
-    )
-  }
-}
-
-# Validate string column-name arguments used with the .data pronoun. Requiring a
-# single non-empty string prevents ambiguous tidy-evaluation behavior.
-.validate_single_column_name <- function(x, arg_name) {
-  if (!is.character(x) || length(x) != 1 || is.na(x) || identical(x, "")) {
-    stop(
-      "`",
-      arg_name,
-      "` must be a single non-empty character string.",
-      call. = FALSE
-    )
-  }
-}
-
-# Validate scalar logical flags used to alter plotting behavior.
-.validate_logical_scalar <- function(x, arg_name) {
-  if (!is.logical(x) || length(x) != 1 || is.na(x)) {
-    stop("`", arg_name, "` must be `TRUE` or `FALSE`.", call. = FALSE)
-  }
 }
 
 #' Validate Phase Exclusion Codes

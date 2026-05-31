@@ -10,8 +10,7 @@
 #' @param md A data frame containing study metadata. Reinforcement-rate columns
 #'   are identified after mapping by column names that start with `"reinf"`.
 #'   If `NULL`, the function first attempts to use an object named `metadata`
-#'   from the calling environment and then falls back to the package-bundled
-#'   `data/metadata.csv` file.
+#'   from the calling environment.
 #' @param grouping_variable A single character string specifying whether
 #'   reinforcement-rate values are counted by unique studies or unique
 #'   conditions. Must be either `"study_id"` or `"condition_id"`.
@@ -50,40 +49,9 @@ reinforcementRates <- function(md = NULL, grouping_variable = "study_id") {
   # 1) Resolve the metadata source
   ############################################################
 
-  # Let interactive users omit `md` while keeping explicit function arguments
-  # as the preferred, reproducible data source.
-  if (is.null(md)) {
-    # Use a caller-side `metadata` object first because it likely reflects the
-    # data currently being explored in the user's analysis session.
-    if (exists("metadata", envir = parent.frame(), inherits = TRUE)) {
-      md <- get("metadata", envir = parent.frame(), inherits = TRUE)
-    } else {
-      # Resolve the installed package data path lazily so a missing bundled
-      # file can be reported with a package-specific error below.
-      metadata_path <- system.file(
-        "data",
-        "metadata.csv",
-        package = "fearbase",
-        mustWork = FALSE
-      )
-    }
-
-    # Stop before readr sees an empty path, which would otherwise create a less
-    # helpful file-system error for users.
-    if (is.null(md) && identical(metadata_path, "")) {
-      stop(
-        "`md` must be supplied, an object named `metadata` must exist ",
-        "in the calling environment, or bundled metadata must be available.",
-        call. = FALSE
-      )
-    }
-
-    if (is.null(md)) {
-      # Use package-bundled metadata only as a final fallback for examples,
-      # tests, and interactive calls where no explicit data were supplied.
-      md <- readr::read_csv(metadata_path, show_col_types = FALSE)
-    }
-  }
+  # Resolve explicit data or a caller-side metadata object only. Ignored local
+  # data files are intentionally not read by package code.
+  md <- .resolve_metadata(md, caller_env = parent.frame())
 
   ############################################################
   # 2) Validate and normalize the metadata schema
@@ -91,36 +59,14 @@ reinforcementRates <- function(md = NULL, grouping_variable = "study_id") {
 
   # Every downstream operation assumes a rectangular object with named columns.
   # Failing here gives a clearer message than a later tidyverse method error.
-  if (!is.data.frame(md)) {
-    stop("`md` must be a data frame.", call. = FALSE)
-  }
-
-  # The grouping switch controls both de-duplication and the count axis label.
-  # Require a scalar supported identifier so tidy evaluation cannot accidentally
-  # receive a vector, missing value, or arbitrary column name.
-  if (
-    !is.character(grouping_variable) ||
-      length(grouping_variable) != 1L ||
-      is.na(grouping_variable)
-  ) {
-    stop(
-      "`grouping_variable` must be a single non-missing character string.",
-      call. = FALSE
-    )
-  }
+  .validate_data_frame(md, "md")
 
   valid_grouping_variables <- c("study_id", "condition_id")
-
-  # Keep the public API intentionally narrow: study-level counts collapse
-  # multiple conditions from the same study, whereas condition-level counts
-  # preserve each mapped condition as the unit of aggregation.
-  if (!grouping_variable %in% valid_grouping_variables) {
-    stop(
-      "`grouping_variable` must be one of: ",
-      paste(valid_grouping_variables, collapse = ", "),
-      call. = FALSE
-    )
-  }
+  grouping_variable <- .validate_choice(
+    grouping_variable,
+    "grouping_variable",
+    valid_grouping_variables
+  )
 
   # Apply the shared FEARBASE metadata mapping before checking for study_id and
   # reinforcement-rate columns so callers may supply current or legacy schemas.
@@ -168,28 +114,12 @@ reinforcementRates <- function(md = NULL, grouping_variable = "study_id") {
       values_to = "reinforcement_rate_raw"
     )
 
-  # Coerce through character for non-numeric vectors so factors and labelled
-  # values are interpreted by their displayed values rather than integer codes.
-  reinforcement_rate <- suppressWarnings(as.numeric(as.character(
-    data_reinforcement_rate$reinforcement_rate_raw
-  )))
-
-  # Treat only supplied, non-missing values that fail numeric coercion as
-  # invalid. Missing values are expected in sparse metadata and are dropped.
-  invalid_reinforcement_rate <- !is.na(
-    data_reinforcement_rate$reinforcement_rate_raw
-  ) &
-    is.na(reinforcement_rate)
-
   # Stop on malformed values instead of silently dropping them, because a
   # non-numeric reinforcement rate indicates a data-quality or import problem.
-  if (any(invalid_reinforcement_rate)) {
-    stop(
-      "All non-missing reinforcement-rate values must be numeric or ",
-      "coercible to numeric.",
-      call. = FALSE
-    )
-  }
+  reinforcement_rate <- .coerce_numeric_strict(
+    data_reinforcement_rate$reinforcement_rate_raw,
+    "reinforcement-rate values"
+  )
 
   # Store the validated numeric values on the plotting data frame so all later
   # operations use one normalized representation.
@@ -247,11 +177,7 @@ reinforcementRates <- function(md = NULL, grouping_variable = "study_id") {
 
   # Match the count axis title to the identifier used for de-duplication so the
   # plotted counts remain interpretable when callers switch aggregation levels.
-  count_axis_title <- if (identical(grouping_variable, "study_id")) {
-    "Number of Studies"
-  } else {
-    "Number of Conditions"
-  }
+  count_axis_title <- .count_axis_title(grouping_variable)
 
   # Build the plot from the aggregated counts and return the ggplot object
   # without printing so callers can add layers, themes, or save it.
@@ -291,8 +217,7 @@ reinforcementRates <- function(md = NULL, grouping_variable = "study_id") {
 #' @param md A data frame containing study metadata. Reinforcement-rate columns
 #'   are identified after mapping by column names that start with `"reinf"`.
 #'   If `NULL`, the function first attempts to use an object named `metadata`
-#'   from the calling environment and then falls back to the package-bundled
-#'   `data/metadata.csv` file.
+#'   from the calling environment.
 #'
 #' @details
 #' Processing steps:
@@ -324,47 +249,14 @@ reinforcementRateDescriptives <- function(md = NULL) {
 
   # Mirror reinforcementRates() so plots and descriptive summaries can be
   # called with the same metadata argument behavior.
-  if (is.null(md)) {
-    # Prefer caller-side data because it is likely to be the dataset currently
-    # under analysis and may differ from the package-bundled metadata.
-    if (exists("metadata", envir = parent.frame(), inherits = TRUE)) {
-      md <- get("metadata", envir = parent.frame(), inherits = TRUE)
-    } else {
-      # Resolve the package data file only when no in-memory metadata object was
-      # supplied or found.
-      metadata_path <- system.file(
-        "data",
-        "metadata.csv",
-        package = "fearbase",
-        mustWork = FALSE
-      )
-    }
-
-    # Give a direct user-facing error if no explicit, in-memory, or bundled
-    # metadata source is available.
-    if (is.null(md) && identical(metadata_path, "")) {
-      stop(
-        "`md` must be supplied, an object named `metadata` must exist ",
-        "in the calling environment, or bundled metadata must be available.",
-        call. = FALSE
-      )
-    }
-
-    if (is.null(md)) {
-      # Read bundled metadata as a convenience fallback for tests, examples, and
-      # interactive use.
-      md <- readr::read_csv(metadata_path, show_col_types = FALSE)
-    }
-  }
+  md <- .resolve_metadata(md, caller_env = parent.frame())
 
   ############################################################
   # 2) Validate and normalize the metadata schema
   ############################################################
 
   # The mapping helper and tidyverse reshaping below require data-frame input.
-  if (!is.data.frame(md)) {
-    stop("`md` must be a data frame.", call. = FALSE)
-  }
+  .validate_data_frame(md, "md")
 
   # Normalize metadata identifiers before selecting reinforcement-rate columns.
   md <- .apply_mapping_to_metadata(md)
@@ -405,28 +297,12 @@ reinforcementRateDescriptives <- function(md = NULL) {
       values_to = "reinforcement_rate_raw"
     )
 
-  # Convert through character to avoid factor integer-code coercion and to make
-  # the numeric validation behavior consistent across input column classes.
-  reinforcement_rate <- suppressWarnings(as.numeric(as.character(
-    data_reinforcement_rate$reinforcement_rate_raw
-  )))
-
-  # Flag only non-missing source values that could not be represented as
-  # numbers. Missing values are dropped below and are not invalid by themselves.
-  invalid_reinforcement_rate <- !is.na(
-    data_reinforcement_rate$reinforcement_rate_raw
-  ) &
-    is.na(reinforcement_rate)
-
   # Malformed non-missing values should fail clearly because they would make the
   # descriptive statistics depend on silent data loss.
-  if (any(invalid_reinforcement_rate)) {
-    stop(
-      "All non-missing reinforcement-rate values must be numeric or ",
-      "coercible to numeric.",
-      call. = FALSE
-    )
-  }
+  reinforcement_rate <- .coerce_numeric_strict(
+    data_reinforcement_rate$reinforcement_rate_raw,
+    "reinforcement-rate values"
+  )
 
   # Keep only valid numeric values before calling psych::describe().
   reinforcement_rate <- reinforcement_rate[!is.na(reinforcement_rate)]

@@ -1,8 +1,14 @@
 test_that("phases heatmap works", {
-  phasesHeatmap() |> testthat::expect_s3_class("ggplot")
+  phasesHeatmap(fixture_long_data(), fixture_codebook()) |>
+    testthat::expect_s3_class("ggplot")
 })
 test_that("measures heatmap works", {
-  measuresHeatmap() |> testthat::expect_s3_class("ggplot")
+  measuresHeatmap(
+    fixture_long_data(),
+    fixture_metadata(),
+    fixture_codebook()
+  ) |>
+    testthat::expect_s3_class("ggplot")
 })
 
 test_that("co-occurrence heatmap expands the left plot margin for long x labels", {

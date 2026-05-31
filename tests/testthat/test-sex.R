@@ -1,10 +1,11 @@
 test_that("sex pie chart works", {
-  sex() |> testthat::expect_s3_class("ggplot")
+  sex(fixture_long_data()) |> testthat::expect_s3_class("ggplot")
 })
 
 test_that("sex separates NA values from not reported values", {
   dl <- data.frame(
     study_id = rep("study-1", 6),
+    condition_id = rep("condition-1", 6),
     participant_id = c(1, 2, 3, 4, 5, 6),
     measure = c("sex", "sex", "age", "sex", "sex", "sex"),
     value = c("m", "f", "32", NA, "NA", "not reported"),
@@ -27,6 +28,7 @@ test_that("sex separates NA values from not reported values", {
 test_that("sex uses repelled labels for missingness categories", {
   dl <- data.frame(
     study_id = rep("study-1", 4),
+    condition_id = rep("condition-1", 4),
     participant_id = c(1, 2, 3, 4),
     measure = c("sex", "sex", "sex", "sex"),
     value = c("m", "f", NA, "not reported"),
@@ -49,6 +51,7 @@ test_that("sex uses repelled labels for missingness categories", {
 test_that("sex maps fill colours from darkest to lightest", {
   dl <- data.frame(
     study_id = rep("study-1", 4),
+    condition_id = rep("condition-1", 4),
     participant_id = c(1, 2, 3, 4),
     measure = c("sex", "sex", "sex", "sex"),
     value = c("m", "f", "not reported", NA),

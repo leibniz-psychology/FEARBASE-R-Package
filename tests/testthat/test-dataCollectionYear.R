@@ -1,5 +1,5 @@
 test_that("collection year bar graph works", {
-  dataCollectionYear() |> testthat::expect_s3_class("ggplot")
+  dataCollectionYear(fixture_metadata()) |> testthat::expect_s3_class("ggplot")
 })
 
 test_that("collection year graph counts unique studies by default", {
@@ -43,7 +43,7 @@ test_that("collection year graph uses data year when requested", {
 
   testthat::expect_equal(graph$data$year, c(2018, 2019))
   testthat::expect_equal(graph$data$n, c(1L, 2L))
-  testthat::expect_equal(graph$labels$x, "Year of Data Uplod")
+  testthat::expect_equal(graph$labels$x, "Year of Data Upload")
   testthat::expect_equal(graph$labels$y, "Number of Studies")
 })
 

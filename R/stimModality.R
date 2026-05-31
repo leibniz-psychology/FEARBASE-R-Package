@@ -11,8 +11,7 @@
 #'   mapping, the data frame must contain `condition_id`, `study_id`,
 #'   `n_subjects`, and the modality column requested with `type`. If `NULL`,
 #'   the function first attempts to use an object named `metadata` from the
-#'   calling environment and then falls back to the package-bundled
-#'   `data/metadata.csv` file.
+#'   calling environment.
 #' @param type Character string specifying which stimulus modality to plot.
 #'   Must be exactly one of:
 #'   \itemize{
@@ -67,40 +66,9 @@ stimModality <- function(
   # 1) Resolve the metadata source
   ############################################################
 
-  # Let interactive users call stimModality() without an explicit data frame
-  # while keeping the explicit `md` argument as the reproducible primary path.
-  if (is.null(md)) {
-    # Prefer a caller-side metadata object because it is likely the active data
-    # set the user is currently exploring or validating.
-    if (exists("metadata", envir = parent.frame(), inherits = TRUE)) {
-      md <- get("metadata", envir = parent.frame(), inherits = TRUE)
-    } else {
-      # Resolve the package data path lazily so a missing bundled metadata file
-      # can be reported with a direct package-specific error below.
-      metadata_path <- system.file(
-        "data",
-        "metadata.csv",
-        package = "fearbase",
-        mustWork = FALSE
-      )
-    }
-
-    # Stop before readr receives an empty path. That keeps the error message
-    # about the function contract rather than the file system.
-    if (is.null(md) && identical(metadata_path, "")) {
-      stop(
-        "`md` must be supplied, an object named `metadata` must exist ",
-        "in the calling environment, or bundled metadata must be available.",
-        call. = FALSE
-      )
-    }
-
-    if (is.null(md)) {
-      # Use bundled metadata only as a final convenience fallback for examples,
-      # tests, and interactive calls where no explicit data object was supplied.
-      md <- readr::read_csv(metadata_path, show_col_types = FALSE)
-    }
-  }
+  # Resolve explicit data or a caller-side metadata object only. Ignored local
+  # data files are intentionally not read by package code.
+  md <- .resolve_metadata(md, caller_env = parent.frame())
 
   ############################################################
   # 2) Validate scalar function arguments
@@ -109,39 +77,14 @@ stimModality <- function(
   # The tidy evaluation below expects one column name for the modality and one
   # count column for slice size. Reject vectors, missing values, and non-string
   # inputs before any data transformation.
-  if (!is.character(type) || length(type) != 1L || is.na(type)) {
-    stop("`type` must be a single character string.", call. = FALSE)
-  }
-
   # Keep supported modality columns explicit so typo-related errors are
   # reported as argument problems rather than later dplyr column errors.
   valid_types <- c("us_type", "cs_type")
-
-  if (!type %in% valid_types) {
-    stop(
-      "`type` must be one of: ",
-      paste(valid_types, collapse = ", "),
-      ".",
-      call. = FALSE
-    )
-  }
-
-  # Validate `level` with the same scalar-character contract used for `type`.
-  if (!is.character(level) || length(level) != 1L || is.na(level)) {
-    stop("`level` must be a single character string.", call. = FALSE)
-  }
+  type <- .validate_choice(type, "type", valid_types)
 
   # These are the only aggregations the plotting data frame creates below.
   valid_levels <- c("n_studies", "n_subjects")
-
-  if (!level %in% valid_levels) {
-    stop(
-      "`level` must be one of: ",
-      paste(valid_levels, collapse = ", "),
-      ".",
-      call. = FALSE
-    )
-  }
+  level <- .validate_choice(level, "level", valid_levels)
 
   ############################################################
   # 3) Validate and normalize the metadata schema
@@ -149,9 +92,7 @@ stimModality <- function(
 
   # Mapping, column selection, and plotting all require a rectangular object
   # with named columns, so fail early for unsupported input classes.
-  if (!is.data.frame(md)) {
-    stop("`md` must be a data frame.", call. = FALSE)
-  }
+  .validate_data_frame(md, "md")
 
   # Normalize metadata identifiers before checking required columns so callers
   # can provide either already mapped metadata or legacy FEARBASE metadata.
@@ -160,15 +101,7 @@ stimModality <- function(
   # The requested modality and both count fields are prepared from this compact
   # schema. Checking all columns at once makes malformed inputs easier to fix.
   required_cols <- c("condition_id", "study_id", "n_subjects", type)
-  missing_cols <- setdiff(required_cols, names(md))
-
-  if (length(missing_cols) > 0L) {
-    stop(
-      "Missing required column(s): ",
-      paste(missing_cols, collapse = ", "),
-      call. = FALSE
-    )
-  }
+  .validate_required_columns(md, required_cols, "md")
 
   ############################################################
   # 4) Prepare modality labels and participant counts
@@ -176,19 +109,7 @@ stimModality <- function(
 
   # Coerce participant counts through character to avoid factor integer-code
   # coercion. Numeric vectors pass through unchanged after as.character().
-  n_subjects <- suppressWarnings(as.numeric(as.character(md$n_subjects)))
-
-  # Only supplied, non-missing values that cannot become numeric are invalid.
-  # Missing counts are allowed because they can be treated as zero for sums.
-  invalid_n_subjects <- !is.na(md$n_subjects) & is.na(n_subjects)
-
-  if (any(invalid_n_subjects)) {
-    stop(
-      "All non-missing values in `md$n_subjects` must be numeric or ",
-      "coercible to numeric.",
-      call. = FALSE
-    )
-  }
+  n_subjects <- .coerce_numeric_strict(md$n_subjects, "`md$n_subjects`")
 
   # Store the validated numeric counts on the mapped metadata. Missing counts
   # are converted to zero so participant totals do not become NA.
@@ -227,7 +148,7 @@ stimModality <- function(
     arrange(desc(.data[[level]]), .data$modality) |>
     mutate(
       modality = stringr::str_replace(
-        modality,
+        .data$modality,
         pattern = ",",
         replacement = ", "
       )

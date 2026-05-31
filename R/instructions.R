@@ -55,61 +55,25 @@ instructions <- function(
 
   # Validate the user-facing input before applying package-internal mapping.
   # This keeps error messages focused on the object supplied by the caller.
-  if (!is.data.frame(md)) {
-    stop("`md` must be a data frame.", call. = FALSE)
-  }
+  .validate_data_frame(md, "md")
 
   # The grouping switch is used for tidy selection and .data pronoun indexing
   # below, so require exactly one explicit supported identifier.
-  if (
-    !is.character(grouping_variable) ||
-      length(grouping_variable) != 1L ||
-      is.na(grouping_variable)
-  ) {
-    stop(
-      "`grouping_variable` must be a single non-missing character string.",
-      call. = FALSE
-    )
-  }
-
   valid_grouping_variables <- c("study_id", "condition_id")
-
-  # Limit the public API to the two identifiers created by the metadata mapping
-  # helper. This keeps the aggregation semantics clear and testable.
-  if (!grouping_variable %in% valid_grouping_variables) {
-    stop(
-      "`grouping_variable` must be one of: ",
-      paste(valid_grouping_variables, collapse = ", "),
-      call. = FALSE
-    )
-  }
+  grouping_variable <- .validate_choice(
+    grouping_variable,
+    "grouping_variable",
+    valid_grouping_variables
+  )
 
   # Missing-instruction handling is a binary counting decision. Require a
   # scalar logical so callers cannot accidentally pass vectors that would make
   # the data pipeline branch ambiguously.
-  if (
-    !is.logical(remove_na) ||
-      length(remove_na) != 1L ||
-      is.na(remove_na)
-  ) {
-    stop(
-      "`remove_na` must be a single non-missing logical value.",
-      call. = FALSE
-    )
-  }
+  .validate_logical_scalar(remove_na, "remove_na")
 
   # Sorting by count is an optional presentation choice. Require a scalar
   # logical value so category ordering cannot branch ambiguously.
-  if (
-    !is.logical(sort_by_count) ||
-      length(sort_by_count) != 1L ||
-      is.na(sort_by_count)
-  ) {
-    stop(
-      "`sort_by_count` must be a single non-missing logical value.",
-      call. = FALSE
-    )
-  }
+  .validate_logical_scalar(sort_by_count, "sort_by_count")
 
   ############################################################
   # 2) Apply FEARBASE metadata mapping and validate required columns
@@ -122,15 +86,7 @@ instructions <- function(
   # CRAN checks should fail with informative messages instead of surfacing a
   # later tidy-evaluation error from inside the plotting pipeline.
   required_cols <- c("condition_id", "study_id", "instruction_contingency")
-  missing_cols <- setdiff(required_cols, names(md))
-
-  if (length(missing_cols) > 0) {
-    stop(
-      "Missing required column(s) in `md`: ",
-      paste(missing_cols, collapse = ", "),
-      call. = FALSE
-    )
-  }
+  .validate_required_columns(md, required_cols, "md")
 
   ############################################################
   # 3) Count each instruction category by the requested grouping identifier
@@ -240,11 +196,7 @@ instructions <- function(
   # coord_flip() renders the count scale as the visual x-axis, while ggplot2
   # keeps that scale attached to the y aesthetic. The label therefore lives in
   # labs(y = ...) so the drawn horizontal count axis has the requested title.
-  count_axis_title <- if (identical(grouping_variable, "study_id")) {
-    "Number of Studies"
-  } else {
-    "Number of Conditions"
-  }
+  count_axis_title <- .count_axis_title(grouping_variable)
 
   # Build the plot after validation and aggregation are complete. Keeping the
   # plotting layer separate from the data pipeline makes the returned object

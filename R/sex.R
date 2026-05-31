@@ -57,8 +57,7 @@
 #' @param dl A data frame in long format. Must contain `study_id`,
 #'   `participant_id`, `measure`, and `value` after
 #'   `.apply_mapping_to_long_data()` is applied. If `NULL`, the function first
-#'   attempts to use an object named `data_long` from the calling environment
-#'   and then falls back to the package-bundled `data/data_long.csv` file.
+#'   attempts to use an object named `data_long` from the calling environment.
 #'
 #' @details
 #' Processing steps:
@@ -97,15 +96,13 @@ sex <- function(dl = NULL) {
   # 1) Resolve and validate the long-format data source
   ############################################################
 
-  # Reuse the package's existing long-data resolver so zero-argument calls keep
-  # working for interactive users, tests, and installed-package examples.
+  # Reuse the package's long-data resolver so interactive users can provide a
+  # caller-side data_long object without silently reading ignored data files.
   dl <- .resolve_sample_size_long_data(dl)
 
   # Tidyverse verbs and the mapping helper require a rectangular object with
   # named columns, so fail before any schema normalization for invalid inputs.
-  if (!is.data.frame(dl)) {
-    stop("`dl` must be a data frame.", call. = FALSE)
-  }
+  .validate_data_frame(dl, "dl")
 
   # Apply the shared FEARBASE mapping before validating required columns so
   # callers may supply current or legacy long-format identifier schemas.
@@ -114,16 +111,7 @@ sex <- function(dl = NULL) {
   # The pie chart is participant-level: study_id and participant_id define the
   # participant key, while measure/value identify sex or gender observations.
   required_cols <- c("study_id", "participant_id", "measure", "value")
-  missing_cols <- setdiff(required_cols, names(dl))
-
-  # Report every missing column at once so malformed inputs are easy to repair.
-  if (length(missing_cols) > 0L) {
-    stop(
-      "Missing required column(s): ",
-      paste(missing_cols, collapse = ", "),
-      call. = FALSE
-    )
-  }
+  .validate_required_columns(dl, required_cols, "dl")
 
   ############################################################
   # 2) Build the distinct participant index

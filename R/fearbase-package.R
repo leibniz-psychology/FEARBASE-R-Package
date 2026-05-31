@@ -12,4 +12,8 @@
 #' @import dplyr
 #' @import ggplot2
 #' @import patchwork
+#' @importFrom grDevices colorRampPalette rgb
+#' @importFrom jsonlite toJSON
+#' @importFrom scales extended_breaks pal_grey
+#' @importFrom utils packageName read.csv
 NULL

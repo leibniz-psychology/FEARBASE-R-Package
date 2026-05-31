@@ -28,6 +28,7 @@
 # - Prevents mismatches during joins
 # - Ensures stable type consistency
 .normalize_mapping <- function(mapping) {
+  .validate_data_frame(mapping, "mapping")
 
   # Define columns that must always be character
   id_columns <- c(
@@ -233,6 +234,7 @@ updateMapping <- function(assign_global = TRUE) {
 # This function ensures that condition_id and study_id
 # are properly mapped in long-format datasets.
 .apply_mapping_to_long_data <- function(dl, mapping = NULL) {
+  .validate_data_frame(dl, "dl")
 
   # If condition_id already exists and contains values,
   # do nothing (idempotent behavior).
@@ -241,17 +243,20 @@ updateMapping <- function(assign_global = TRUE) {
     return(dl)
   }
 
+  .validate_required_columns(dl, "study_id", "dl")
+
   # Retrieve mapping (lazy-loaded)
   mapping <- .get_mapping(mapping)
+  .validate_required_columns(mapping, c("condition_id", "study_id"), "mapping")
+  mapping_lookup <- mapping[c("condition_id", "study_id")]
+  names(mapping_lookup) <- c("condition_id", "mapped_study_id")
 
   dl |>
-    mutate(study_id = as.character(study_id)) |>
+    mutate(study_id = as.character(.data$study_id)) |>
 
     # Join: study_id in dl actually equals condition_id
     left_join(
-      select(mapping,
-             condition_id,
-             mapped_study_id = study_id),
+      mapping_lookup,
       by = c("study_id" = "condition_id")
     ) |>
 
@@ -265,10 +270,10 @@ updateMapping <- function(assign_global = TRUE) {
     ) |>
 
     # Improve column ordering
-    relocate(condition_id, .before = study_id) |>
+    relocate(all_of("condition_id"), .before = all_of("study_id")) |>
 
     # Remove temporary join column
-    select(-mapped_study_id)
+    select(-all_of("mapped_study_id"))
 }
 
 
@@ -279,6 +284,7 @@ updateMapping <- function(assign_global = TRUE) {
 
 # Metadata uses "id" instead of "study_id".
 .apply_mapping_to_metadata <- function(md, mapping = NULL) {
+  .validate_data_frame(md, "md")
 
   # If mapping already applied, return as-is
   if (
@@ -288,15 +294,17 @@ updateMapping <- function(assign_global = TRUE) {
     return(md)
   }
 
+  .validate_required_columns(md, "id", "md")
+
   mapping <- .get_mapping(mapping)
+  .validate_required_columns(mapping, c("condition_id", "study_id"), "mapping")
+  mapping_lookup <- mapping[c("condition_id", "study_id")]
 
   md |>
-    mutate(id = as.character(id)) |>
+    mutate(id = as.character(.data$id)) |>
 
     left_join(
-      select(mapping,
-             condition_id,
-             study_id),
+      mapping_lookup,
       by = c("id" = "condition_id")
     ) |>
 
@@ -308,7 +316,7 @@ updateMapping <- function(assign_global = TRUE) {
       )
     ) |>
 
-    relocate(condition_id, .before = study_id)
+    relocate(all_of("condition_id"), .before = all_of("study_id"))
 }
 
 
@@ -320,21 +328,25 @@ updateMapping <- function(assign_global = TRUE) {
 # Nearly identical to long-data version,
 # adapted to study design structure.
 .apply_mapping_to_study_design <- function(sd, mapping = NULL) {
+  .validate_data_frame(sd, "sd")
 
   if ("condition_id" %in% names(sd) &&
       any(!is.na(sd$condition_id))) {
     return(sd)
   }
 
+  .validate_required_columns(sd, "study_id", "sd")
+
   mapping <- .get_mapping(mapping)
+  .validate_required_columns(mapping, c("condition_id", "study_id"), "mapping")
+  mapping_lookup <- mapping[c("condition_id", "study_id")]
+  names(mapping_lookup) <- c("condition_id", "mapped_study_id")
 
   sd |>
-    mutate(study_id = as.character(study_id)) |>
+    mutate(study_id = as.character(.data$study_id)) |>
 
     left_join(
-      select(mapping,
-             condition_id,
-             mapped_study_id = study_id),
+      mapping_lookup,
       by = c("study_id" = "condition_id")
     ) |>
 
@@ -346,7 +358,7 @@ updateMapping <- function(assign_global = TRUE) {
       )
     ) |>
 
-    relocate(condition_id, .before = study_id) |>
+    relocate(all_of("condition_id"), .before = all_of("study_id")) |>
 
-    select(-mapped_study_id)
+    select(-all_of("mapped_study_id"))
 }

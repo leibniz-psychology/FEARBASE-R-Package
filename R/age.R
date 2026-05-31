@@ -88,19 +88,17 @@ age <- function(
   # 1) Normalize the caller's long-format data schema
   ############################################################
 
-  # Apply the package-level mapping before validation so callers can provide
+  # Validate before applying package-level mapping so non-data-frame inputs fail
+  # with a direct package message instead of a lower-level mapping error.
+  .validate_data_frame(dl, "dl")
+
+  # Apply the package-level mapping after type validation so callers can provide
   # either legacy identifiers or the current FEARBASE identifier columns.
   dl <- .apply_mapping_to_long_data(dl)
 
   ############################################################
   # 2) Validate plotting inputs and supported grouping choices
   ############################################################
-
-  # All downstream filtering, selecting, and plotting assumes a rectangular
-  # data object with named columns, so fail early for non-data-frame inputs.
-  if (!is.data.frame(dl)) {
-    stop("`dl` must be a data.frame.", call. = FALSE)
-  }
 
   # These are the only grouping identifiers that this visualization knows how
   # to expose. Keep this vector close to validation because it is reused for
@@ -112,15 +110,11 @@ age <- function(
     "paper_study_id"
   )
 
-  # Reject unsupported grouping names before looking in the data. This gives a
-  # clearer user-facing error when a typo or unsupported identifier is supplied.
-  if (!grouping_variable %in% valid_group_vars) {
-    stop(
-      "`grouping_variable` must be one of: ",
-      paste(valid_group_vars, collapse = ", "),
-      call. = FALSE
-    )
-  }
+  grouping_variable <- .validate_choice(
+    grouping_variable,
+    "grouping_variable",
+    valid_group_vars
+  )
 
   # The requested grouping variable must survive the mapping step and be
   # present in the resulting data before it can be used by dplyr or ggplot2.
@@ -133,6 +127,7 @@ age <- function(
 
   # Match plot types case-insensitively while preserving a small set of short
   # aliases for interactive use.
+  .validate_single_column_name(type, "type")
   type <- tolower(type)
 
   # Keep the aliases explicit so the branching condition below is easy to
@@ -157,17 +152,7 @@ age <- function(
   # a stable participant-level plotting contract, even though participant_id is
   # not drawn directly in the final chart.
   required_cols <- c("measure", "value", "participant_id")
-  missing_cols <- setdiff(required_cols, names(dl))
-
-  # Report all missing required columns together so callers can fix the input
-  # schema in one pass.
-  if (length(missing_cols) > 0) {
-    stop(
-      "Missing required column(s): ",
-      paste(missing_cols, collapse = ", "),
-      call. = FALSE
-    )
-  }
+  .validate_required_columns(dl, required_cols, "dl")
 
   # Build a compact age-only data set for plotting. The value column is
   # intentionally coerced with suppressWarnings() because invalid values are
@@ -386,6 +371,10 @@ ageDescriptives <- function(dl, grouping_variable = NULL) {
   # 1) Normalize the caller's long-format data schema
   ############################################################
 
+  # Validate before applying package-level mapping so non-data-frame inputs fail
+  # with a direct package message instead of a lower-level mapping error.
+  .validate_data_frame(dl, "dl")
+
   # Use the same mapping path as age() so descriptive summaries and plots agree
   # on the identifier columns available after schema normalization.
   dl <- .apply_mapping_to_long_data(dl)
@@ -394,25 +383,10 @@ ageDescriptives <- function(dl, grouping_variable = NULL) {
   # 2) Validate descriptive-statistics inputs
   ############################################################
 
-  # dplyr verbs below require a data frame or tibble with named columns.
-  if (!is.data.frame(dl)) {
-    stop("`dl` must be a data.frame.", call. = FALSE)
-  }
-
   # Descriptives only require the long-format measure/value pair. Grouping
   # columns are validated separately because they are optional.
   required_cols <- c("measure", "value")
-  missing_cols <- setdiff(required_cols, names(dl))
-
-  # Return every missing required column in one message to make malformed input
-  # easier to repair.
-  if (length(missing_cols) > 0) {
-    stop(
-      "Missing required column(s): ",
-      paste(missing_cols, collapse = ", "),
-      call. = FALSE
-    )
-  }
+  .validate_required_columns(dl, required_cols, "dl")
 
   # If grouping is requested, verify both the type of the grouping declaration
   # and the existence of every named grouping column before any summarisation.

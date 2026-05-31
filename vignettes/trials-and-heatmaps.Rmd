@@ -19,11 +19,33 @@ knitr::opts_chunk$set(
 
 ```{r setup}
 library(fearbase)
-library(readr)
 
-data_long <- read_csv("data/data_long.csv", show_col_types = FALSE)
-metadata <- read_csv("data/metadata.csv", show_col_types = FALSE)
-codebook <- read_csv("data/codebook.csv", show_col_types = FALSE)
+data_long <- tibble::tribble(
+  ~condition_id, ~study_id, ~paper_cond_id, ~paper_study_id, ~participant_id, ~measure, ~value, ~phase, ~stimulus, ~trial,
+  "c1", "s1", "pc1", "ps1", "p1", "scr", "0.3", "hab", "cs+", 1,
+  "c1", "s1", "pc1", "ps1", "p1", "scr", "0.4", "acq", "cs+", 1,
+  "c1", "s1", "pc1", "ps1", "p1", "us_exp", "70", "acq", "cs-", 1,
+  "c1", "s1", "pc1", "ps1", "p2", "scr", "0.2", "ext", "cs+", 1,
+  "c1", "s1", "pc1", "ps1", "p2", "us_exp", "30", "ext", "cs-", 1,
+  "c2", "s2", "pc2", "ps2", "p3", "scr", "0.5", "acq", "cs+", 1,
+  "c2", "s2", "pc2", "ps2", "p3", "scr", "0.6", "acq", "cs+", 2,
+  "c2", "s2", "pc2", "ps2", "p4", "us_exp", "20", "ext", "cs-", 1
+)
+
+metadata <- tibble::tribble(
+  ~condition_id, ~study_id,
+  "c1", "s1",
+  "c2", "s2"
+)
+
+codebook <- tibble::tribble(
+  ~attribute, ~abbreviation, ~name,
+  "phase", "hab", "habituation",
+  "phase", "acq", "acquisition",
+  "phase", "ext", "extinction",
+  "measure", "scr", "skin conductance response",
+  "measure", "us_exp", "US expectancy"
+)
 ```
 
 ## Trial Counts per Phase and Participant

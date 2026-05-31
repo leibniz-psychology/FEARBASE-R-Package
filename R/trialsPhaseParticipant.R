@@ -262,58 +262,12 @@
   sd = NULL,
   caller_env = parent.frame()
 ) {
-  ############################################################
-  # 1) Prefer explicit study-design data
-  ############################################################
-
-  if (!is.null(sd)) {
-    return(sd)
-  }
-
-  ############################################################
-  # 2) Support interactive workflows with a study_design object
-  ############################################################
-
-  if (exists("study_design", envir = caller_env, inherits = TRUE)) {
-    study_design_candidate <- get(
-      "study_design",
-      envir = caller_env,
-      inherits = TRUE
-    )
-
-    if (is.data.frame(study_design_candidate)) {
-      return(study_design_candidate)
-    }
-  }
-
-  ############################################################
-  # 3) Fall back to the bundled CSV
-  ############################################################
-
-  study_design_path <- system.file(
-    "data",
-    "study_design.csv",
-    package = "fearbase",
-    mustWork = FALSE
+  .resolve_caller_data(
+    data = sd,
+    arg_name = "sd",
+    object_name = "study_design",
+    caller_env = caller_env
   )
-
-  if (
-    identical(study_design_path, "") &&
-      file.exists(file.path("data", "study_design.csv"))
-  ) {
-    study_design_path <- file.path("data", "study_design.csv")
-  }
-
-  if (identical(study_design_path, "")) {
-    stop(
-      "`sd` must be supplied, an object named `study_design` must exist ",
-      "in the calling environment, or bundled study-design data must be ",
-      "available.",
-      call. = FALSE
-    )
-  }
-
-  readr::read_csv(study_design_path, show_col_types = FALSE)
 }
 
 #' Plot Trial Counts per Phase and Participant
@@ -327,8 +281,7 @@
 #' @param dl A data frame in long format. Must contain `participant_id`,
 #'   `phase`, `stimulus`, `trial`, and the selected `grouping_variable` after
 #'   `.apply_mapping_to_long_data()` is applied. If `NULL`, the function first
-#'   attempts to use an object named `data_long` from the calling environment
-#'   and then falls back to the package-bundled `data/data_long.csv` file.
+#'   attempts to use an object named `data_long` from the calling environment.
 #' @param y_axis A single character string selecting the plotted count. Use
 #'   `"n"`, `"participant"`, or `"participants"` for participant counts; use
 #'   `"s"`, `"study"`, or `"studies"` for grouping-unit counts.
@@ -338,8 +291,7 @@
 #' @param cb A codebook data frame with at least `attribute`, `abbreviation`,
 #'   and `name`. Rows where `attribute == "phase"` are used to translate phase
 #'   abbreviations to display labels. If `NULL`, the function first attempts to
-#'   use an object named `codebook` from the calling environment and then falls
-#'   back to the package-bundled `data/codebook.csv` file.
+#'   use an object named `codebook` from the calling environment.
 #'
 #' @details
 #' Processing steps:
@@ -536,11 +488,9 @@ trialsPhaseParticipantDescriptive <- function(
 #'   `cspTrials`, and `csmTrials` after `.apply_mapping_to_study_design()` is
 #'   applied. The `name` column contains phase abbreviations. If `NULL`, the
 #'   function first attempts to use an object named `study_design` from the
-#'   calling environment and then falls back to the package-bundled
-#'   `data/study_design.csv` file.
+#'   calling environment.
 #' @param cb A codebook data frame, or `NULL`. If `NULL`, the function first
-#'   attempts to use an object named `codebook` from the calling environment and
-#'   then falls back to the package-bundled `data/codebook.csv` file.
+#'   attempts to use an object named `codebook` from the calling environment.
 #'
 #' @return A `ggplot2` object with one facet row per phase.
 #'

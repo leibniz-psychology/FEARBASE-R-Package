@@ -8,8 +8,7 @@
 #'
 #' @param md A data frame containing study metadata. The data frame must contain
 #'   a `year` column. If `NULL`, the function first attempts to use an object
-#'   named `metadata` from the calling environment and then falls back to the
-#'   package-bundled `data/metadata.csv` file.
+#'   named `metadata` from the calling environment.
 #' @param grouping_variable A single character string specifying whether data
 #'   collection years are counted by unique studies or unique conditions. Must
 #'   be either `"study_id"` or `"condition_id"`.
@@ -53,41 +52,9 @@ dataCollectionYear <- function(
   # 1) Resolve the metadata source
   ############################################################
 
-  # Allow callers to omit `md` for interactive package use. In that case, look
-  # first for a `metadata` object in the caller's environment and only then fall
-  # back to the package-bundled metadata file.
-  if (is.null(md)) {
-    # Prefer the caller's in-memory metadata object when it exists because it is
-    # likely to reflect the data currently being analyzed or edited.
-    if (exists("metadata", envir = parent.frame(), inherits = TRUE)) {
-      md <- get("metadata", envir = parent.frame(), inherits = TRUE)
-    } else {
-      # Record the installed package metadata path. `mustWork = FALSE` lets us
-      # detect a missing bundled file and produce a package-specific error below.
-      metadata_path <- system.file(
-        "data",
-        "metadata.csv",
-        package = "fearbase",
-        mustWork = FALSE
-      )
-    }
-
-    # If no caller-supplied object was found and the package data file is not
-    # available, stop before attempting to read from an empty path.
-    if (is.null(md) && identical(metadata_path, "")) {
-      stop(
-        "`md` must be supplied, an object named `metadata` must exist ",
-        "in the calling environment, or bundled metadata must be available.",
-        call. = FALSE
-      )
-    }
-
-    if (is.null(md)) {
-      # Use the package-bundled metadata only as a final fallback so explicit
-      # user input remains the primary and reproducible data source.
-      md <- readr::read_csv(metadata_path, show_col_types = FALSE)
-    }
-  }
+  # Resolve explicit data or a caller-side metadata object only. Ignored local
+  # data files are intentionally not read by package code.
+  md <- .resolve_metadata(md, caller_env = parent.frame())
 
   ############################################################
   # 2) Validate and normalize the metadata schema
@@ -95,36 +62,17 @@ dataCollectionYear <- function(
 
   # All subsequent column checks, assignments, and plotting preparation require
   # a rectangular data object with named columns.
-  if (!is.data.frame(md)) {
-    stop("`md` must be a data frame.", call. = FALSE)
-  }
+  .validate_data_frame(md, "md")
 
   # The grouping identifier determines the unit counted for each collection
   # year. Require one explicit supported value so aggregation and axis labeling
   # remain predictable.
-  if (
-    !is.character(grouping_variable) ||
-      length(grouping_variable) != 1L ||
-      is.na(grouping_variable)
-  ) {
-    stop(
-      "`grouping_variable` must be a single non-missing character string.",
-      call. = FALSE
-    )
-  }
-
   valid_grouping_variables <- c("study_id", "condition_id")
-
-  # Match the public API used by the other metadata summary plots: study-level
-  # counts collapse mapped conditions into their parent study, whereas
-  # condition-level counts keep each condition as its own observation.
-  if (!grouping_variable %in% valid_grouping_variables) {
-    stop(
-      "`grouping_variable` must be one of: ",
-      paste(valid_grouping_variables, collapse = ", "),
-      call. = FALSE
-    )
-  }
+  grouping_variable <- .validate_choice(
+    grouping_variable,
+    "grouping_variable",
+    valid_grouping_variables
+  )
 
   # The year switch selects between publication-year metadata and data-upload
   # year metadata while keeping the rest of the counting pipeline identical.
@@ -191,31 +139,9 @@ dataCollectionYear <- function(
   # malformed, non-missing years fail with a clear input-validation error.
   raw_year <- md[[year_column]]
 
-  # Preserve numeric vectors as-is apart from normalizing their storage mode;
-  # otherwise coerce through character so factors and labelled values convert by
-  # their displayed values rather than by underlying integer codes.
-  if (is.numeric(raw_year)) {
-    year <- as.numeric(raw_year)
-  } else {
-    year <- suppressWarnings(as.numeric(as.character(raw_year)))
-  }
-
-  # A value is invalid only when the caller supplied something non-missing that
-  # could not be represented as a number. Missing values are handled separately
-  # and are intentionally excluded from the final plot.
-  invalid_year <- !is.na(raw_year) & is.na(year)
-
   # Stop on malformed non-missing years instead of silently dropping them; a
   # typo in a year should be treated as a data-quality issue.
-  if (any(invalid_year)) {
-    stop(
-      "All non-missing values in `md$",
-      year_column,
-      "` must be numeric or coercible ",
-      "to numeric.",
-      call. = FALSE
-    )
-  }
+  year <- .coerce_numeric_strict(raw_year, paste0("`md$", year_column, "`"))
 
   # Store the validated numeric vector in a standardized internal column so the
   # counting and plotting code can stay identical for publication and data
@@ -268,11 +194,7 @@ dataCollectionYear <- function(
 
   # Match the count axis title to the identifier used for de-duplication so the
   # graph remains self-explanatory when callers switch aggregation levels.
-  count_axis_title <- if (identical(grouping_variable, "study_id")) {
-    "Number of Studies"
-  } else {
-    "Number of Conditions"
-  }
+  count_axis_title <- .count_axis_title(grouping_variable)
 
   # Keep the publication-year label unchanged for backward compatibility. The
   # data-year label follows the requested user-facing wording.

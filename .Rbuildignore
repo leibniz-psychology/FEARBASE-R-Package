@@ -8,3 +8,15 @@ csv_to_rds.R
 data-preprocessing.R
 ^data-raw$
 ^\.github$
+^\.Rprofile$
+^\.gitignore$
+^\.dockerignore$
+^\.quarto$
+^dev_local$
+^output$
+^data$
+^R/sysdata[.]rda$
+^man/(createCsv|jsonSummary|reorderPhases)[.]Rd$
+^[.][.]Rcheck$
+^AGENTS[.]md$
+^_quarto[.]yml$
