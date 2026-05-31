@@ -170,13 +170,13 @@
 #'
 #' @examples
 #' \dontrun{
-#' sampleSizeByStudy(data_long)
-#' sampleSizeByStudy(data_long, grouping_variable = "condition_id")
+#' sample_size_by_study(data_long)
+#' sample_size_by_study(data_long, grouping_variable = "condition_id")
 #' }
 #'
 #' @importFrom rlang .data
 #' @export
-sampleSizeByStudy <- function(
+sample_size_by_study <- function(
   dl = NULL,
   grouping_variable = "study_id"
 ) {
@@ -266,10 +266,10 @@ sampleSizeByStudy <- function(
 #'
 #' @examples
 #' \dontrun{
-#' sampleSizeDescriptives(data_long)
-#' sampleSizeDescriptives(data_long, grouping_variable = "condition_id")
+#' sample_size_descriptives(data_long)
+#' sample_size_descriptives(data_long, grouping_variable = "condition_id")
 #' }
-sampleSizeDescriptives <- function(
+sample_size_descriptives <- function(
   dl = NULL,
   grouping_variable = "study_id"
 ) {
@@ -277,7 +277,7 @@ sampleSizeDescriptives <- function(
   # 1) Prepare validated sample-size counts
   ############################################################
 
-  # Use the same preparation path as sampleSizeByStudy() so the plot and
+  # Use the same preparation path as sample_size_by_study() so the plot and
   # descriptive statistics always summarize the identical participant counts.
   data_sample_size <- .prepare_sample_size_by_study(
     dl = dl,

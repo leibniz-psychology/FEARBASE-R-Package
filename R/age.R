@@ -356,17 +356,17 @@ age <- function(
 #' @examples
 #' \dontrun{
 #' # Overall descriptives
-#' ageDescriptives(dl)
+#' age_descriptives(dl)
 #'
 #' # Descriptives grouped by study
-#' ageDescriptives(dl, grouping_variable = "study_id")
+#' age_descriptives(dl, grouping_variable = "study_id")
 #'
 #' # Descriptives grouped by multiple variables
-#' ageDescriptives(dl, grouping_variable = c("study_id", "condition_id"))
+#' age_descriptives(dl, grouping_variable = c("study_id", "condition_id"))
 #' }
 #'
 #' @export
-ageDescriptives <- function(dl, grouping_variable = NULL) {
+age_descriptives <- function(dl, grouping_variable = NULL) {
   ############################################################
   # 1) Normalize the caller's long-format data schema
   ############################################################

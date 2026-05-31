@@ -1,5 +1,5 @@
 test_that("reinforcement rate graph works", {
-  reinforcementRates(fixture_metadata()) |> testthat::expect_s3_class("ggplot")
+  reinforcement_rates(fixture_metadata()) |> testthat::expect_s3_class("ggplot")
 })
 
 test_that("reinforcement rate graph counts unique studies by default", {
@@ -10,7 +10,7 @@ test_that("reinforcement rate graph counts unique studies by default", {
     reinf_b = c(50, 60, 75, 80)
   )
 
-  graph <- reinforcementRates(md)
+  graph <- reinforcement_rates(md)
 
   testthat::expect_equal(
     graph$data$n,
@@ -27,7 +27,7 @@ test_that("reinforcement rate graph counts unique conditions when requested", {
     reinf_b = c(50, 60, 75, 80)
   )
 
-  graph <- reinforcementRates(md, grouping_variable = "condition_id")
+  graph <- reinforcement_rates(md, grouping_variable = "condition_id")
 
   testthat::expect_equal(
     graph$data$n,
@@ -44,7 +44,7 @@ test_that("reinforcement rate graph validates grouping variable", {
   )
 
   testthat::expect_error(
-    reinforcementRates(md, grouping_variable = "participant_id"),
+    reinforcement_rates(md, grouping_variable = "participant_id"),
     "`grouping_variable` must be one of"
   )
 })

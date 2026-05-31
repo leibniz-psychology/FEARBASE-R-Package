@@ -50,13 +50,13 @@ codebook <- tibble::tribble(
 
 ## Trial Counts per Phase and Participant
 
-`trialsPhaseParticipant()` computes participant-level phase trial counts from
+`trial_phase_counts()` computes participant-level phase trial counts from
 long-format data. It counts the maximum trial index within each participant,
 phase, and stimulus stream, then sums across stimulus streams for each
 participant-phase pair.
 
 ```{r trials-studies}
-trialsPhaseParticipant(
+trial_phase_counts(
   data_long,
   y_axis = "studies",
   grouping_variable = "condition_id",
@@ -68,7 +68,7 @@ Use `y_axis = "participants"` to show participant counts at each observed trial
 count and fill by the selected grouping variable.
 
 ```{r trials-participants}
-trialsPhaseParticipant(
+trial_phase_counts(
   data_long,
   y_axis = "participants",
   grouping_variable = "study_id",
@@ -88,11 +88,11 @@ from the codebook rows where `attribute == "phase"`.
 
 ## Phase Heatmap
 
-`phasesHeatmap()` shows phase co-occurrence across mapped conditions with a
+`phases_heatmap()` shows phase co-occurrence across mapped conditions with a
 marginal bar chart of phase usage.
 
 ```{r phases-heatmap}
-phasesHeatmap(data_long, codebook)
+phases_heatmap(data_long, codebook)
 ```
 
 The function maps identifiers, labels phase abbreviations through the codebook,
@@ -100,11 +100,11 @@ removes `int` and `other`, and counts co-occurrence across `condition_id`.
 
 ## Measure Heatmap
 
-`measuresHeatmap()` shows outcome-measure co-occurrence across mapped
+`measures_heatmap()` shows outcome-measure co-occurrence across mapped
 conditions with a marginal bar chart.
 
 ```{r measures-heatmap}
-measuresHeatmap(
+measures_heatmap(
   data_long,
   metadata,
   codebook

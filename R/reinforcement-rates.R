@@ -38,13 +38,13 @@
 #'
 #' @examples
 #' \dontrun{
-#' reinforcementRates(metadata)
-#' reinforcementRates(metadata, grouping_variable = "condition_id")
+#' reinforcement_rates(metadata)
+#' reinforcement_rates(metadata, grouping_variable = "condition_id")
 #' }
 #'
 #' @importFrom rlang .data
 #' @export
-reinforcementRates <- function(md = NULL, grouping_variable = "study_id") {
+reinforcement_rates <- function(md = NULL, grouping_variable = "study_id") {
   ############################################################
   # 1) Resolve the metadata source
   ############################################################
@@ -240,14 +240,14 @@ reinforcementRates <- function(md = NULL, grouping_variable = "study_id") {
 #'
 #' @examples
 #' \dontrun{
-#' reinforcementRateDescriptives(metadata)
+#' reinforcement_rate_descriptives(metadata)
 #' }
-reinforcementRateDescriptives <- function(md = NULL) {
+reinforcement_rate_descriptives <- function(md = NULL) {
   ############################################################
   # 1) Resolve the metadata source
   ############################################################
 
-  # Mirror reinforcementRates() so plots and descriptive summaries can be
+  # Mirror reinforcement_rates() so plots and descriptive summaries can be
   # called with the same metadata argument behavior.
   md <- .resolve_metadata(md, caller_env = parent.frame())
 

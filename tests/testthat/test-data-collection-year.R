@@ -1,5 +1,5 @@
 test_that("collection year bar graph works", {
-  dataCollectionYear(fixture_metadata()) |> testthat::expect_s3_class("ggplot")
+  data_collection_year(fixture_metadata()) |> testthat::expect_s3_class("ggplot")
 })
 
 test_that("collection year graph counts unique studies by default", {
@@ -9,7 +9,7 @@ test_that("collection year graph counts unique studies by default", {
     year = c(2020, 2020, 2021, 2021, 2021)
   )
 
-  graph <- dataCollectionYear(md)
+  graph <- data_collection_year(md)
 
   testthat::expect_equal(graph$data$year, c(2020, 2021))
   testthat::expect_equal(graph$data$n, c(1L, 2L))
@@ -24,7 +24,7 @@ test_that("collection year graph counts unique conditions when requested", {
     year = c(2020, 2020, 2021, 2021, 2021)
   )
 
-  graph <- dataCollectionYear(md, grouping_variable = "condition_id")
+  graph <- data_collection_year(md, grouping_variable = "condition_id")
 
   testthat::expect_equal(graph$data$year, c(2020, 2021))
   testthat::expect_equal(graph$data$n, c(2L, 2L))
@@ -39,7 +39,7 @@ test_that("collection year graph uses data year when requested", {
     year_data = c(2018, 2018, 2019, 2019)
   )
 
-  graph <- dataCollectionYear(md, year_of = "data")
+  graph <- data_collection_year(md, year_of = "data")
 
   testthat::expect_equal(graph$data$year, c(2018, 2019))
   testthat::expect_equal(graph$data$n, c(1L, 2L))
@@ -55,7 +55,7 @@ test_that("collection year graph validates grouping variable", {
   )
 
   testthat::expect_error(
-    dataCollectionYear(md, grouping_variable = "participant_id"),
+    data_collection_year(md, grouping_variable = "participant_id"),
     "`grouping_variable` must be one of"
   )
 })
@@ -69,7 +69,7 @@ test_that("collection year graph validates year selector", {
   )
 
   testthat::expect_error(
-    dataCollectionYear(md, year_of = "collection"),
+    data_collection_year(md, year_of = "collection"),
     "`year_of` must be one of"
   )
 })

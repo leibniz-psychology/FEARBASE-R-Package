@@ -62,13 +62,13 @@ Supported grouping variables are:
 
 ## Age Descriptives
 
-`ageDescriptives()` computes mean, standard deviation, minimum, maximum, and
+`age_descriptives()` computes mean, standard deviation, minimum, maximum, and
 count for valid age rows. You can compute global or grouped summaries.
 
 ```{r age-descriptives}
-ageDescriptives(data_long)
+age_descriptives(data_long)
 
-ageDescriptives(
+age_descriptives(
   data_long,
   grouping_variable = c("study_id", "condition_id")
 )
@@ -91,13 +91,13 @@ Contradictory non-missing participant values stop with an error.
 
 ## Sample Size by Study
 
-`sampleSizeByStudy()` counts distinct participants per study-level grouping.
+`sample_size_by_study()` counts distinct participants per study-level grouping.
 Repeated long-format rows for the same participant do not inflate counts.
 
 ```{r sample-size}
-sampleSizeByStudy(data_long)
+sample_size_by_study(data_long)
 
-sampleSizeByStudy(
+sample_size_by_study(
   data_long,
   grouping_variable = "condition_id"
 )

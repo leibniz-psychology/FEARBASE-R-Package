@@ -25,13 +25,13 @@
 #' @return A \code{patchwork} object combining two
 #'   \code{\link[ggplot2:ggplot]{ggplot()}} plots.
 #'
-#' @seealso \code{\link{phasesHeatmap}},
+#' @seealso \code{\link{phases_heatmap}},
 #'   \code{\link{plot_co_occurrence_heatmap}},
 #'   \code{\link{plot_horizontal_bar}}
 #'
 #' @importFrom rlang .data
 #' @export
-measuresHeatmap <- function(dl, md, cb) {
+measures_heatmap <- function(dl, md, cb) {
   # Validate the user-facing inputs before any internal mapping is applied.
   # This produces clear package-level errors instead of lower-level join or
   # tidy-evaluation errors.
@@ -177,12 +177,12 @@ measuresHeatmap <- function(dl, md, cb) {
 #' @return A \code{patchwork} object combining two
 #'   \code{\link[ggplot2:ggplot]{ggplot()}} plots.
 #'
-#' @seealso \code{\link{measuresHeatmap}},
+#' @seealso \code{\link{measures_heatmap}},
 #'   \code{\link{plot_co_occurrence_heatmap}},
 #'   \code{\link{plot_horizontal_bar}}
 #'
 #' @export
-phasesHeatmap <- function(dl, cb, exclude = "none") {
+phases_heatmap <- function(dl, cb, exclude = "none") {
   # Validate raw inputs before the mapping step so callers get concise errors
   # when a non-data-frame object is supplied.
   .validate_data_frame(dl, "dl")
@@ -256,7 +256,7 @@ phasesHeatmap <- function(dl, cb, exclude = "none") {
 
   # Keep the core fear-conditioning sequence visually stable. Additional phase
   # labels remain available and are appended after this priority order by
-  # reorderPhases().
+  # reorder_phases().
   defined_order <- c(
     "Habituation",
     "Acquisition",
@@ -264,7 +264,7 @@ phasesHeatmap <- function(dl, cb, exclude = "none") {
   )
 
   data_phases_barplot$phase_long <- forcats::fct_rev(
-    reorderPhases(data_phases_barplot$phase_long, defined_order)
+    reorder_phases(data_phases_barplot$phase_long, defined_order)
   )
 
   # Convert condition-level phase counts into a pairwise co-occurrence table for
@@ -278,12 +278,12 @@ phasesHeatmap <- function(dl, cb, exclude = "none") {
 
   # Apply the same priority phase order to both heatmap axes. The y-axis is
   # reversed so the top row aligns with the first visible bar plot category.
-  data_phases_heatmap$phase_long <- reorderPhases(
+  data_phases_heatmap$phase_long <- reorder_phases(
     data_phases_heatmap$phase_long,
     defined_order
   )
   data_phases_heatmap$phase_long2 <- forcats::fct_rev(
-    reorderPhases(data_phases_heatmap$phase_long2, defined_order)
+    reorder_phases(data_phases_heatmap$phase_long2, defined_order)
   )
 
   heatmap_plot <- plot_co_occurrence_heatmap(
@@ -327,7 +327,7 @@ plot_co_occurrence_heatmap <- function(
   diag_na = FALSE
 ) {
   # Validate plot inputs up front. These checks make the function safer to use
-  # independently from measuresHeatmap() and phasesHeatmap().
+  # independently from measures_heatmap() and phases_heatmap().
   .validate_data_frame(df, "df")
   .validate_single_column_name(x_var, "x_var")
   .validate_single_column_name(y_var, "y_var")
@@ -588,7 +588,7 @@ arrange_histogram_layout <- function(hm, bp) {
 
 #' Validate Phase Exclusion Codes
 #'
-#' @param exclude A character vector supplied to \code{phasesHeatmap()}.
+#' @param exclude A character vector supplied to \code{phases_heatmap()}.
 #' @param available_phases A character vector of phase codes observed in the
 #'   mapped long-format data.
 #'

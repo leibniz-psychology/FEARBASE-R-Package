@@ -51,13 +51,13 @@
 #'
 #' @examples
 #' \dontrun{
-#' stimModality(metadata, type = "us_type", level = "n_studies")
-#' stimModality(metadata, type = "cs_type", level = "n_subjects")
+#' stimulus_modality(metadata, type = "us_type", level = "n_studies")
+#' stimulus_modality(metadata, type = "cs_type", level = "n_subjects")
 #' }
 #'
 #' @importFrom rlang .data
 #' @export
-stimModality <- function(
+stimulus_modality <- function(
   md = NULL,
   type = "us_type",
   level = "n_studies"

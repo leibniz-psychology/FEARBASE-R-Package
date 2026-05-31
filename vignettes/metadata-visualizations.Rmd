@@ -29,11 +29,11 @@ metadata <- tibble::tribble(
 
 ## Data Collection Year
 
-`dataCollectionYear()` counts studies or metadata records per valid year after
+`data_collection_year()` counts studies or metadata records per valid year after
 mapping metadata identifiers.
 
 ```{r data-collection-year}
-dataCollectionYear(metadata)
+data_collection_year(metadata)
 ```
 
 Non-missing `year` values must be numeric or coercible to numeric.
@@ -53,18 +53,18 @@ The mapped metadata must contain `condition_id`, `study_id`, and
 
 ## Stimulus Modality
 
-`stimModality()` creates a pie chart for unconditioned stimulus modality
+`stimulus_modality()` creates a pie chart for unconditioned stimulus modality
 (`us_type`) or conditioned stimulus modality (`cs_type`). Slice sizes can count
 studies or participants.
 
 ```{r stim-modality}
-stimModality(
+stimulus_modality(
   metadata,
   type = "us_type",
   level = "n_studies"
 )
 
-stimModality(
+stimulus_modality(
   metadata,
   type = "cs_type",
   level = "n_subjects"
@@ -76,26 +76,26 @@ Missing or blank modality labels are shown as `not reported`. Missing
 
 ## Reinforcement Rates
 
-`reinforcementRates()` searches for metadata columns whose names begin with
+`reinforcement_rates()` searches for metadata columns whose names begin with
 `reinf`, reshapes those columns to long format, validates numeric values, and
 plots whole-number reinforcement-rate counts.
 
 ```{r reinforcement-rates}
-reinforcementRates(metadata)
+reinforcement_rates(metadata)
 ```
 
 ## SCR Peak Detection Windows
 
-`peakDetectionWindows()` plots SCR baseline, peak-detection, and
+`peak_detection_windows()` plots SCR baseline, peak-detection, and
 trough-detection scoring windows in seconds relative to stimulus onset.
 
 ```{r peak-detection-windows}
-peakDetectionWindows(
+peak_detection_windows(
   metadata,
   grouping_variable = "study_id"
 )
 
-peakDetectionWindows(
+peak_detection_windows(
   metadata,
   grouping_variable = "condition_id"
 )

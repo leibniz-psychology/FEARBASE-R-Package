@@ -1,9 +1,9 @@
 test_that("phases heatmap works", {
-  phasesHeatmap(fixture_long_data(), fixture_codebook()) |>
+  phases_heatmap(fixture_long_data(), fixture_codebook()) |>
     testthat::expect_s3_class("ggplot")
 })
 test_that("measures heatmap works", {
-  measuresHeatmap(
+  measures_heatmap(
     fixture_long_data(),
     fixture_metadata(),
     fixture_codebook()

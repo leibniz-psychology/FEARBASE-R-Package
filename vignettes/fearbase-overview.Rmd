@@ -88,7 +88,7 @@ mapping <- tibble::tibble(
 )
 head(mapping)
 
-allStudies(metadata)
+all_studies(metadata)
 ```
 
 ## Function Families
@@ -98,33 +98,33 @@ Participant summaries:
 ```{r participant-functions}
 age(data_long, type = "histogram", grouping_variable = "study_id")
 age(data_long, type = "ridge", grouping_variable = "condition_id")
-ageDescriptives(data_long, grouping_variable = "study_id")
+age_descriptives(data_long, grouping_variable = "study_id")
 sex(data_long)
-sampleSizeByStudy(data_long)
+sample_size_by_study(data_long)
 ```
 
 Metadata summaries:
 
 ```{r metadata-functions}
-dataCollectionYear(metadata)
+data_collection_year(metadata)
 instructions(metadata)
-stimModality(metadata, type = "us_type", level = "n_studies")
-stimModality(metadata, type = "cs_type", level = "n_subjects")
-reinforcementRates(metadata)
-peakDetectionWindows(metadata, grouping_variable = "study_id")
+stimulus_modality(metadata, type = "us_type", level = "n_studies")
+stimulus_modality(metadata, type = "cs_type", level = "n_subjects")
+reinforcement_rates(metadata)
+peak_detection_windows(metadata, grouping_variable = "study_id")
 ```
 
 Trial and phase summaries:
 
 ```{r trial-functions}
-trialsPhaseParticipant(
+trial_phase_counts(
   data_long,
   y_axis = "studies",
   grouping_variable = "condition_id",
   cb = codebook
 )
 
-trialsPhaseParticipant(
+trial_phase_counts(
   data_long,
   y_axis = "participants",
   grouping_variable = "study_id",
@@ -135,8 +135,8 @@ trialsPhaseParticipant(
 Heatmaps:
 
 ```{r heatmap-functions}
-phasesHeatmap(data_long, codebook)
-measuresHeatmap(data_long, metadata, codebook)
+phases_heatmap(data_long, codebook)
+measures_heatmap(data_long, metadata, codebook)
 ```
 
 ## Saving Results
@@ -144,6 +144,6 @@ measuresHeatmap(data_long, metadata, codebook)
 Because plots are returned as objects, save them with `ggplot2::ggsave()`.
 
 ```{r save-plot}
-plot <- sampleSizeByStudy(data_long)
+plot <- sample_size_by_study(data_long)
 # ggplot2::ggsave("sample-size-by-study.png", plot, width = 8, height = 5)
 ```

@@ -60,11 +60,15 @@ Check the [OpenCPU API docs](https://www.opencpu.org/api.html#api-methods) for i
 
 #### Example Request
 
-To run `jsonSummary` on the `randomData` enter:
+To run `json_summary` on the `randomData` enter:
 * Method: `POST`
-* Endpoint: `../library/fearbase/R/jsonSummary`
+* Endpoint: `../library/fearbase/R/json_summary`
 * Param Name: `d`
 * Param Value: `"randomData"`
+
+Snake_case endpoints are the preferred API. Historical camelCase endpoint names
+such as `jsonSummary` and `createCsv` remain temporarily available as
+deprecated compatibility wrappers.
 
 To see the result of the analysis, pick one of the links in the response and run a get request on it:
 * Method: `GET`
@@ -74,9 +78,9 @@ To see the result of the analysis, pick one of the links in the response and run
 
 If you want to use functions that require datasets (e.g. data_long or metadata), you need to provide these datasets first:
 
-- send a ``POST`` request with Endpoint `../library/fearbase/R/createCsv`
+- send a ``POST`` request with Endpoint `../library/fearbase/R/create_csv`
 - click `Add file`
-  - name: `file` (same as parameter of `createCsv`)
+  - name: `file` (same as parameter of `create_csv`)
   - browse to the csv file you want to upload
   - send the request
 - If everything goes according to plan: you should see some entries that start with something like ``/ocpu/tmp/x0d715a6f605d54/``

@@ -20,7 +20,13 @@ Most user-facing functions return `ggplot2` objects, which lets callers print, t
 |------------------------------------|------------------------------------|
 | `R/` | Package implementation. Each file generally owns one function family. |
 | `R/mapping.R` | Central identifier mapping and schema normalization logic. |
-| `R/combinedHistograms.R` | Heatmap, co-occurrence, and shared validation helpers. |
+| `R/co-occurrence-heatmaps.R` | Heatmap, co-occurrence, and tightly coupled plotting helpers. |
+| `R/validate.R` | Cross-cutting data-frame, column, scalar, and numeric validation helpers. |
+| `R/resolve-data.R` | Caller-side data resolution helpers. |
+| `R/codebook.R` | Codebook resolution and label mapping helpers. |
+| `R/phase.R` | Phase ordering and phase display helpers. |
+| `R/ggplot-diagnostics.R` | Count-axis helpers and ggplot row-removal diagnostics. |
+| `R/opencpu.R` | OpenCPU-oriented object lookup, CSV upload, and JSON summary helpers. |
 | `R/viz-defaults.R` | Package palette and `.onLoad()` ggplot theme defaults. |
 | `data/` | CSV data files used during local development and fallback resolution. |
 | `data-raw/` | Source and rebuild scripts for internal package data. |
@@ -132,7 +138,7 @@ Mapping identifiers are normalized to character vectors by `.normalize_mapping()
 - `.apply_mapping_to_metadata(md, mapping = NULL)`;
 - `.apply_mapping_to_study_design(sd, mapping = NULL)`.
 
-These helpers are intentionally idempotent: if a data frame already contains a non-missing `condition_id`, the helper returns it unchanged. Maintainers should therefore join optional mapping columns, such as `paper_study_id`, explicitly when a downstream function needs them and the idempotent path may skip them. `trialsPhaseParticipant.R` does this through `.augment_trials_phase_grouping()`.
+These helpers are intentionally idempotent: if a data frame already contains a non-missing `condition_id`, the helper returns it unchanged. Maintainers should therefore join optional mapping columns, such as `paper_study_id`, explicitly when a downstream function needs them and the idempotent path may skip them. `trial-phase-counts.R` does this through `.augment_trials_phase_grouping()`.
 
 ## 5. Input Resolution Pattern
 
@@ -140,8 +146,7 @@ Several functions allow omitted data arguments for interactive and OpenCPU-like 
 
 1.  use the explicit data argument when supplied;
 2.  look for a conventional object in the caller environment, such as `data_long`, `metadata`, `codebook`, or `study_design`;
-3.  fall back to the package-bundled CSV in `data/`;
-4.  stop with a direct package-level error if no source is available.
+3.  stop with a direct package-level error if no source is available.
 
 Key resolver helpers:
 
@@ -158,7 +163,7 @@ When adding new functions, prefer explicit data arguments and reuse these resolv
 | Function | Source | Output | Notes |
 |------------------|------------------|------------------|------------------|
 | `age()` | long data | `ggplot` | Histogram or ridge density by grouping column. |
-| `ageDescriptives()` | long data | tibble | Mean, SD, min, max, and n for age. |
+| `age_descriptives()` | long data | tibble | Mean, SD, min, max, and n for age. |
 | `sex()` | long data | `ggplot` | Participant-level sex/gender pie chart. |
 
 Important call chain:
@@ -171,11 +176,11 @@ Important call chain:
 
 | Function | Source | Output | Notes |
 |------------------|------------------|------------------|------------------|
-| `dataCollectionYear()` | metadata | `ggplot` | Counts records per year. |
+| `data_collection_year()` | metadata | `ggplot` | Counts records per year. |
 | `instructions()` | metadata | `ggplot` | Counts contingency-instruction categories once per study. |
-| `stimModality()` | metadata | `ggplot` | Pie chart for `us_type` or `cs_type`. |
-| `reinforcementRates()` | metadata | `ggplot` | Distribution of reinforcement-rate entries. |
-| `peakDetectionWindows()` | metadata | `ggplot` | SCR baseline, peak, and trough windows. |
+| `stimulus_modality()` | metadata | `ggplot` | Pie chart for `us_type` or `cs_type`. |
+| `reinforcement_rates()` | metadata | `ggplot` | Distribution of reinforcement-rate entries. |
+| `peak_detection_windows()` | metadata | `ggplot` | SCR baseline, peak, and trough windows. |
 
 Metadata functions all normalize identifiers before selecting columns. Numeric metadata fields are validated before plotting; non-missing malformed values stop the function instead of being silently dropped.
 
@@ -183,12 +188,12 @@ Metadata functions all normalize identifiers before selecting columns. Numeric m
 
 | Function | Source | Output | Notes |
 |------------------|------------------|------------------|------------------|
-| `trialsPhaseParticipant()` | long data plus codebook | `ggplot` | Trial-count distribution by phase. |
-| `studyDesign()` | study design plus codebook | `ggplot` | Study-design trial-count distribution. Internal, not exported. |
+| `trial_phase_counts()` | long data plus codebook | `ggplot` | Trial-count distribution by phase. |
+| `study_design_trial_counts()` | study design plus codebook | `ggplot` | Study-design trial-count distribution. Internal, not exported. |
 
 Important call chain:
 
-`trialsPhaseParticipant()` -\> `.validate_trials_phase_y_axis()` -\> `.prepare_trials_phase_participant_data()` -\> long-data resolver -\> codebook resolver -\> mapping -\> grouping augmentation -\> trial counting -\> phase labels from codebook -\> plot branch for participant or study counts.
+`trial_phase_counts()` -\> `.validate_trials_phase_y_axis()` -\> `.prepare_trials_phase_participant_data()` -\> long-data resolver -\> codebook resolver -\> mapping -\> grouping augmentation -\> trial counting -\> phase labels from codebook -\> plot branch for participant or study counts.
 
 The long-data branch counts the maximum trial number per participant, phase, and stimulus, then sums stimulus-specific maxima to phase-level participant totals. The function currently excludes `int` and `other` phases.
 
@@ -196,33 +201,33 @@ The long-data branch counts the maximum trial number per participant, phase, and
 
 | Function | Source | Output | Notes |
 |------------------|------------------|------------------|------------------|
-| `measuresHeatmap()` | long data, metadata, codebook | patchwork object | Measure co-occurrence plus marginal counts. |
-| `phasesHeatmap()` | long data, codebook | patchwork object | Phase co-occurrence plus marginal counts. |
+| `measures_heatmap()` | long data, metadata, codebook | patchwork object | Measure co-occurrence plus marginal counts. |
+| `phases_heatmap()` | long data, codebook | patchwork object | Phase co-occurrence plus marginal counts. |
 | `plot_co_occurrence_heatmap()` | precomputed long table | `ggplot` | Reusable heatmap helper. |
 | `plot_horizontal_bar()` | precomputed counts | `ggplot` | Reusable marginal bar helper. |
 
 Important call chain:
 
-`measuresHeatmap()` -\> validate inputs -\> map long data and metadata -\> join by `condition_id` -\> label measures from codebook -\> distinct participant-condition measure rows -\> `.get_co_occurrence_data()` -\> reusable plot helpers -\> `arrange_histogram_layout()`.
+`measures_heatmap()` -\> validate inputs -\> map long data and metadata -\> join by `condition_id` -\> label measures from codebook -\> distinct participant-condition measure rows -\> `.get_co_occurrence_data()` -\> reusable plot helpers -\> `arrange_histogram_layout()`.
 
-`phasesHeatmap()` follows the same shape, but labels phases and excludes `int` and `other`.
+`phases_heatmap()` follows the same shape, but labels phases and excludes `int` and `other`.
 
 ### Utility and OpenCPU Helpers
 
 | Function | Purpose |
 |------------------------------------|------------------------------------|
-| `checkData()` | Retrieve an object by name from an environment with strict validation. |
-| `createCsv()` | Read an uploaded CSV file; used by OpenCPU upload workflows. |
-| `jsonSummary()` | Return a JSON summary of a named object. |
-| `updateMapping()` | Load the integrated mapping and optionally assign it globally. |
-| `allStudies()` | Return sorted study IDs from mapped metadata. |
-| `traceRemovedRows()` | Diagnose rows removed by a ggplot layer. |
+| `check_data()` | Retrieve an object by name from an environment with strict validation. |
+| `create_csv()` | Read an uploaded CSV file; used by OpenCPU upload workflows. |
+| `json_summary()` | Return a JSON summary of a named object. |
+| `update_mapping()` | Load the integrated mapping and optionally assign it globally. |
+| `all_studies()` | Return sorted study IDs from mapped metadata. |
+| `trace_removed_rows()` | Diagnose rows removed by a ggplot layer. |
 
-`createCsv()` and `jsonSummary()` are currently OpenCPU-oriented and are not exported in `NAMESPACE`. If they are intended to be part of the stable package API, add explicit roxygen `@export` tags and tests before relying on them from external code.
+`create_csv()` and `json_summary()` are OpenCPU-oriented exports. Prefer the snake_case endpoint names; the historical camelCase endpoint wrappers are deprecated and live in `R/compatibility.R`.
 
 ## 7. Validation Strategy
 
-The package validates early and close to function boundaries. Shared helpers in `combinedHistograms.R` include:
+The package validates early and close to function boundaries. Shared helpers in `validate.R` include:
 
 - `.validate_data_frame()`;
 - `.validate_required_columns()`;
@@ -266,7 +271,7 @@ API explorer:
 http://localhost/ocpu/
 ```
 
-For CSV-backed functions, upload data first through `createCsv`, then pass the returned OpenCPU session key to functions that need the uploaded object.
+For CSV-backed functions, upload data first through `create_csv`, then pass the returned OpenCPU session key to functions that need the uploaded object.
 
 ## 10. Testing and Quality Gates
 
@@ -309,7 +314,7 @@ Use this checklist for new user-facing functions.
 
 ## 12. Current Maintenance Notes
 
-- `createCsv()` and `jsonSummary()` have roxygen blocks but are not exported.
-- `sampleSizeDescriptives()`, `reinforcementRateDescriptives()`, `trialsPhaseParticipantDescriptive()`, and `studyDesign()` are not exported. Treat them as internal unless the API is intentionally expanded.
-- Several tests exercise zero-argument calls. Preserve caller-object and bundled data fallback behavior unless the team decides to make all data inputs explicit.
+- `create_csv()` and `json_summary()` are exported for OpenCPU workflows.
+- `sample_size_descriptives()`, `reinforcement_rate_descriptives()`, `trial_phase_count_descriptives()`, and `study_design_trial_counts()` are not exported. Treat them as internal unless the API is intentionally expanded.
+- Several tests exercise caller-object lookup. Preserve caller-side resolution unless the team decides to make all data inputs explicit.
 - The mapping helpers are intentionally idempotent. If a new function needs optional mapping columns, account for the idempotent early return.

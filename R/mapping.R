@@ -221,7 +221,7 @@
 #'
 #' @return A normalized mapping data frame.
 #' @export
-updateMapping <- function(assign_global = TRUE) {
+update_mapping <- function(assign_global = TRUE) {
   .get_mapping(assign_global = assign_global)
 }
 

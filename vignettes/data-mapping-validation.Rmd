@@ -36,7 +36,7 @@ metadata <- tibble::tribble(
 
 ## Mapping
 
-`updateMapping()` loads the integrated condition-to-study mapping. By default it
+`update_mapping()` loads the integrated condition-to-study mapping. By default it
 also assigns `mapping` in the global environment for compatibility with older
 interactive workflows. Use `assign_global = FALSE` in scripts when you want a
 pure return value.
@@ -54,30 +54,30 @@ not need to call internal mapping helpers directly.
 
 ## Study Lists
 
-`allStudies()` maps metadata and returns sorted study identifiers.
+`all_studies()` maps metadata and returns sorted study identifiers.
 
 ```{r all-studies}
-studies <- allStudies(metadata)
+studies <- all_studies(metadata)
 head(studies)
 length(studies)
 ```
 
 ## Strict Object Lookup
 
-`checkData()` retrieves a named object from an environment and gives explicit
+`check_data()` retrieves a named object from an environment and gives explicit
 errors when the object cannot be found or when invalid arguments are supplied.
 This is useful for OpenCPU-style workflows where object names arrive as strings.
 
 ```{r check-data}
 example_data <- data.frame(x = 1:5, y = letters[1:5])
 
-checkData("example_data")
-checkData("example_data", inherits = TRUE)
+check_data("example_data")
+check_data("example_data", inherits = TRUE)
 ```
 
 ## Diagnosing Removed Plot Rows
 
-`traceRemovedRows()` helps identify rows that a ggplot layer is likely to drop
+`trace_removed_rows()` helps identify rows that a ggplot layer is likely to drop
 because required aesthetics are missing or coordinates fall outside the trained
 panel range.
 
@@ -91,26 +91,26 @@ plot <- ggplot2::ggplot(plot_data, ggplot2::aes(x, y)) +
   ggplot2::geom_point() +
   ggplot2::xlim(0, 10)
 
-traceRemovedRows(plot, data = plot_data)
+trace_removed_rows(plot, data = plot_data)
 ```
 
 ## OpenCPU CSV Loading
 
-`createCsv()` reads an uploaded CSV file and returns a data frame. In local R
+`create_csv()` reads an uploaded CSV file and returns a data frame. In local R
 scripts, prefer `readr::read_csv()` or `utils::read.csv()` directly. In OpenCPU
-workflows, upload the file to `createCsv()` first and pass the resulting session
+workflows, upload the file to `create_csv()` first and pass the resulting session
 object to downstream functions.
 
 ```{r create-csv}
 # In OpenCPU this helper receives the path to the uploaded CSV file.
-# uploaded_data <- createCsv(uploaded_file)
+# uploaded_data <- create_csv(uploaded_file)
 ```
 
 ## JSON Summaries
 
-`jsonSummary()` converts a named object to a JSON summary. The named object must
-be visible to `checkData()`.
+`json_summary()` converts a named object to a JSON summary. The named object must
+be visible to `check_data()`.
 
 ```{r json-summary}
-# jsonSummary("example_data")
+# json_summary("example_data")
 ```

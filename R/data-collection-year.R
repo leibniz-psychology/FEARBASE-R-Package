@@ -36,14 +36,14 @@
 #'
 #' @examples
 #' \dontrun{
-#' dataCollectionYear(metadata)
-#' dataCollectionYear(metadata, grouping_variable = "condition_id")
-#' dataCollectionYear(metadata, year_of = "data")
+#' data_collection_year(metadata)
+#' data_collection_year(metadata, grouping_variable = "condition_id")
+#' data_collection_year(metadata, year_of = "data")
 #' }
 #'
 #' @importFrom rlang .data
 #' @export
-dataCollectionYear <- function(
+data_collection_year <- function(
   md = NULL,
   grouping_variable = "study_id",
   year_of = "publication"

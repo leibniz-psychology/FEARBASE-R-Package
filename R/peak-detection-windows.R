@@ -45,13 +45,13 @@
 #'
 #' @examples
 #' \dontrun{
-#' peakDetectionWindows(metadata)
-#' peakDetectionWindows(metadata, grouping_variable = "condition_id")
+#' peak_detection_windows(metadata)
+#' peak_detection_windows(metadata, grouping_variable = "condition_id")
 #' }
 #'
 #' @importFrom rlang .data
 #' @export
-peakDetectionWindows <- function(
+peak_detection_windows <- function(
   md,
   grouping_variable = "study_id"
 ) {

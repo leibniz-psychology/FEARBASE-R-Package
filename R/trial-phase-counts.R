@@ -251,24 +251,6 @@
   return(participant_phase_trials)
 }
 
-#' Resolve Study-Design Data for Trial-Phase Helpers
-#'
-#' @param sd A study-design data frame supplied by the caller, or `NULL`.
-#' @param caller_env Environment to inspect for an object named `study_design`.
-#'
-#' @return A study-design data frame.
-#' @noRd
-.resolve_trials_phase_study_design <- function(
-  sd = NULL,
-  caller_env = parent.frame()
-) {
-  .resolve_caller_data(
-    data = sd,
-    arg_name = "sd",
-    object_name = "study_design",
-    caller_env = caller_env
-  )
-}
 
 #' Plot Trial Counts per Phase and Participant
 #'
@@ -316,8 +298,8 @@
 #'
 #' @examples
 #' \dontrun{
-#' trialsPhaseParticipant(data_long, cb = codebook)
-#' trialsPhaseParticipant(
+#' trial_phase_counts(data_long, cb = codebook)
+#' trial_phase_counts(
 #'   data_long,
 #'   y_axis = "participants",
 #'   grouping_variable = "paper_study_id",
@@ -327,7 +309,7 @@
 #'
 #' @importFrom rlang .data
 #' @export
-trialsPhaseParticipant <- function(
+trial_phase_counts <- function(
   dl = NULL,
   y_axis = "s",
   grouping_variable = "condition_id",
@@ -434,19 +416,19 @@ trialsPhaseParticipant <- function(
 #' each experimental phase in a FEARBASE long-format data set.
 #'
 #' @param dl A data frame in long format, or `NULL`. See
-#'   `trialsPhaseParticipant()` for the required long-format columns and the
+#'   `trial_phase_counts()` for the required long-format columns and the
 #'   omitted-data resolution rules.
 #' @param grouping_variable A single character string specifying the grouping
 #'   column. Must be one of `"condition_id"`, `"study_id"`,
 #'   `"paper_cond_id"`, or `"paper_study_id"`.
-#' @param cb A codebook data frame, or `NULL`. See `trialsPhaseParticipant()`
+#' @param cb A codebook data frame, or `NULL`. See `trial_phase_counts()`
 #'   for the required codebook columns and omitted-codebook resolution rules.
 #'
 #' @return A list-like object returned by `psych::describeBy()` with
 #'   descriptive statistics grouped by codebook-derived phase label.
 #'
 #' @noRd
-trialsPhaseParticipantDescriptive <- function(
+trial_phase_count_descriptives <- function(
   dl = NULL,
   grouping_variable = "condition_id",
   cb = NULL
@@ -455,7 +437,7 @@ trialsPhaseParticipantDescriptive <- function(
   # 1) Reuse the plotting preparation path
   ############################################################
 
-  # Use the same data preparation as trialsPhaseParticipant() so descriptive
+  # Use the same data preparation as trial_phase_counts() so descriptive
   # statistics and plots are computed from identical phase-level trial counts.
   participant_phase_trials <- .prepare_trials_phase_participant_data(
     dl = dl,
@@ -478,131 +460,3 @@ trialsPhaseParticipantDescriptive <- function(
   return(result)
 }
 
-#' Plot Study-Design Trial Counts per Phase
-#'
-#' @description
-#' Creates a faceted bar plot of phase-level trial counts from the study-design
-#' table, where phases are labeled dynamically from the FEARBASE codebook.
-#'
-#' @param sd A study-design data frame, or `NULL`. Must contain `study_id`, `name`,
-#'   `cspTrials`, and `csmTrials` after `.apply_mapping_to_study_design()` is
-#'   applied. The `name` column contains phase abbreviations. If `NULL`, the
-#'   function first attempts to use an object named `study_design` from the
-#'   calling environment.
-#' @param cb A codebook data frame, or `NULL`. If `NULL`, the function first
-#'   attempts to use an object named `codebook` from the calling environment.
-#'
-#' @return A `ggplot2` object with one facet row per phase.
-#'
-#' @noRd
-studyDesign <- function(sd = NULL, cb = NULL) {
-  ############################################################
-  # 1) Resolve, map, and validate study-design inputs
-  ############################################################
-
-  # Capture the unevaluated expression so legacy calls such as
-  # studyDesign(study_design) can fall back to bundled data when `study_design`
-  # is not an object in the current test or interactive environment.
-  sd_expr <- substitute(sd)
-  sd <- tryCatch(
-    sd,
-    error = function(error) {
-      if (identical(as.character(sd_expr), "study_design")) {
-        return(NULL)
-      }
-
-      stop(error)
-    }
-  )
-
-  sd <- .resolve_trials_phase_study_design(
-    sd = sd,
-    caller_env = parent.frame()
-  )
-  cb <- .resolve_codebook(cb, caller_env = parent.frame())
-
-  .validate_data_frame(sd, "sd")
-  .validate_data_frame(cb, "cb")
-
-  # Study-design tables use `name` for the phase abbreviation. Apply the
-  # package mapping first so `study_id` has the same meaning as in long data.
-  sd <- .apply_mapping_to_study_design(sd)
-
-  .validate_required_columns(
-    sd,
-    c("study_id", "name", "cspTrials", "csmTrials"),
-    "sd"
-  )
-
-  ############################################################
-  # 2) Prepare phase-level trial counts from the design table
-  ############################################################
-
-  # Keep rows with complete CS+ and CS- trial counts, exclude non-plotted phase
-  # categories, and de-duplicate design rows before aggregation.
-  trials <- sd |>
-    filter(
-      !is.na(.data$cspTrials),
-      !is.na(.data$csmTrials),
-      !is.na(.data$name),
-      !.data$name %in% c("int", "other")
-    ) |>
-    distinct() |>
-    group_by(
-      .data$study_id,
-      .data$name
-    ) |>
-    summarise(
-      trials = sum(.data$cspTrials),
-      .groups = "drop"
-    ) |>
-    mutate(
-      name = .label_phases_from_codebook(
-        .data$name,
-        cb = cb,
-        keep_unmapped = FALSE
-      )
-    ) |>
-    filter(!is.na(.data$name))
-
-  trials$study_id <- as.factor(trials$study_id)
-
-  if (nrow(trials) == 0L) {
-    stop(
-      "No mapped study-design trial counts were available after excluding ",
-      "intervention and other phases.",
-      call. = FALSE
-    )
-  }
-
-  ############################################################
-  # 3) Count studies per phase-level trial count and plot
-  ############################################################
-
-  graph <- trials |>
-    distinct(
-      .data$study_id,
-      .data$name,
-      .data$trials
-    ) |>
-    group_by(
-      .data$name,
-      .data$trials
-    ) |>
-    summarise(
-      n = n(),
-      .groups = "drop"
-    ) |>
-    ggplot(
-      aes(
-        x = .data$trials,
-        y = .data$n
-      )
-    ) +
-    geom_col() +
-    facet_grid(rows = vars(.data$name), axes = "all", axis.labels = "all_x") +
-    scale_x_continuous(breaks = scales::extended_breaks(10)) +
-    labs(x = "Number of Trials", y = "Number of Studies")
-
-  return(graph)
-}

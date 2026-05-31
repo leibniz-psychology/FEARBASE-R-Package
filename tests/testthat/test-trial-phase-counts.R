@@ -1,20 +1,20 @@
 test_that("phase length graph works", {
-  trialsPhaseParticipant(fixture_long_data(), cb = fixture_codebook()) |>
+  trial_phase_counts(fixture_long_data(), cb = fixture_codebook()) |>
     testthat::expect_s3_class("ggplot")
-  trialsPhaseParticipant(
+  trial_phase_counts(
     fixture_long_data(),
     y_axis = "s",
     cb = fixture_codebook()
   ) |>
     testthat::expect_s3_class("ggplot")
-  trialsPhaseParticipant(
+  trial_phase_counts(
     fixture_long_data(),
     y_axis = "s",
     grouping_variable = "paper_study_id",
     cb = fixture_codebook()
   ) |>
     testthat::expect_s3_class("ggplot")
-  trialsPhaseParticipant(
+  trial_phase_counts(
     fixture_long_data(),
     y_axis = "s",
     grouping_variable = "study_id",
@@ -23,6 +23,6 @@ test_that("phase length graph works", {
     testthat::expect_s3_class("ggplot")
 })
 test_that("phase length graph (N source: study design) works", {
-  studyDesign(fixture_study_design(), fixture_codebook()) |>
+  study_design_trial_counts(fixture_study_design(), fixture_codebook()) |>
     testthat::expect_s3_class("ggplot")
 })
