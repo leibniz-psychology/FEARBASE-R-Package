@@ -38,7 +38,6 @@ measures_heatmap <- function(dl, md, cb) {
   .validate_data_frame(dl, "dl")
   .validate_data_frame(md, "md")
   .validate_data_frame(cb, "cb")
-  .validate_required_columns(cb, c("attribute", "abbreviation", "name"), "cb")
 
   # Normalize study and condition identifiers with the package mapping helpers.
   # The helper functions are intentionally called before column validation
@@ -52,6 +51,7 @@ measures_heatmap <- function(dl, md, cb) {
     "dl"
   )
   .validate_required_columns(md, "condition_id", "md")
+  .validate_required_columns(cb, c("attribute", "abbreviation", "name"), "cb")
 
   # Join participant-level observations to their mapped metadata rows. The
   # current measure co-occurrence calculation only needs the identifiers from
