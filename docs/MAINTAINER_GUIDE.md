@@ -69,7 +69,7 @@ Important columns include:
 - `year`: data collection or publication year, depending on the source export;
 - `n_subjects`: participant count;
 - `us_type` and `cs_type`: stimulus modality columns;
-- `instruction_contingency`: instruction category;
+- `instruction_contingency`: instruction category;mark
 - columns beginning with `reinf`: reinforcement-rate fields;
 - `physio_scr_*` or legacy `scr_*`: SCR peak-detection window fields.
 

@@ -395,7 +395,11 @@ plot_co_occurrence_heatmap <- function(
     )
   ) +
     geom_tile() +
-    scale_y_discrete(position = "right") +
+    scale_y_discrete(
+      position = "right",
+      labels = scales::label_wrap(width = 40)
+    ) +
+    scale_x_discrete(labels = scales::label_wrap(width = 40)) +
     geom_text(
       aes(
         label = .data[[value_var]]
@@ -418,7 +422,7 @@ plot_co_occurrence_heatmap <- function(
     scale_alpha(guide = "none") +
     labs(fill = "Number of Participants") +
     theme(
-      axis.text.x = element_text(angle = 45, hjust = 1),
+      axis.text.x = element_text(angle = 90, hjust = 1),
       legend.position = "top",
       legend.key.width = grid::unit(2, "line"),
       legend.title = element_text(
