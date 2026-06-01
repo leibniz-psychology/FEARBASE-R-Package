@@ -1,7 +1,8 @@
 #' Validate Trial-Phase Grouping Input
 #'
 #' @param dl A mapped long-format data frame.
-#' @param grouping_variable A single grouping column name.
+#' @param grouping_variable A single grouping column name, or `NULL` when no
+#'   grouping column should be used.
 #'
 #' @return Invisibly returns `grouping_variable` when validation succeeds.
 #' @noRd
@@ -9,6 +10,19 @@
   ############################################################
   # 1) Validate the grouping declaration
   ############################################################
+
+  # A NULL grouping variable is the explicit ungrouped mode used by
+  # trial_phase_counts(). In that mode, validation only needs to confirm the
+  # participant-level trial columns below.
+  if (is.null(grouping_variable)) {
+    .validate_required_columns(
+      dl,
+      c("participant_id", "phase", "stimulus", "trial"),
+      "dl"
+    )
+
+    return(invisible(grouping_variable))
+  }
 
   # The trial-count summaries aggregate by exactly one identifier column. A
   # scalar character value keeps the later `.data[[grouping_variable]]` calls
@@ -85,7 +99,8 @@
 #' Add Supported Grouping Columns from the Mapping Table When Needed
 #'
 #' @param dl A mapped long-format data frame.
-#' @param grouping_variable A single grouping column name.
+#' @param grouping_variable A single grouping column name, or `NULL` when no
+#'   grouping column should be used.
 #'
 #' @return `dl`, optionally joined with the requested grouping column.
 #' @noRd
@@ -93,6 +108,11 @@
   ############################################################
   # 1) Return immediately when the requested grouping already exists
   ############################################################
+
+  # Ungrouped trial-count plots do not need any mapping-derived identifier.
+  if (is.null(grouping_variable)) {
+    return(dl)
+  }
 
   # Some input data already include paper-level identifiers. In that common
   # case, avoid an unnecessary join and preserve the caller's existing column.
@@ -134,7 +154,8 @@
 #'
 #' @param dl A data frame in FEARBASE long format, or `NULL`.
 #' @param cb A codebook data frame, or `NULL`.
-#' @param grouping_variable A single grouping column name.
+#' @param grouping_variable A single grouping column name, or `NULL` when no
+#'   grouping column should be used.
 #' @param caller_env Environment used to resolve omitted data objects.
 #'
 #' @return A tibble with one row per grouping value, participant, phase, and
@@ -143,7 +164,7 @@
 .prepare_trials_phase_participant_data <- function(
   dl = NULL,
   cb = NULL,
-  grouping_variable = "condition_id",
+  grouping_variable = NULL,
   caller_env = parent.frame()
 ) {
   ############################################################
@@ -178,31 +199,41 @@
   # Work from only the required columns, remove incomplete trial observations,
   # and de-duplicate long-format rows so repeated measurements do not inflate
   # the participant-level trial counts.
+  required_trial_columns <- c(
+    grouping_variable,
+    "participant_id",
+    "phase",
+    "stimulus",
+    "trial"
+  )
+
+  grouping_columns <- c(
+    grouping_variable,
+    "participant_id",
+    "phase",
+    "stimulus"
+  )
+
   participant_stimulus_trials <- dl |>
-    select(
-      all_of(c(
-        grouping_variable,
-        "participant_id",
-        "phase",
-        "stimulus",
-        "trial"
-      ))
-    ) |>
+    select(all_of(required_trial_columns)) |>
     filter(
-      !is.na(.data[[grouping_variable]]),
       !is.na(.data$participant_id),
       !is.na(.data$phase),
       !is.na(.data$stimulus),
       !is.na(.data$trial),
       !.data$phase %in% c("int", "other")
-    ) |>
+    )
+
+  if (!is.null(grouping_variable)) {
+    # Grouped plots should exclude observations that cannot be assigned to the
+    # requested identifier before participant-level trial totals are computed.
+    participant_stimulus_trials <- participant_stimulus_trials |>
+      filter(!is.na(.data[[grouping_variable]]))
+  }
+
+  participant_stimulus_trials <- participant_stimulus_trials |>
     distinct() |>
-    group_by(
-      .data[[grouping_variable]],
-      .data$participant_id,
-      .data$phase,
-      .data$stimulus
-    ) |>
+    group_by(across(all_of(grouping_columns))) |>
     summarise(
       stimulus_trials = max(.data$trial),
       .groups = "drop"
@@ -215,12 +246,14 @@
   # A participant may have separate rows for multiple stimuli within the same
   # phase. Summing the stimulus-specific maxima gives the participant's total
   # number of recorded trials for that phase.
+  phase_grouping_columns <- c(
+    grouping_variable,
+    "participant_id",
+    "phase"
+  )
+
   participant_phase_trials <- participant_stimulus_trials |>
-    group_by(
-      .data[[grouping_variable]],
-      .data$participant_id,
-      .data$phase
-    ) |>
+    group_by(across(all_of(phase_grouping_columns))) |>
     summarise(
       trials = sum(.data$stimulus_trials),
       .groups = "drop"
@@ -236,9 +269,11 @@
 
   # Convert the grouping column after aggregation so ggplot treats identifiers
   # as categories while the data-processing steps can still compare raw values.
-  participant_phase_trials[[grouping_variable]] <- as.factor(
-    participant_phase_trials[[grouping_variable]]
-  )
+  if (!is.null(grouping_variable)) {
+    participant_phase_trials[[grouping_variable]] <- as.factor(
+      participant_phase_trials[[grouping_variable]]
+    )
+  }
 
   if (nrow(participant_phase_trials) == 0L) {
     stop(
@@ -268,8 +303,9 @@
 #'   `"n"`, `"participant"`, or `"participants"` for participant counts; use
 #'   `"s"`, `"study"`, or `"studies"` for grouping-unit counts.
 #' @param grouping_variable A single character string specifying the grouping
-#'   column. Must be one of `"condition_id"`, `"study_id"`,
-#'   `"paper_cond_id"`, or `"paper_study_id"`.
+#'   column, or `NULL` to aggregate across all grouping units. When supplied,
+#'   must be one of `"condition_id"`, `"study_id"`, `"paper_cond_id"`, or
+#'   `"paper_study_id"`.
 #' @param cb A codebook data frame with at least `attribute`, `abbreviation`,
 #'   and `name`. Rows where `attribute == "phase"` are used to translate phase
 #'   abbreviations to display labels. If `NULL`, the function first attempts to
@@ -311,8 +347,8 @@
 #' @export
 trial_phase_counts <- function(
   dl = NULL,
-  y_axis = "s",
-  grouping_variable = "condition_id",
+  y_axis = "participants",
+  grouping_variable = NULL,
   cb = NULL
 ) {
   ############################################################
@@ -322,6 +358,13 @@ trial_phase_counts <- function(
   # Normalize the y-axis selector once so the plotting branch can work with a
   # compact internal mode name.
   y_axis <- .validate_trials_phase_y_axis(y_axis)
+
+  if (identical(y_axis, "studies") && is.null(grouping_variable)) {
+    stop(
+      "`grouping_variable` must be supplied when `y_axis` selects grouping-unit counts.",
+      call. = FALSE
+    )
+  }
 
   # Delegate data resolution, mapping, validation, trial counting, and phase
   # labeling to the shared helper. This keeps the public function focused on
@@ -341,34 +384,53 @@ trial_phase_counts <- function(
     # Count participants at each trial count within each phase and grouping
     # unit. The grouping fill makes cross-study or cross-condition differences
     # visible while preserving the phase facets.
+    participant_grouping_columns <- c(
+      grouping_variable,
+      "phase",
+      "trials"
+    )
+
     plot_data <- participant_phase_trials |>
-      group_by(
-        .data[[grouping_variable]],
-        .data$phase,
-        .data$trials
-      ) |>
+      group_by(across(all_of(participant_grouping_columns))) |>
       summarise(
         n = n(),
         .groups = "drop"
       )
 
-    graph <- plot_data |>
-      ggplot(
-        aes(
-          x = .data$trials,
-          y = .data$n,
-          fill = .data[[grouping_variable]],
-          group = .data[[grouping_variable]]
+    if (is.null(grouping_variable)) {
+      graph <- plot_data |>
+        ggplot(
+          aes(
+            x = .data$trials,
+            y = .data$n
+          )
+        ) +
+        geom_col() +
+        facet_grid(rows = vars(.data$phase), axes = "all", axis.labels = "all_x") +
+        scale_x_continuous(breaks = scales::extended_breaks(10)) +
+        labs(
+          x = "Number of Trials",
+          y = "Number of Participants"
         )
-      ) +
-      geom_col(color = "white", linewidth = 0.2) +
-      facet_grid(rows = vars(.data$phase), axes = "all", axis.labels = "all_x") +
-      scale_x_continuous(breaks = scales::extended_breaks(10)) +
-      labs(
-        x = "Number of Trials",
-        y = "Number of Participants",
-        fill = grouping_variable
+    } else {
+      graph <- plot_data |>
+        ggplot(
+          aes(
+            x = .data$trials,
+            y = .data$n,
+            fill = .data[[grouping_variable]],
+            group = .data[[grouping_variable]]
+          )
+        ) +
+        geom_col(color = "white", linewidth = 0.2) +
+        facet_grid(rows = vars(.data$phase), axes = "all", axis.labels = "all_x") +
+        scale_x_continuous(breaks = scales::extended_breaks(10)) +
+        labs(
+          x = "Number of Trials",
+          y = "Number of Participants",
+          fill = grouping_variable
       )
+    }
   } else {
     # Count each grouping unit once per phase and observed trial total. This
     # branch reports the distribution across studies or conditions, depending
