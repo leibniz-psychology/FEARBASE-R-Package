@@ -59,7 +59,6 @@ docs/DOCUMENTATION_IMPLEMENTATION_LOG.md
 /.quarto/
 **/*.quarto_ipynb
 .quarto/project-cache/deno-kv-file
-dev_local/all_graphs.qmd
 dev_local/all_graphs.html
 _quarto.yml
 *.png

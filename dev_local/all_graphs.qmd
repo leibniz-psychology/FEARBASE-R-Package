@@ -1,0 +1,1020 @@
+---
+title: "Fearbase Visualisations"
+format: html
+toc: true
+toc-depth: 4
+toc-expand: true
+number-sections: true
+number-depth: 4
+execution:
+    cache: true
+---
+
+```{r}
+#| include: false
+#| label: load-packages-data
+devtools::load_all() # Load fearbase package
+library(tidyverse)
+
+csv_files <- dir(
+  "C:\\Users\\calting\\Documents\\GitLab\\FEARBASE-R-Package\\data",
+  pattern = "*.csv",
+  full.names = TRUE
+)
+
+# read all csv files
+for (f in csv_files) {
+  assign(
+    sub(".csv", "", basename(f)),
+    read_csv(f),
+    envir = .GlobalEnv
+  )
+}
+```
+
+# Participant-related
+
+## Age
+
+### Histogram
+
+I'd remove the histogram from the package due to colours being not differentiable in a meaningful way (see comment in "Introducing the fearbase")
+
+:::: {.column-page layout="[ 50, 50 ]"}
+
+::: {#hist-by-study}
+
+```{r}
+#| label: fig-age-hist-study
+#| fig-cap: "Age distribution by study (not dataset)."
+#| code-fold: true
+age(dl = data_long, type = "histogram", grouping_variable = "study_id")
+```
+
+:::
+
+::: {#hist-by-condition}
+
+```{r}
+#| label: fig-age-hist-condition
+#| fig-cap: "Age distribution by condition (= dataset, not study)."
+#| code-fold: true
+age(dl = data_long, type = "histogram", grouping_variable = "condition_id")
+```
+
+:::
+
+::::
+
+### Ridgeline Plots
+
+:::: {.column-page layout-ncol="2"}
+
+::: {#ridge-by-study}
+
+```{r }
+#| label: fig-age-ridge-study
+#| fig-cap: "Age densities by study (not dataset)."
+#| code-fold: true
+age(dl = data_long, type = "ridge", grouping_variable = "study_id")
+```
+
+:::
+
+::: {#ridge-by-condition}
+
+```{r}
+#| label: fig-age-ridge-condition
+#| fig-cap: "Age densities by condition (= dataset, not study)."
+#| code-fold: true
+age(dl = data_long, type = "ridge", grouping_variable = "condition_id")
+```
+
+:::
+
+::::
+
+
+## Sex
+
+::: {#sex-pie-chart}
+
+```{r}
+#| label: fig-sex-pie
+#| fig-cap: "Number of participants by sex."
+#| code-fold: true
+sex(dl = data_long)
+```
+
+:::
+
+# Study-related
+
+## Year (of Publication or Data Upload)
+
+:::: {.column-page layout-ncol="2"}
+
+::: {#year-of-publication-by-study}
+```{r}
+#| label: fig-year-publication-by-study
+#| fig-cap: "The year a study associated with a Fearbase dataset was published."
+#| code-fold: true
+data_collection_year(
+  md = metadata,
+  grouping_variable = "study_id",
+  year_of = "publication"
+)
+```
+:::
+
+::: {#year-of-data-upload-by-study}
+```{r}
+#| label: fig-year-data-upload-by-study
+#| fig-cap: "The year a Fearbase dataset was made (publicly) available."
+#| code-fold: true
+data_collection_year(
+  md = metadata,
+  grouping_variable = "study_id",
+  year_of = "data"
+)
+```
+:::
+
+::::
+
+## Sample Size
+
+:::: {.column-page layout-ncol="2"}
+
+::: {#sample-size-by-study}
+```{r}
+#| label: fig-sample-size-by-study
+#| fig-cap: "Number of participants per study (not dataset)"
+#| code-fold: true
+sample_size_by_study(dl = data_long, grouping_variable = "study_id")
+```
+:::
+
+::: {#sample-size-by-condition}
+```{r}
+#| label: fig-sample-size-by-condition
+#| fig-cap: "Number of participants per condition (= dataset)"
+#| code-fold: true
+sample_size_by_study(dl = data_long, grouping_variable = "condition_id")
+```
+:::
+
+::::
+
+## Instructions
+
+:::: {.column-page layout-ncol="2" layout-nrow="3"}
+
+::: {#instructions-by-study_with_na}
+```{r}
+#| label: fig-instructions-study-with-na
+#| fig-cap: "Number of studies (not datasets) per instructions (NA included)."
+#| code-fold: true
+instructions(md = metadata, grouping_variable = "study_id", remove_na = FALSE)
+```
+:::
+
+::: {#instructions-by-condition_with_na}
+```{r}
+#| label: fig-instructions-condition-with-na
+#| fig-cap: "Number of conditions (= datasets) per instructions (NA included)."
+#| code-fold: true
+instructions(
+  md = metadata,
+  grouping_variable = "condition_id",
+  remove_na = FALSE
+)
+```
+:::
+
+
+
+::: {#instructions-by-study_without_na}
+```{r}
+#| label: fig-instructions-study-without-na
+#| fig-cap: "Number of studies (not datasets) per instructions (NA excluded)."
+#| code-fold: true
+instructions(md = metadata, grouping_variable = "study_id", remove_na = TRUE)
+```
+:::
+
+::: {#instructions-by-condition_without_na}
+```{r}
+#| label: fig-instructions-condition-without-na
+#| fig-cap: "Number of conditions (= datasets) per instructions (NA excluded)."
+#| code-fold: true
+instructions(
+  md = metadata,
+  grouping_variable = "condition_id",
+  remove_na = TRUE
+)
+```
+:::
+
+
+
+::: {#instructions-by-study_with_na_by_count}
+```{r}
+#| label: fig-instructions-study-with_na_by_count
+#| fig-cap: "Number of studies (not datasets) per instructions (NA excluded). Sorted by count."
+#| code-fold: true
+instructions(
+  md = metadata,
+  grouping_variable = "study_id",
+  remove_na = TRUE,
+  sort_by_count = TRUE
+)
+```
+:::
+
+::: {#instructions-by-condition_with_na-by-count}
+```{r}
+#| label: fig-instructions-condition-with-na-by-count
+#| fig-cap: "Number of conditions (= datasets) per instructions (NA excluded). Sorted by count."
+#| code-fold: true
+instructions(
+  md = metadata,
+  grouping_variable = "condition_id",
+  remove_na = TRUE,
+  sort_by_count = TRUE
+)
+```
+:::
+
+::::
+
+## Reinforcement Rates
+
+:::: {.column-page layout-ncol="2"}
+
+::: {#reinforcement-rate-by-study}
+```{r}
+#| label: fig-reinforcement-rate-by-study
+#| fig-cap: "Number of Studies (not datasets) per reinforcement rate."
+#| code-fold: true
+reinforcement_rates(md = metadata, grouping_variable = "study_id")
+```
+:::
+
+::: {#reinforcement-rate-by-condition}
+```{r}
+#| label: fig-reinforcement-rate-by-condition
+#| fig-cap: "Number of Conditions (= datasets) per reinforcement rate."
+#| code-fold: true
+reinforcement_rates(md = metadata, grouping_variable = "condition_id")
+```
+:::
+
+::::
+
+## Stimulus Modalities
+
+::: {.callout-note}
+Should we add "n = " to the number of studies/participants in brackets, e.g. auditory (n = 1)?
+:::
+
+
+### US
+
+:::: {.column-page layout-ncol="2"}
+
+::: {#stimulus-modality-us-by-study}
+```{r}
+#| label: fig-us-modality-by-study
+#| fig-cap: "Number of Studies per US modality."
+#| code-fold: true
+stimulus_modality(md = metadata, type = "us_type", level = "n_studies")
+```
+:::
+
+::: {#stimulus-modality-us-by-participants}
+```{r}
+#| label: fig-us-modality-by-subject
+#| fig-cap: "Number of Participants per US modality."
+#| code-fold: true
+stimulus_modality(md = metadata, type = "us_type", level = "n_subjects")
+```
+:::
+
+::::
+
+
+### CS
+
+:::: {.column-page layout-ncol="2"}
+
+::: {#stimulus-modality-cs-by-study}
+```{r}
+#| label: fig-cs-modality-by-study
+#| fig-cap: "Number of Studies per CS modality."
+#| code-fold: true
+stimulus_modality(md = metadata, type = "cs_type", level = "n_studies")
+```
+:::
+
+::: {#stimulus-modality-cs-by-participants}
+```{r}
+#| label: fig-cs-modality-by-subject
+#| fig-cap: "Number of Participants per CS modality."
+#| code-fold: true
+stimulus_modality(md = metadata, type = "cs_type", level = "n_subjects")
+```
+:::
+
+::::
+
+
+## SCR Scoring-Approaches
+
+::: {.callout-important}
+Maybe add "window" plots for other measures than SCR later (e.g. FPS)?
+:::
+
+::: {.callout-important}
+Rework of scoring approach categories is on our todo.
+:::
+
+::: {.callout-note}
+*CS Onset* label must be dynamic or relative. Must look further into this.
+:::
+
+::: {.callout-note}
+An alternative way could be to just show the unique windows, add n = xxx at the left/right of each bar and add a column next to the plot with the study IDs that used the corresponding windows?
+:::
+
+
+:::: {.column-page layout-ncol="2"}
+
+::: {#scr-scoring-approach-by-study}
+```{r}
+#| label: fig-scr-scoring-approach-by-study
+#| fig-cap: "SCR Scoring Approach Parameters by Study."
+#| code-fold: true
+peak_detection_windows(md = metadata, grouping_variable = "study_id")
+```
+:::
+
+::: {#stimulus-modality-cs-by-participants}
+```{r}
+#| label: fig-scr-scoring-approach-by-condition
+#| fig-cap: "SCR Scoring Approach Parameters by Condition (= dataset)."
+#| code-fold: true
+peak_detection_windows(md = metadata, grouping_variable = "condition_id")
+```
+:::
+
+::::
+
+::: {#stimulus-modality-cs-by-participants}
+```{r}
+#| label: fig-scr-scoring-approach-dynamic
+#| fig-cap: "Unique SCR Scoring Approach Settings. Hover with your mouse over a segment to show Dataset IDs."
+#| code-fold: true
+peak_detection_windows_dynamic(
+  md = metadata,
+  grouping_variable = "condition_id"
+)
+```
+:::
+
+
+
+## Heatmaps
+
+### Measures
+
+:::{.callout-warning}
+This looks messed up only on quarto rendering. When viewing the plot in RStudio or Positron, it looks much better. Will look for a fix, though we might do not want to plot ALL measures at once in a heatmap ;)
+A quick and cheap option would be to add an input paramter like "include" that accepts a vector where we can explicitly pass what to plot. In case of many measures this might be cumbersome. The default could be a hardcoded subset, but then again, that would be hardcoded...
+:::
+
+:::{.callout-note}
+The changes of how ratings are displayed (Valence (US), Expectancy (US)) etc. are **not yet in place**. We might want to think of a way to properly do this manually instead of hardcoding this, e.g. by making some changes to the codebook, maybe?
+:::
+
+:::: {.column-screen}
+::: {#scr-scoring-approach-by-study}
+```{r}
+#| label: fig-measures-heatmap
+#| fig-cap: "Heatmap for all measures. Note: Measure names are taken from codebook!"
+#| code-fold: true
+measures_heatmap(
+  dl = data_long,
+  md = metadata,
+  cb = codebook
+)
+```
+:::
+::::
+
+### Phases
+
+:::{.callout-note}
+Now supports dynamic removal of phases instead of hardcoded exclusion of "int" and "other". Phases to exclude can be supplied as vector, e.g. c("int", "other", "acq").
+:::
+
+:::: {.column-screen layout-ncol="2"}
+
+::: {#phases-heatmap-without-int-and-other}
+```{r}
+#| label: fig-phases-heatmap-without-int-and-other
+#| fig-cap: "Heatmap for all phases except 'int' and 'other'. Note: Measure names are taken from codebook!"
+#| code-fold: true
+phases_heatmap(dl = data_long, cb = codebook, exclude = c("int", "other"))
+```
+:::
+
+::: {#phases-heatmap-all-phases}
+```{r}
+#| label: fig-phases-heatmap-all-phases
+#| fig-cap: "Heatmap for all phases. Note: Measure names are taken from codebook!"
+#| code-fold: true
+phases_heatmap(dl = data_long, cb = codebook)
+```
+:::
+
+::::
+
+### Trials per Phases
+
+Note: The number of trials is calculated as the total number of CSs per phase (e.g. n_trials(acq) = n(CS+) + n(CS-)).
+
+:::: {.column-page layout-ncol="2"}
+
+:::{#studis-per-trial-x-phase}
+```{r}
+#| label: fig-phases-trials
+#| fig-cap: "Number of Studies per trial x phase."
+#| code-fold: true
+trial_phase_counts(
+  dl = data_long,
+  y_axis = "studies",
+  grouping_variable = "study_id",
+  cb = codebook
+)
+```
+:::
+
+:::{#participants-per-trial-x-phase}
+```{r}
+#| label: fig-phases-trials-participants
+#| fig-cap: "Number of Participants per trial x phase."
+#| code-fold: true
+trial_phase_counts(
+  dl = data_long,
+  y_axis = "participants",
+  grouping_variable = NULL,
+  cb = codebook
+)
+```
+:::
+
+::::
+
+# Work in progress & Playground
+
+## Choropleth Map (interactive)
+
+::::{.column-page}
+
+:::{#choropleth-map}
+
+```{r}
+#| label: fig-choropleth-map
+#| fig-cap: "Number of studies by Country."
+#| code-fold: true
+#| echo: false
+library(sf)
+library(ggplot2)
+library(ggiraph)
+library(patchwork)
+library(countrycode)
+library(rnaturalearth)
+library(rnaturalearthdata)
+
+# Clean fearbase country metadata
+metadata <- metadata %>%
+  mutate(countryClean = countryname(dataCountry))
+
+# get country counts
+fearbase_country_counts <- metadata %>%
+  select(countryClean) %>%
+  table() %>%
+  as_tibble() %>%
+  mutate(countryClean = forcats::fct_reorder(countryClean, n))
+
+
+# Get World Data
+world_sf <- ne_countries(scale = "large", returnclass = "sf")
+world_sf <- world_sf %>%
+  mutate(
+    countryClean = countryname(sovereignt, nomatch = NULL)
+  )
+
+# add fearbase data to world data
+world_sf_complete <- world_sf %>%
+  left_join(
+    fearbase_country_counts,
+    by = c("countryClean" = "countryClean")
+  ) %>%
+  filter(countryClean != "Antarctica")
+
+# create colour palette
+n_countries <- length(unique(fearbase_country_counts$countryClean))
+nn = 4
+new_palette <- generate_palette(n_countries * nn)
+new_colors <- setNames(
+  new_palette[seq(0, n_countries * nn, nn)],
+  levels(fearbase_country_counts$countryClean)
+)
+
+# country bar graph
+p1 <- ggplot(
+  fearbase_country_counts,
+  aes(
+    x = reorder(countryClean, n),
+    y = n,
+    tooltip = n,
+    data_id = countryClean,
+    fill = countryClean
+  )
+) +
+  geom_col_interactive(data = filter(fearbase_country_counts, !is.na(n))) +
+  # geom_text(stat='identity',
+  #           aes(label=n),
+  #           size = 4,
+  #           hjust=-1) +
+  guides(fill = "none") +
+  scale_fill_manual(values = new_colors) +
+  coord_flip() +
+  theme(axis.title.x = element_blank(), axis.title.y = element_blank()) +
+  scale_y_continuous("Number of datasets", breaks = seq(0, 8))
+#p1
+
+p2 <- ggplot() +
+  geom_sf(data = world_sf_complete, fill = "lightgrey", color = "lightgrey") +
+  geom_sf_interactive(
+    data = filter(world_sf_complete, !is.na(n)),
+    aes(fill = countryClean, tooltip = countryClean, data_id = countryClean)
+  ) +
+  coord_sf(crs = st_crs(3857)) +
+  theme_void() +
+  theme(
+    axis.title.x = element_blank(),
+    axis.title.y = element_blank(),
+    legend.position = "none"
+  ) +
+  scale_fill_manual(values = new_colors)
+
+combined_plot <- p1 / p2 + plot_layout(heights = c(1, 3))
+#combined_plot
+
+# Create the interactive plot
+interactive_plot <- girafe(ggobj = combined_plot)
+interactive_plot <- girafe_options(
+  interactive_plot,
+  opts_hover(css = "fill:orange;stroke:black;")
+)
+interactive_plot
+```
+
+:::
+::::
+
+## Sex by Study
+
+For now only if both m and f were supplied.
+
+```{r}
+#| label: fig-sex-by-study
+#| fig-cap: "Number of male and female participants by study. Note: Studies with either sex missing were excluded."
+#| code-fold: true
+#| warning: false
+grouping_variable <- "study_id"
+
+dl <- data_long
+
+data_sex <- data_long |>
+  filter(measure == "sex" & !is.na(value)) |>
+  mutate(value = .normalize_sex_value(value)) |>
+  group_by(.data[[grouping_variable]], "sex") |>
+  count(value) |>
+  pivot_wider(
+    id_cols = any_of(grouping_variable),
+    names_from = "value",
+    values_from = "n"
+  ) |>
+  tidyr::drop_na(m, f) |>
+  pull(study_id)
+
+data_sex_pyramid <- dl |>
+  filter(measure == "sex" & !is.na(value)) |>
+  mutate(value = .normalize_sex_value(value)) |>
+  group_by(.data[[grouping_variable]], "sex") |>
+  count(value) |>
+  rename("sex" = "value", "measure" = `"sex"`) |>
+  mutate(n_new = dplyr::if_else(sex == "m", -n, n)) |>
+  tidyr::drop_na(n_new) |>
+  filter(study_id %in% data_sex) |>
+  group_by(study_id) |>
+  mutate(n_complete = sum(n)) |>
+  ungroup()
+
+x_axis_min <- plyr::round_any(min(data_sex_pyramid$n_new), 20, f = floor)
+x_axis_max <- plyr::round_any(max(data_sex_pyramid$n_new), 20, f = ceiling)
+x_axis_breaks <- seq(x_axis_min, x_axis_max, by = 20)
+x_axis_labels <- abs(x_axis_breaks)
+
+data_sex_pyramid |>
+  ggplot(aes(x = n_new, y = reorder(study_id, n_complete), fill = sex)) +
+  geom_col() +
+  labs(
+    x = "Number of Participants",
+    y = "Study ID"
+  ) +
+  scale_x_continuous(breaks = x_axis_breaks, labels = x_axis_labels) +
+  scale_fill_discrete("Sex", breaks = c("m", "f"), labels = c("male", "female"))
+```
+
+
+## Number of Participants per unique Phase Combination
+
+:::: {.column-page}
+
+::: {#participant-phase-combination}
+```{r}
+#| label: fig-participants-per-phase-combination
+#| fig-cap: "Number of participants per unique phase combination"
+#| code-fold: true
+`%nin%` <- purrr::negate(`%in%`)
+
+
+grouping_var <- "condition_id"
+
+study_design <- .apply_mapping_to_study_design(study_design)
+
+study_design <- study_design |>
+  filter(name %nin% c("int", "other"))
+
+study_sequences <- study_design %>%
+  arrange(grouping_var, orderPosition) %>%
+  group_by(.data[[grouping_var]]) %>%
+  summarise(
+    phase_combination = str_c(name, collapse = " -> "),
+    .groups = "drop"
+  )
+
+data_long2 <- .apply_mapping_to_long_data(data_long)
+data_long2 <- data_long2 |>
+  filter(phase %nin% c("int", "other"))
+
+
+study_counts <- data_long2 %>%
+  distinct(.data[[grouping_var]], participant_id) %>%
+  count(.data[[grouping_var]], name = "n_participant")
+
+study_summary <- study_sequences %>%
+  left_join(study_counts, by = grouping_var)
+
+result <- study_summary %>%
+  group_by(phase_combination) %>%
+  summarise(
+    n_participant = sum(n_participant, na.rm = TRUE),
+    n_studies = n(),
+    .groups = "drop"
+  ) %>%
+  arrange(desc(n_participant))
+
+plot_df <- result %>%
+  mutate(
+    phase_lower = str_to_lower(phase_combination),
+
+    order_group = case_when(
+      phase_lower == "hab" ~ 1,
+      phase_lower == "hab, acq" ~ 2,
+      phase_lower == "hab, acq, ext" ~ 3,
+      str_starts(phase_lower, "hab") ~ 4,
+
+      phase_lower == "acq" ~ 5,
+      phase_lower == "acq, ext" ~ 6,
+      str_starts(phase_lower, "acq") ~ 7,
+
+      phase_lower == "ext" ~ 8,
+
+      TRUE ~ 9
+    )
+  )
+
+plot_df <- plot_df %>%
+  arrange(order_group, phase_combination) %>%
+  mutate(
+    phase_combination = factor(
+      phase_combination,
+      levels = phase_combination
+    )
+  )
+
+
+p1 <- ggplot(plot_df, aes(x = n_participant, y = phase_combination)) +
+  geom_col(fill = "#0032a0") +
+  labs(
+    x = "Number of Participants",
+    y = "Phase Combination"
+  ) +
+  theme_minimal(base_size = 14) +
+  scale_x_continuous(limits = c(0, 300)) +
+  #theme(axis.title.y.right = element_text(hjust = -1)) +
+  scale_y_discrete(position = "left")
+
+
+phase_counts <- data_long2 %>%
+  filter(phase %nin% c("int", "other")) |>
+  tidyr::drop_na(phase) |>
+  distinct(study_id, participant_id, phase) %>% # avoid duplicates
+  group_by(phase) %>%
+  summarise(
+    n_participant = n(),
+    .groups = "drop"
+  ) %>%
+  arrange(desc(n_participant))
+
+phase_counts <- phase_counts %>%
+  mutate(
+    phase_lower = str_to_lower(phase),
+    order_group = case_when(
+      phase_lower == "hab" ~ 1,
+      phase_lower == "acq" ~ 2,
+      phase_lower == "ext" ~ 3,
+      phase_lower == "rex" ~ 4,
+      phase_lower == "rin" ~ 5,
+      TRUE ~ 6
+    )
+  )
+
+phase_counts <- phase_counts %>%
+  arrange(order_group, phase_lower) %>%
+  mutate(
+    phase = factor(phase, levels = phase)
+  )
+
+p1
+```
+
+
+```{r}
+#| label: fig-participants-per-phase
+#| fig-cap: "Number of participants per unique phase."
+#| code-fold: true
+p2 <- ggplot(phase_counts, aes(x = n_participant, y = phase)) +
+  geom_col(fill = "#0032a0") +
+  labs(
+    x = "Number of Participants.",
+    y = "Phase"
+  )
+
+
+p2
+```
+
+```{r}
+#| label: fig-conditions-per-phase
+#| fig-cap: "Number of conditions (= datasets) per unique phase."
+#| code-fold: true
+p3 <- ggplot(plot_df, aes(x = n_studies, y = phase_combination)) +
+  geom_col(fill = "#0032a0") +
+  labs(
+    x = "Number of Conditions (= datasets)",
+    y = "Phase Combination"
+  ) +
+  theme_minimal(base_size = 14) +
+  scale_x_continuous(breaks = seq(0, max(plot_df$n_studies), 2)) +
+  #theme(axis.title.y.right = element_text(hjust = -1)) +
+  scale_y_discrete(position = "left")
+
+p3
+```
+
+:::
+::::
+
+## Complex Upset for Participants per Phase (Combination)
+
+```{r}
+#| label: fig-participants-per-phase-and-phase-combinations-upset
+#| fig-cap: "Phase combinations by condition."
+#| code-fold: true
+data_long_mapped <- .apply_mapping_to_long_data(data_long)
+
+# Translate compact FEARBASE phase codes to the display names stored in the
+# codebook before reshaping. Keeping unmapped codes visible makes exploratory
+# local renders robust while still using the codebook as the primary source.
+data_long_phases <- data_long_mapped |>
+  select("condition_id", "phase") |>
+  tidyr::drop_na("condition_id", "phase") |>
+  mutate(
+    phase = as.character(
+      .label_phases_from_codebook(
+        phases = .data$phase,
+        cb = codebook,
+        keep_unmapped = TRUE
+      )
+    )
+  ) |>
+  filter(!is.na(.data$phase)) |>
+  distinct(.data$condition_id, .data$phase)
+
+phase_order <- c(
+  "Habituation",
+  "Acquisition",
+  "Extinction",
+  "Re-Extinction",
+  "Reinstatement Test",
+  "Reversal",
+  "Intervention",
+  "Other"
+)
+
+observed_phases <- data_long_phases |>
+  distinct(.data$phase) |>
+  pull(.data$phase)
+
+# Use the requested display order for known phases and append any future
+# codebook-derived phase labels after the curated order.
+phases <- c(
+  phase_order[phase_order %in% observed_phases],
+  setdiff(observed_phases, phase_order)
+)
+
+# ComplexUpset expects one logical membership column for each set. Here each
+# row is one condition and TRUE means that the condition contains that phase.
+data_long_upset <- data_long_phases |>
+  mutate(in_phase = TRUE) |>
+  tidyr::pivot_wider(
+    names_from = "phase",
+    values_from = "in_phase",
+    values_fill = FALSE
+  ) |>
+  arrange(.data$condition_id)
+
+ComplexUpset::upset(
+  data_long_upset,
+  phases,
+  name = "Phase",
+  sort_sets = FALSE,
+  base_annotations = list(
+    "Number of Participants" = ComplexUpset::intersection_size() +
+      ggplot2::ylab("Number of Participants")
+  ),
+  set_sizes = ComplexUpset::upset_set_size() +
+    ggplot2::ylab("Total Number of Participants")
+)
+```
+
+## Complex Upset for Participants per Phase (Combination), Participant Counts
+
+```{r}
+#| label: fig-participants-per-phase-and-phase-combinations-upset-participant-counts
+#| fig-cap: "Phase combinations by participant."
+#| code-fold: true
+# Each row in this version is one participant within one condition. Because
+# ComplexUpset counts rows, the intersection size and set size now represent
+# participant counts instead of condition counts.
+data_long_participant_phases <- data_long_mapped |>
+  select("condition_id", "participant_id", "phase") |>
+  tidyr::drop_na("condition_id", "participant_id", "phase") |>
+  mutate(
+    phase = as.character(
+      .label_phases_from_codebook(
+        phases = .data$phase,
+        cb = codebook,
+        keep_unmapped = TRUE
+      )
+    )
+  ) |>
+  filter(!is.na(.data$phase)) |>
+  distinct(.data$condition_id, .data$participant_id, .data$phase)
+
+# Use the same phase vector as the condition-level plot so the two versions
+# are directly comparable and keep identical set labels.
+data_long_participants <- data_long_participant_phases |>
+  mutate(in_phase = TRUE) |>
+  tidyr::pivot_wider(
+    names_from = "phase",
+    values_from = "in_phase",
+    values_fill = FALSE
+  ) |>
+  arrange(.data$condition_id, .data$participant_id)
+
+ComplexUpset::upset(
+  data_long_participants,
+  phases,
+  name = "Phase",
+  sort_sets = FALSE,
+  base_annotations = list(
+    "Number of Participants" = ComplexUpset::intersection_size() +
+      ggplot2::ylab("Number of Participants")
+  ),
+  set_sizes = ComplexUpset::upset_set_size() +
+    ggplot2::ylab("Total Number of Participants")
+)
+```
+
+## Complex Upset for Participants per Measure (Combination), Participant Counts
+
+```{r}
+#| label: fig-participants-per-measure-and-measure-combinations-upset-participant-counts
+#| fig-cap: "Measure combinations by participant."
+#| code-fold: true
+metadata_mapped <- .apply_mapping_to_metadata(metadata)
+
+# Metadata marks measure availability with binary family-prefixed columns such
+# as physio_scr, rating_fear, and quest_stais. Strip only the family prefix so
+# those metadata flags can be matched to the compact codes in data_long$measure.
+metadata_measure_lookup <- tibble(
+  metadata_measure = names(metadata_mapped)
+) |>
+  filter(str_detect(.data$metadata_measure, "^(physio|rating|quest)_")) |>
+  mutate(
+    measure_family = str_extract(.data$metadata_measure, "^[^_]+"),
+    measure = str_remove(.data$metadata_measure, "^(physio|rating|quest)_")
+  ) |>
+  filter(.data$measure %in% unique(data_long_mapped$measure)) |>
+  distinct(.data$measure_family, .data$measure, .keep_all = TRUE)
+
+# Pivot the binary metadata flags to condition-measure rows. In the current
+# metadata export, used measures are encoded as 1 and unused measures as NA.
+metadata_measure_flags <- metadata_mapped |>
+  select("condition_id", all_of(metadata_measure_lookup$metadata_measure)) |>
+  tidyr::pivot_longer(
+    cols = all_of(metadata_measure_lookup$metadata_measure),
+    names_to = "metadata_measure",
+    values_to = "used_measure"
+  ) |>
+  filter(.data$used_measure == 1) |>
+  left_join(metadata_measure_lookup, by = "metadata_measure") |>
+  select("condition_id", "measure", "measure_family") |>
+  distinct()
+
+# Use the codebook labels for display. The lookup is intentionally restricted
+# to measures identified through the metadata binary flags, excluding general
+# participant attributes such as age, sex, gender, and experimental group.
+measure_name_mapping <- codebook |>
+  filter(.data$attribute == "measure") |>
+  select(
+    measure = "abbreviation",
+    measure_long = "name"
+  ) |>
+  mutate(
+    measure_long = stringr::str_to_title(.data$measure_long)
+  )
+
+data_long_measure_data <- data_long_mapped |>
+  select("condition_id", "participant_id", "measure") |>
+  tidyr::drop_na("condition_id", "participant_id", "measure") |>
+  inner_join(metadata_measure_flags, by = c("condition_id", "measure")) |>
+  left_join(measure_name_mapping, by = "measure") |>
+  filter(!is.na(.data$measure_long)) |>
+  distinct(.data$condition_id, .data$participant_id, .data$measure_long)
+
+measure_order <- metadata_measure_lookup |>
+  left_join(measure_name_mapping, by = "measure") |>
+  mutate(
+    measure_family = factor(
+      .data$measure_family,
+      levels = c("physio", "rating", "quest")
+    )
+  ) |>
+  filter(.data$measure_long %in% data_long_measure_data$measure_long) |>
+  arrange(.data$measure_family, .data$metadata_measure) |>
+  distinct(.data$measure_long) |>
+  pull(.data$measure_long)
+
+# Each row is one participant within one condition. TRUE values indicate that
+# the participant has at least one observation for the corresponding measure.
+data_long_measures <- data_long_measure_data |>
+  mutate(in_measure = TRUE) |>
+  tidyr::pivot_wider(
+    names_from = "measure_long",
+    values_from = "in_measure",
+    values_fill = FALSE
+  ) |>
+  arrange(.data$condition_id, .data$participant_id)
+
+ComplexUpset::upset(
+  data_long_measures,
+  measure_order,
+  name = "Measure",
+  sort_sets = FALSE,
+  base_annotations = list(
+    "Number of Participants" = ComplexUpset::intersection_size() +
+      ggplot2::ylab("Number of Participants")
+  ),
+  set_sizes = ComplexUpset::upset_set_size() +
+    ggplot2::ylab("Total Number of Participants")
+)
+```
