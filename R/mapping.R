@@ -145,8 +145,8 @@
 # 5) mapping from sysdata.rda
 # 6) Stop with error if none found
 #
-# It also normalizes and optionally assigns globally.
-.get_mapping <- function(mapping = NULL, assign_global = FALSE) {
+# It also normalizes and caches package-bundled mappings internally.
+.get_mapping <- function(mapping = NULL) {
 
   ##########################################################
   # 1) User explicitly supplied mapping
@@ -197,13 +197,9 @@
   # Normalize ID types
   package_mapping <- .normalize_mapping(package_mapping)
 
-  # Cache internally for future calls
+  # Cache internally for future calls. Public assignment, when requested, is
+  # handled by update_mapping() in the caller's environment.
   assign("mapping", package_mapping, envir = .fearbase_env)
-
-  # Optionally assign to global environment
-  if (isTRUE(assign_global)) {
-    assign("mapping", package_mapping, envir = .GlobalEnv)
-  }
 
   return(package_mapping)
 }
@@ -217,12 +213,23 @@
 #' Load the integrated study-to-condition mapping
 #'
 #' @param assign_global Logical. Should mapping also be assigned
-#'   to global environment?
+#'   to the calling environment? When called interactively from the console,
+#'   this creates or updates `mapping` in the global environment.
 #'
 #' @return A normalized mapping data frame.
 #' @export
 update_mapping <- function(assign_global = TRUE) {
-  .get_mapping(assign_global = assign_global)
+  # Resolve the mapping through the package cache first. The optional assignment
+  # is deliberately performed in the caller's environment instead of writing
+  # directly to .GlobalEnv, which keeps interactive compatibility without
+  # creating package-check notes about global-environment side effects.
+  package_mapping <- .get_mapping()
+
+  if (isTRUE(assign_global)) {
+    assign("mapping", package_mapping, envir = parent.frame())
+  }
+
+  package_mapping
 }
 
 

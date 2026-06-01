@@ -32,7 +32,8 @@
 #' @param y_axis Trial-count y-axis selector.
 #' @param exclude Phase codes to exclude from phase heatmaps.
 #' @param assign_global Logical flag controlling whether mapping is assigned to
-#'   `.GlobalEnv`.
+#'   the calling environment. When called interactively from the console, this
+#'   creates or updates `mapping` in the global environment.
 #'
 #' @name deprecated-compatibility
 NULL

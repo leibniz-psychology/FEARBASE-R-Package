@@ -20,3 +20,4 @@ data-preprocessing.R
 ^[.][.]Rcheck$
 ^AGENTS[.]md$
 ^_quarto[.]yml$
+^docs$

@@ -39,8 +39,6 @@ measures_heatmap <- function(dl, md, cb) {
   .validate_data_frame(md, "md")
   .validate_data_frame(cb, "cb")
 
-  `%nin%` <- purrr::negate(`%in%`)
-
   # Normalize study and condition identifiers with the package mapping helpers.
   # The helper functions are intentionally called before column validation
   # because callers may supply raw database tables that still need mapping.
@@ -60,7 +58,7 @@ measures_heatmap <- function(dl, md, cb) {
   # metadata, but the join preserves the established package data flow.
   full_data <- dl |>
     left_join(md, by = "condition_id") |>
-    filter(measure %nin% c("age", "sex", "gender", "exp_group"))
+    filter(!.data$measure %in% c("age", "sex", "gender", "exp_group"))
 
   # Build a lookup table that turns compact measure codes into human-readable
   # labels for plotting. The labels are title-cased here because the current
