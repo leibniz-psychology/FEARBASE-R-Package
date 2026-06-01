@@ -359,7 +359,7 @@ peak_detection_windows(md = metadata, grouping_variable = "study_id")
 ```
 :::
 
-::: {#stimulus-modality-cs-by-participants}
+::: {#scr-scoring-approach-by-condition}
 ```{r}
 #| label: fig-scr-scoring-approach-by-condition
 #| fig-cap: "SCR Scoring Approach Parameters by Condition (= dataset)."
@@ -370,7 +370,7 @@ peak_detection_windows(md = metadata, grouping_variable = "condition_id")
 
 ::::
 
-::: {#stimulus-modality-cs-by-participants}
+::: {#scr-scoring-approach-by-condition-dynamic}
 ```{r}
 #| label: fig-scr-scoring-approach-dynamic
 #| fig-cap: "Unique SCR Scoring Approach Settings. Hover with your mouse over a segment to show Dataset IDs."
