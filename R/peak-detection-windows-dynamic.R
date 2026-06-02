@@ -49,6 +49,7 @@
 #' peak_detection_windows_dynamic(metadata, grouping_variable = "condition_id")
 #' }
 #'
+#' @import ggiraph
 #' @importFrom rlang .data
 #' @export
 peak_detection_windows_dynamic <- function(
