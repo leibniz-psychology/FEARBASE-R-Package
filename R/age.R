@@ -331,7 +331,7 @@ age <- function(
 #' }
 #'
 #' The standard deviation is computed using \code{\link[stats]{sd}},
-#' corresponding to the sample standard deviation with denominator n−1 n - 1 n−1.
+#' corresponding to the sample standard deviation with denominator n-1 n - 1 n-1.
 #'
 #' Rows with non-coercible or missing age values are removed prior to
 #' computation.
