@@ -71,3 +71,5 @@ dev_local/Dockerfile - Copy (2)
 dev_local/Dockerfile - Copy
 dev_local/Dockerfile_bu
 /man
+peak_detection_windows_dynamic.html
+/peak_detection_windows_dynamic_files
