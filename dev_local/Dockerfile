@@ -1,51 +1,52 @@
 FROM opencpu/base:latest
 
-#install needed dependenciesp
+# Install system headers before compiling R packages from source. ggiraph pulls in
+# native graphics/text packages such as gdtools, systemfonts, and textshaping, so
+# the image needs font, image, XML, SSL, curl, cairo, harfbuzz, and fribidi
+# development libraries available during package installation. htmlwidgets also
+# brings in rmarkdown through ggiraph, whose dependency chain compiles fs against
+# libuv.
 RUN apt-get update && apt-get install -y \
-    libcurl4-gnutls-dev libcairo2-dev\
-    && apt install -y cmake \
-    ## clean up
+    cmake \
+    libcurl4-gnutls-dev \
+    libcairo2-dev \
+    libfontconfig1-dev \
+    libfreetype6-dev \
+    libfribidi-dev \
+    libharfbuzz-dev \
+    libjpeg-dev \
+    libpng-dev \
+    libssl-dev \
+    libtiff5-dev \
+    libuv1-dev \
+    libxml2-dev \
     && apt-get clean \
-    && rm -rf /var/lib/apt/lists/ \
+    && rm -rf /var/lib/apt/lists/* \
     && rm -rf /tmp/downloaded_packages/ /tmp/*.rds \
     && rm -rf /var/www/html/index.html
 
-RUN cp /etc/apache2/mods-available/rewrite.load /etc/apache2/mods-enabled/ && \
-    cp /etc/apache2/mods-available/headers.load /etc/apache2/mods-enabled/
+# Enable the Apache modules used by OpenCPU for request routing and headers.
+RUN a2enmod rewrite headers
 
-RUN R -e "install.packages('devtools')"
-RUN R -e "install.packages('remotes')"
-RUN R -e "install.packages('ggplot2')"
-RUN R -e "install.packages('meta')"
-RUN R -e "install.packages('rlang')"
-RUN R -e 'remove.packages("rlang", "/usr/lib/opencpu/library")'
-RUN R -e 'remove.packages("vctrs", "/usr/lib/opencpu/library")'
-RUN R -e "install.packages('vctrs')"
-RUN R -e "install.packages('tidyverse')"
-RUN R -e "install.packages('patchwork')"
-RUN R -e "install.packages('lme4')"
-RUN R -e "install.packages('lmerTest')"
-RUN R -e "install.packages('psych')"
-RUN R -e "install.packages('gsheet')"
-RUN R -e "install.packages('plotly')"
-RUN R -e "install.packages('ggridges')"
-RUN R -e "install.packages('ggiraph')"
-RUN R -e "install.packages('shadowtext')"
-RUN R -e "install.packages('broom.mixed')"
-RUN R -e "install.packages('ggrepel')"
+# OpenCPU serves packages from its own library path, so install both package
+# dependencies and the local package into that library.
+ENV R_LIBS=/usr/lib/opencpu/library
+
+RUN mkdir -p /usr/lib/opencpu/library
+
+# Use a fixed CRAN mirror so non-interactive Docker builds never prompt for one.
+RUN echo "options(repos = c(CRAN = 'https://cloud.r-project.org'))" \
+    >> /usr/lib/R/etc/Rprofile.site
 
 COPY . /home/opencpu/fearbase
 
-RUN cd /home/opencpu && \
-    R -e "install.packages('remotes')" && \
-    R CMD build fearbase && \
-    mv fearbase_*.tar.gz fearbase_latest.tar.gz && \
-    R CMD INSTALL fearbase_latest.tar.gz --library=/usr/local/lib/R/site-library
+# Install only the package runtime dependency set declared in DESCRIPTION. This
+# includes ggiraph while avoiding unrelated local-analysis packages that make the
+# compose build slow and fragile.
+RUN R -e "install.packages('remotes', lib = '/usr/lib/opencpu/library'); \
+          remotes::install_deps('/home/opencpu/fearbase', \
+            lib = '/usr/lib/opencpu/library', \
+            dependencies = c('Depends', 'Imports', 'LinkingTo'), \
+            upgrade = 'never')"
 
-
-
-
-
-
-
-
+RUN R CMD INSTALL --library=/usr/lib/opencpu/library /home/opencpu/fearbase
