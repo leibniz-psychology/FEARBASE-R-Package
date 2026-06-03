@@ -274,6 +274,7 @@ peak_detection_windows_dynamic <- function(
         sort(unique(as.character(.data$condition_id))),
         collapse = ", "
       ),
+      n = n(),
       .groups = "drop"
     ) |>
     # Build a readable axis label from the exact SCR scoring-window definition
@@ -300,7 +301,8 @@ peak_detection_windows_dynamic <- function(
       cols = -all_of(c(
         "scr_scoring_approach",
         "condition_ids_per_scoring",
-        "scoring_window_definition"
+        "scoring_window_definition",
+        "n"
       )),
       names_to = c("measure", "window", "timepoint"),
       names_pattern = "(scr)_(.*)_window_(.*)"
@@ -345,7 +347,14 @@ peak_detection_windows_dynamic <- function(
         factor(levels = c("Baseline", "Peak Detection", "Trough Detection"))
     ) |>
     # Only complete numeric intervals can be drawn as geom_segment() rows.
-    tidyr::drop_na(all_of(c("start", "end")))
+    tidyr::drop_na(all_of(c("start", "end"))) |>
+    mutate(
+      condition_ids_per_scoring = if_else(
+        n == 1,
+        paste("Dataset ID:", condition_ids_per_scoring),
+        paste("Dataset IDs:", condition_ids_per_scoring)
+      )
+    )
 
   # Supported columns can still produce no plottable rows if all endpoint values
   # were missing or non-numeric, so give a data-quality error before ggplot.
@@ -475,7 +484,7 @@ peak_detection_windows_dynamic <- function(
         yend = .data$end,
         color = .data$window,
         group = .data$window,
-        tooltip = paste("Dataset ID(s):", .data$condition_ids_per_scoring),
+        tooltip = .data$condition_ids_per_scoring,
         data_id = .data$plot_group
       ),
       linewidth = segment_linewidth
