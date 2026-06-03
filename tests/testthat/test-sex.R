@@ -66,3 +66,38 @@ test_that("sex maps fill colours from darkest to lightest", {
     rev(fearbase_palette_v2[seq_len(4L)])
   )
 })
+
+test_that("sex validates unsupported and contradictory values", {
+  invalid_value <- data.frame(
+    condition_id = "c1",
+    study_id = "s1",
+    participant_id = "p1",
+    measure = "sex",
+    value = "other"
+  )
+  contradictory_values <- data.frame(
+    condition_id = c("c1", "c1"),
+    study_id = c("s1", "s1"),
+    participant_id = c("p1", "p1"),
+    measure = c("sex", "gender"),
+    value = c("m", "f")
+  )
+
+  testthat::expect_error(sex(invalid_value), "must start with")
+  testthat::expect_error(sex(contradictory_values), "contradictory")
+})
+
+test_that("sex validates missing participant identifiers", {
+  missing_participants <- data.frame(
+    condition_id = "c1",
+    study_id = "s1",
+    participant_id = NA_character_,
+    measure = "age",
+    value = "21"
+  )
+
+  testthat::expect_error(
+    sex(missing_participants),
+    "non-missing participant ID"
+  )
+})

@@ -82,10 +82,14 @@
   # 2) Select and normalize the requested codebook rows
   ############################################################
 
+  # Store the validated scalar in a differently named local so dplyr's data
+  # mask cannot confuse it with the codebook column named `attribute`.
+  selected_attribute <- attribute
+
   # Keep a compact two-column lookup so joins remain explicit at call sites.
   # distinct() protects downstream joins from duplicated codebook rows.
   label_mapping <- cb |>
-    filter(.data$attribute == attribute) |>
+    filter(.data$attribute == selected_attribute) |>
     select(
       "abbreviation",
       "name"
@@ -107,7 +111,7 @@
   if (nrow(label_mapping) == 0L) {
     stop(
       "No `",
-      attribute,
+      selected_attribute,
       "` rows with abbreviations and names were found in `cb`.",
       call. = FALSE
     )

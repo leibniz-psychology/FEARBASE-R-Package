@@ -1,5 +1,6 @@
 test_that("collection year bar graph works", {
-  data_collection_year(fixture_metadata()) |> testthat::expect_s3_class("ggplot")
+  data_collection_year(fixture_metadata()) |>
+    testthat::expect_s3_class("ggplot")
 })
 
 test_that("collection year graph counts unique studies by default", {
@@ -72,4 +73,41 @@ test_that("collection year graph validates year selector", {
     data_collection_year(md, year_of = "collection"),
     "`year_of` must be one of"
   )
+  testthat::expect_error(
+    data_collection_year(md, year_of = NA_character_),
+    "single non-missing character"
+  )
+})
+
+test_that("collection year graph validates missing and malformed years", {
+  missing_year <- tibble::tibble(
+    condition_id = "c1",
+    study_id = "s1"
+  )
+  bad_year <- tibble::tibble(
+    condition_id = "c1",
+    study_id = "s1",
+    year = "not a year"
+  )
+  empty_year <- tibble::tibble(
+    condition_id = "c1",
+    study_id = "s1",
+    year = NA_real_
+  )
+
+  testthat::expect_error(
+    data_collection_year(missing_year),
+    "must contain a `year` column"
+  )
+  testthat::expect_error(data_collection_year(bad_year), "numeric")
+  testthat::expect_error(data_collection_year(empty_year), "non-missing")
+})
+
+test_that("collection year graph resolves caller-side metadata", {
+  metadata <- fixture_metadata()
+
+  graph <- data_collection_year()
+
+  testthat::expect_s3_class(graph, "ggplot")
+  testthat::expect_equal(graph$data$year, c(2020, 2021))
 })

@@ -1,4 +1,4 @@
-test_that("deprecated camelCase wrappers delegate to snake_case implementations", {
+test_that("deprecated wrappers delegate to snake_case implementations", {
   expect_deprecated_value <- function(expr) {
     value <- NULL
     testthat::expect_warning(

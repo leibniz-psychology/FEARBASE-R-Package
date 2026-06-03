@@ -21,7 +21,8 @@ knitr::opts_chunk$set(
 library(fearbase)
 
 data_long <- tibble::tribble(
-  ~condition_id, ~study_id, ~paper_cond_id, ~paper_study_id, ~participant_id, ~measure, ~value, ~phase, ~stimulus, ~trial,
+  ~condition_id, ~study_id, ~paper_cond_id, ~paper_study_id,
+  ~participant_id, ~measure, ~value, ~phase, ~stimulus, ~trial,
   "c1", "s1", "pc1", "ps1", "p1", "age", "21", "hab", "cs+", 1,
   "c1", "s1", "pc1", "ps1", "p1", "sex", "m", "hab", "cs+", 1,
   "c1", "s1", "pc1", "ps1", "p2", "age", "24", "hab", "cs+", 1,

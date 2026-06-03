@@ -120,6 +120,21 @@
     return(dl)
   }
 
+  # Unsupported grouping names should be rejected by
+  # .validate_trials_phase_grouping() below, not routed through the optional
+  # mapping lookup first. This keeps validation deterministic in installed
+  # package checks where no local development mapping file may be present.
+  valid_group_vars <- c(
+    "condition_id",
+    "study_id",
+    "paper_cond_id",
+    "paper_study_id"
+  )
+
+  if (!grouping_variable %in% valid_group_vars) {
+    return(dl)
+  }
+
   ############################################################
   # 2) Recover optional identifiers from the package mapping table
   ############################################################
@@ -361,7 +376,8 @@ trial_phase_counts <- function(
 
   if (identical(y_axis, "studies") && is.null(grouping_variable)) {
     stop(
-      "`grouping_variable` must be supplied when `y_axis` selects grouping-unit counts.",
+      "`grouping_variable` must be supplied when `y_axis` selects ",
+      "grouping-unit counts.",
       call. = FALSE
     )
   }
@@ -406,7 +422,11 @@ trial_phase_counts <- function(
           )
         ) +
         geom_col() +
-        facet_grid(rows = vars(.data$phase), axes = "all", axis.labels = "all_x") +
+        facet_grid(
+          rows = vars(.data$phase),
+          axes = "all",
+          axis.labels = "all_x"
+        ) +
         scale_x_continuous(breaks = scales::extended_breaks(10)) +
         labs(
           x = "Number of Trials",
@@ -423,7 +443,11 @@ trial_phase_counts <- function(
           )
         ) +
         geom_col(color = "white", linewidth = 0.2) +
-        facet_grid(rows = vars(.data$phase), axes = "all", axis.labels = "all_x") +
+        facet_grid(
+          rows = vars(.data$phase),
+          axes = "all",
+          axis.labels = "all_x"
+        ) +
         scale_x_continuous(breaks = scales::extended_breaks(10)) +
         labs(
           x = "Number of Trials",
@@ -458,7 +482,11 @@ trial_phase_counts <- function(
         )
       ) +
       geom_col() +
-      facet_grid(rows = vars(.data$phase), axes = "all", axis.labels = "all_x") +
+      facet_grid(
+        rows = vars(.data$phase),
+        axes = "all",
+        axis.labels = "all_x"
+      ) +
       scale_x_continuous(breaks = scales::extended_breaks(10)) +
       labs(
         x = "Number of Trials",

@@ -54,7 +54,7 @@
 #' peak_detection_windows_dynamic(metadata, grouping_variable = "condition_id")
 #' }
 #'
-#' @import ggiraph
+#' @importFrom ggiraph geom_segment_interactive girafe
 #' @importFrom rlang .data
 #' @export
 peak_detection_windows_dynamic <- function(
@@ -335,7 +335,7 @@ peak_detection_windows_dynamic <- function(
         "BLC" = "baseline_correction",
         "TTP" = "trough-to-peak"
       ),
-      # TODO: Muss angepasst werden, wenn wir Auswahloptionen im Scoring Approach Drop-Down anpassen
+      # TODO: Update when scoring-approach dropdown options change.
       window = case_when(
         .data$scr_scoring_approach != "BLC" ~ "Trough Detection",
         .data$scr_scoring_approach == "BLC" &
@@ -351,8 +351,8 @@ peak_detection_windows_dynamic <- function(
     mutate(
       condition_ids_per_scoring = if_else(
         n == 1,
-        paste("Dataset ID:", condition_ids_per_scoring),
-        paste("Dataset IDs:", condition_ids_per_scoring)
+        paste("Dataset ID:", .data$condition_ids_per_scoring),
+        paste("Dataset IDs:", .data$condition_ids_per_scoring)
       )
     )
 

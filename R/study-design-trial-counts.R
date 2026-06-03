@@ -24,11 +24,11 @@
 #' Creates a faceted bar plot of phase-level trial counts from the study-design
 #' table, where phases are labeled dynamically from the FEARBASE codebook.
 #'
-#' @param sd A study-design data frame, or `NULL`. Must contain `study_id`, `name`,
-#'   `cspTrials`, and `csmTrials` after `.apply_mapping_to_study_design()` is
-#'   applied. The `name` column contains phase abbreviations. If `NULL`, the
-#'   function first attempts to use an object named `study_design` from the
-#'   calling environment.
+#' @param sd A study-design data frame, or `NULL`. Must contain `study_id`,
+#'   `name`, `cspTrials`, and `csmTrials` after
+#'   `.apply_mapping_to_study_design()` is applied. The `name` column contains
+#'   phase abbreviations. If `NULL`, the function first attempts to use an
+#'   object named `study_design` from the calling environment.
 #' @param cb A codebook data frame, or `NULL`. If `NULL`, the function first
 #'   attempts to use an object named `codebook` from the calling environment.
 #'
@@ -41,8 +41,9 @@ study_design_trial_counts <- function(sd = NULL, cb = NULL) {
   ############################################################
 
   # Capture the unevaluated expression so legacy calls such as
-  # study_design_trial_counts(study_design) can fall back to bundled data when `study_design`
-  # is not an object in the current test or interactive environment.
+  # study_design_trial_counts(study_design) can fall back to bundled data when
+  # `study_design` is not an object in the current test or interactive
+  # environment.
   sd_expr <- substitute(sd)
   sd <- tryCatch(
     sd,
@@ -140,7 +141,11 @@ study_design_trial_counts <- function(sd = NULL, cb = NULL) {
       )
     ) +
     geom_col() +
-    facet_grid(rows = vars(.data$name), axes = "all", axis.labels = "all_x") +
+    facet_grid(
+      rows = vars(.data$name),
+      axes = "all",
+      axis.labels = "all_x"
+    ) +
     scale_x_continuous(breaks = scales::extended_breaks(10)) +
     labs(x = "Number of Trials", y = "Number of Studies")
 

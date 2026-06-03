@@ -31,7 +31,8 @@ fixture_codebook <- function() {
 
 fixture_long_data <- function() {
   tibble::tribble(
-    ~condition_id, ~study_id, ~paper_cond_id, ~paper_study_id, ~participant_id, ~measure, ~value, ~phase, ~stimulus, ~trial,
+    ~condition_id, ~study_id, ~paper_cond_id, ~paper_study_id,
+    ~participant_id, ~measure, ~value, ~phase, ~stimulus, ~trial,
     "c1", "s1", "pc1", "ps1", "p1", "age", "21", "hab", "cs+", 1,
     "c1", "s1", "pc1", "ps1", "p1", "sex", "m", "hab", "cs+", 1,
     "c1", "s1", "pc1", "ps1", "p1", "scr", "0.3", "hab", "cs+", 2,
@@ -52,9 +53,18 @@ fixture_long_data <- function() {
 
 fixture_metadata <- function() {
   tibble::tribble(
-    ~condition_id, ~study_id, ~year, ~year_data, ~n_subjects, ~us_type, ~cs_type, ~instruction_contingency, ~reinf_acq, ~reinf_ext, ~physio_scr_scoring_approach, ~physio_scr_baseline_window_start, ~physio_scr_baseline_window_end, ~physio_scr_peak_detection_window_min, ~physio_scr_peak_detection_window_max,
-    "c1", "s1", 2020, 2019, 2, "electrotactile", "visual", "Fully instructed (whole exp)", 100, 50, "baseline_correction", -1, 0, 1, 4,
-    "c2", "s2", 2021, 2020, 2, "auditory", "visual", "Uninstructed (whole exp)", 75, 25, "trough-to-peak", -2, 0, 2, 5
+    ~condition_id, ~study_id, ~year, ~year_data, ~n_subjects,
+    ~us_type, ~cs_type, ~instruction_contingency,
+    ~reinf_acq, ~reinf_ext, ~physio_scr_scoring_approach,
+    ~physio_scr_baseline_window_start, ~physio_scr_baseline_window_end,
+    ~physio_scr_peak_detection_window_min,
+    ~physio_scr_peak_detection_window_max,
+    "c1", "s1", 2020, 2019, 2,
+    "electrotactile", "visual", "Fully instructed (whole exp)",
+    100, 50, "baseline_correction", -1, 0, 1, 4,
+    "c2", "s2", 2021, 2020, 2,
+    "auditory", "visual", "Uninstructed (whole exp)",
+    75, 25, "trough-to-peak", -2, 0, 2, 5
   )
 }
 

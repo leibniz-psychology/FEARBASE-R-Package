@@ -266,7 +266,7 @@ peak_detection_windows <- function(
         "BLC" = "baseline_correction",
         "TTP" = "trough-to-peak"
       ),
-      # TODO: Muss angepasst werden, wenn wir Auswahloptionen im Scoring Approach Drop-Down anpassen
+      # TODO: Update when scoring-approach dropdown options change.
       window = case_when(
         .data$scr_scoring_approach != "BLC" ~ "Trough Detection",
         .data$scr_scoring_approach == "BLC" &

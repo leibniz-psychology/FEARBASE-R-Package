@@ -3,12 +3,14 @@
 #' Retrieves an object by name from a specified environment with
 #' strict input validation and structured error handling.
 #'
-#' @param d A character string of length one. The name of the object to retrieve.
+#' @param d A character string of length one. The name of the object to
+#'   retrieve.
 #' @param envir An environment from which to retrieve the object.
 #'   Defaults to the calling environment.
 #' @param inherits Logical. Should enclosing environments be searched?
 #'   Passed to \code{get()}. Defaults to \code{FALSE}.
-#' @param warn_as_error Logical. If \code{TRUE}, warnings are converted to errors.
+#' @param warn_as_error Logical. If \code{TRUE}, warnings are converted to
+#'   errors.
 #'   Defaults to \code{TRUE}.
 #'
 #' @return The object named by \code{d}.
@@ -44,7 +46,11 @@ check_data <- function(d,
          call. = FALSE)
   }
 
-  if (!is.logical(warn_as_error) || length(warn_as_error) != 1L || is.na(warn_as_error)) {
+  if (
+    !is.logical(warn_as_error) ||
+      length(warn_as_error) != 1L ||
+      is.na(warn_as_error)
+  ) {
     stop("`warn_as_error` must be a non-missing logical scalar.",
          call. = FALSE)
   }
@@ -117,7 +123,10 @@ json_summary <- function(
   warn_as_error = TRUE
 ) {
   if (!requireNamespace("jsonlite", quietly = TRUE)) {
-    stop("Package `jsonlite` is required to build JSON summaries.", call. = FALSE)
+    stop(
+      "Package `jsonlite` is required to build JSON summaries.",
+      call. = FALSE
+    )
   }
 
   # Load the named object through check_data() so lookup validation is shared

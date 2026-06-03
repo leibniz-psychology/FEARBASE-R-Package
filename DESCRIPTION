@@ -8,6 +8,8 @@ Description: Provides analysis and visualization helpers for data exported
     summaries, trial-count plots, and co-occurrence heatmaps.
 Author: Fritz Becker
 License: GPL-2
+URL: https://github.com/leibniz-psychology/FEARBASE-R-Package
+BugReports: https://github.com/leibniz-psychology/FEARBASE-R-Package/issues
 Encoding: UTF-8
 Imports: 
     dplyr,
@@ -30,7 +32,8 @@ Depends:
 Suggests: 
     knitr,
     rmarkdown,
-    testthat (>= 3.0.0)
+    testthat (>= 3.0.0),
+    withr
 VignetteBuilder: knitr
 Config/testthat/edition: 3
 Config/roxygen2/version: 8.0.0

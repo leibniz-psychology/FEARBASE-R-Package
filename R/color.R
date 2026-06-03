@@ -1,4 +1,5 @@
-# taken from stack overflow, see https://stackoverflow.com/questions/28562288/how-to-use-the-hsl-hue-saturation-lightness-cylindric-color-model
+# Adapted from the Stack Overflow discussion on converting HSL colour values:
+# https://stackoverflow.com/questions/28562288/
 hsl_to_rgb <- function(h, s, l) {
   h <- h / 360
   r <- g <- b <- 0.0

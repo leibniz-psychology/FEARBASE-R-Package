@@ -9,10 +9,12 @@
 #' is coerced to numeric to obtain age values. Rows with missing or
 #' non-coercible age values are removed prior to plotting.
 #'
-#' @param dl A data frame in long format. Must contain at least the following columns:
+#' @param dl A data frame in long format. Must contain at least the following
+#'   columns:
 #'   \itemize{
 #'     \item `measure` (character): Variable identifier.
-#'     \item `value` (numeric or character): Contains age values when `measure == "age"`.
+#'     \item `value` (numeric or character): Contains age values when
+#'       `measure == "age"`.
 #'     \item `participant_id` (numeric): Unique identifier of each participant.
 #'     \item At least one of: `"condition_id"`, `"study_id"`,
 #'           `"paper_cond_id"`, or `"paper_study_id"`.
@@ -23,7 +25,8 @@
 #' @param type Character string specifying the plot type (case-insensitive).
 #'   Must be one of:
 #'   \itemize{
-#'     \item `"histogram"`, `"hist"`, `"h"`: Stacked histogram of counts per age value.
+#'     \item `"histogram"`, `"hist"`, `"h"`: Stacked histogram of counts per
+#'       age value.
 #'     \item `"ridge"`, `"density"`, `"r"`, `"d"`: Kernel density ridge plot.
 #'   }
 #'
@@ -298,10 +301,12 @@ age <- function(
 #' coerces the `value` column to numeric, removes missing age values,
 #' and returns summary statistics optionally grouped by one or more variables.
 #'
-#' @param dl A data frame in long format. Must contain at least the following columns:
+#' @param dl A data frame in long format. Must contain at least the following
+#'   columns:
 #'   \itemize{
 #'     \item `measure` (character): Variable identifier.
-#'     \item `value` (numeric or character): Contains age values when `measure == "age"`.
+#'     \item `value` (numeric or character): Contains age values when
+#'       `measure == "age"`.
 #'   }
 #'   The function `.apply_mapping_to_long_data()` is applied internally before
 #'   further processing.
@@ -331,7 +336,7 @@ age <- function(
 #' }
 #'
 #' The standard deviation is computed using \code{\link[stats]{sd}},
-#' corresponding to the sample standard deviation with denominator n-1 n - 1 n-1.
+#' corresponding to the sample standard deviation with denominator `n - 1`.
 #'
 #' Rows with non-coercible or missing age values are removed prior to
 #' computation.

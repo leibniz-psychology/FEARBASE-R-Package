@@ -52,7 +52,9 @@ test_that("primary implementation files do not define camelCase functions", {
     file.path("..", "..", "R")
   }
   if (!dir.exists(source_dir)) {
-    testthat::skip("Package source files are not available in this test context.")
+    testthat::skip(
+      "Package source files are not available in this test context."
+    )
   }
   implementation_files <- setdiff(
     list.files(source_dir, pattern = "\\.R$", full.names = TRUE),
@@ -109,7 +111,9 @@ test_that("deprecated camelCase implementations live only in compatibility.R", {
     file.path("..", "..", "R")
   }
   if (!dir.exists(source_dir)) {
-    testthat::skip("Package source files are not available in this test context.")
+    testthat::skip(
+      "Package source files are not available in this test context."
+    )
   }
   implementation_files <- setdiff(
     list.files(source_dir, pattern = "\\.R$", full.names = TRUE),

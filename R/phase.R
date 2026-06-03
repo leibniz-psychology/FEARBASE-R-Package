@@ -1,5 +1,6 @@
 #' @title Reorder phases
-#' @description Returns a factor with standardized levels: priority phases first ("hab", "acq", "ext", "int", "rin", "rex", "rev", "other"), then others.
+#' @description Returns a factor with standardized levels: priority phases
+#'   first, followed by other observed phases.
 #' @param phases A vector of phases to be converted to factor levels.
 #' @param order Character vector of priority phase levels.
 #' @return A factor with the standardized phase levels.
