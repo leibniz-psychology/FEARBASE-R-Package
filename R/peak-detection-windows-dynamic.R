@@ -16,6 +16,11 @@
 #'   variable used for backwards-compatible input validation. The dynamic plot
 #'   itself groups rows by unique SCR scoring-window definitions and shows the
 #'   condition IDs belonging to each definition in interactive tooltips.
+#' @param save_html_widget A single logical value. If `TRUE`, the generated
+#'   [ggiraph::girafe()] htmlwidget is additionally written to
+#'   `peak_detection_windows_dynamic.html` in the current working directory
+#'   before the widget object is returned. In OpenCPU sessions, files written to
+#'   the working directory are exposed through the session `/files/` endpoint.
 #'
 #' @details
 #' The current supported SCR window column set is:
@@ -54,7 +59,8 @@
 #' @export
 peak_detection_windows_dynamic <- function(
   md,
-  grouping_variable = "study_id"
+  grouping_variable = "study_id",
+  save_html_widget = FALSE
 ) {
   ############################################################
   # 1) Validate user inputs before touching package internals
@@ -75,6 +81,20 @@ peak_detection_windows_dynamic <- function(
   ) {
     stop(
       "`grouping_variable` must be a single non-missing character string.",
+      call. = FALSE
+    )
+  }
+
+  # The save flag controls only the optional OpenCPU-friendly HTML side effect.
+  # Keep it strict so accidental character or numeric values do not silently
+  # write files during ordinary plotting calls.
+  if (
+    !is.logical(save_html_widget) ||
+      length(save_html_widget) != 1 ||
+      is.na(save_html_widget)
+  ) {
+    stop(
+      "`save_html_widget` must be a single non-missing logical value.",
       call. = FALSE
     )
   }
@@ -490,5 +510,20 @@ peak_detection_windows_dynamic <- function(
 
   # Wrap the ggplot in a ggiraph widget so the interactive segment tooltips are
   # available to downstream OpenCPU, Quarto, Shiny, or browser renderers.
-  return(ggiraph::girafe(ggobj = graph))
+  graph_widget <- ggiraph::girafe(ggobj = graph)
+
+  # OpenCPU captures static ggplot objects through its graphics device, but
+  # htmlwidgets are HTML/JavaScript objects. Saving the widget into the session
+  # working directory makes it available from OpenCPU's /files/ endpoint while
+  # preserving the regular R return value for local, Quarto, and Shiny callers.
+  if (save_html_widget) {
+    htmlwidgets::saveWidget(
+      graph_widget,
+      file = "peak_detection_windows_dynamic.html",
+      selfcontained = FALSE,
+      libdir = "peak_detection_windows_dynamic_files"
+    )
+  }
+
+  return(graph_widget)
 }

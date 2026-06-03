@@ -20,6 +20,7 @@ Imports:
     ggridges,
     ggrepel,
     ggiraph,
+    htmlwidgets,
     psych,
     rlang,
     jsonlite,

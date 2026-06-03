@@ -16,7 +16,6 @@ backlog.md
 *.Rcheck/
 /vignettes/*.html
 /vignettes/*.pdf
-/man/*.Rd
 # Note: Some people prefer to track .Rd files,
 # but they are auto-generated from Roxygen2 tags in your R/ files.
 
@@ -71,3 +70,4 @@ dev_local/all_graphs.rmarkdown
 dev_local/Dockerfile - Copy (2)
 dev_local/Dockerfile - Copy
 dev_local/Dockerfile_bu
+/man
