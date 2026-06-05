@@ -70,11 +70,13 @@
   # original label keeps the interactive display consistent across count modes.
   country_tooltips <- metadata_country_lookup |>
     distinct(.data$country_clean, .data$dataset_id) |>
-    arrange(.data$country_clean, .data$dataset_id) |>
     group_by(.data$country_clean) |>
     summarise(
       dataset_id_n = n_distinct(.data$dataset_id),
-      dataset_ids = paste(.data$dataset_id, collapse = ", "),
+      dataset_ids = paste(
+        .sort_choropleth_dataset_ids(.data$dataset_id),
+        collapse = ", "
+      ),
       .groups = "drop"
     )
 
@@ -198,6 +200,21 @@
   }
 
   country_counts
+}
+
+#' Sort choropleth dataset IDs for tooltip display
+#'
+#' @param dataset_id Dataset identifiers to sort.
+#'
+#' @return A character vector of unique dataset identifiers in natural
+#'   ascending order.
+#' @noRd
+.sort_choropleth_dataset_ids <- function(dataset_id) {
+  # Metadata IDs can arrive as factors or as character representations of
+  # numbers. Coerce to character first to avoid factor-level ordering, then use
+  # stringr's numeric-aware sorting so "2" appears before "10".
+  dataset_id <- unique(as.character(dataset_id))
+  stringr::str_sort(dataset_id, numeric = TRUE)
 }
 
 #' Resolve the count-axis title for choropleth country plots

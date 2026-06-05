@@ -46,6 +46,35 @@ test_that("choropleth country preparation counts distinct datasets", {
   )
 })
 
+test_that("choropleth country tooltips sort dataset IDs ascending", {
+  testthat::skip_if_not_installed("countrycode")
+
+  metadata <- data.frame(
+    id = factor(
+      c("condition-10", "condition-1", "condition-2"),
+      levels = c("condition-10", "condition-2", "condition-1")
+    ),
+    condition_id = c("condition-10", "condition-1", "condition-2"),
+    study_id = "study-1",
+    dataCountry = "Germany"
+  )
+
+  country_counts <- fearbase:::.prepare_choropleth_country_counts(
+    metadata,
+    country_variable = "dataCountry",
+    dataset_id_variable = "id"
+  )
+
+  testthat::expect_equal(
+    country_counts$tooltip,
+    "Dataset IDs: condition-1, condition-2, condition-10"
+  )
+  testthat::expect_equal(
+    fearbase:::.sort_choropleth_dataset_ids(factor(c("10", "1", "2"))),
+    c("1", "2", "10")
+  )
+})
+
 test_that("choropleth country preparation counts mapped studies", {
   testthat::skip_if_not_installed("countrycode")
 
