@@ -107,7 +107,10 @@ instructions <- function(
   # counted as their own missing category in the returned plot data.
   if (remove_na) {
     data_instructions <- data_instructions |>
-      filter(!is.na(.data$instruction_contingency))
+      filter(
+        !is.na(.data$instruction_contingency),
+        .data$instruction_contingency != ""
+      )
   }
 
   data_instructions <- data_instructions |>
@@ -135,7 +138,8 @@ instructions <- function(
     data_instructions <- data_instructions |>
       mutate(
         instruction_contingency = if_else(
-          is.na(.data$instruction_contingency),
+          (is.na(.data$instruction_contingency) |
+            .data$instruction_contingency == ""),
           "NA",
           as.character(.data$instruction_contingency)
         )
