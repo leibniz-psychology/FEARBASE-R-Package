@@ -32,8 +32,8 @@
 #' @param y_axis Trial-count y-axis selector.
 #' @param exclude Phase codes to exclude from phase heatmaps.
 #' @param assign_global Logical flag controlling whether mapping is assigned to
-#'   the calling environment. When called interactively from the console, this
-#'   creates or updates `mapping` in the global environment.
+#'   the calling environment. Defaults to `FALSE`. When set to `TRUE`, this
+#'   creates or updates `mapping` in the calling environment.
 #'
 #' @name deprecated-compatibility
 NULL
@@ -180,7 +180,7 @@ trialsPhaseParticipant <- function(
 
 #' @rdname deprecated-compatibility
 #' @export
-updateMapping <- function(assign_global = TRUE) {
+updateMapping <- function(assign_global = FALSE) {
   .Deprecated("update_mapping")
   update_mapping(assign_global = assign_global)
 }

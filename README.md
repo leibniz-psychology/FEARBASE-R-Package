@@ -275,10 +275,11 @@ http://localhost:8004/ocpu/tmp/x0d715a6f605d54/graphics/1
 The study-to-condition mapping is part of the package.
 
 - The editable source file lives at `data-raw/mapping.csv`.
-- The runtime object used by the package is the internal dataset `mapping` in
+- The runtime object used by the package is the internal dataset `.mapping` in
   `R/sysdata.rda`.
-- `update_mapping()` loads the integrated mapping and, by default, assigns it
-  into the calling environment for interactive workflows.
+- `update_mapping()` loads and returns the integrated mapping. Set
+  `assign_global = TRUE` to also assign it into the calling environment for
+  interactive workflows.
 
 After changing `data-raw/mapping.csv`, rebuild the internal mapping with:
 

@@ -15,7 +15,6 @@ data-preprocessing.R
 ^dev_local$
 ^output$
 ^data$
-^R/sysdata[.]rda$
 ^man/(createCsv|jsonSummary|reorderPhases)[.]Rd$
 ^[.][.]Rcheck$
 ^AGENTS[.]md$

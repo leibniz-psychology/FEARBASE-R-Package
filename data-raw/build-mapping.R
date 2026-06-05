@@ -6,7 +6,6 @@ required_columns <- c(
 )
 
 mapping_path <- file.path("data-raw", "mapping.csv")
-output_path <- file.path("R", "sysdata.rda")
 
 if (!file.exists(mapping_path)) {
   stop("Mapping source file not found: ", mapping_path)
@@ -29,4 +28,13 @@ if (anyDuplicated(mapping$condition_id) > 0) {
   stop("The mapping contains duplicated condition_id values.")
 }
 
-save(mapping, file = output_path, compress = "xz")
+# Store the prepared table under a dot-prefixed name because the object is only
+# meant for package internals. usethis writes it to R/sysdata.rda, which R then
+# lazy-loads into the package namespace when installed or loaded with load_all().
+.mapping <- mapping
+usethis::use_data(
+  .mapping,
+  internal = TRUE,
+  overwrite = TRUE,
+  compress = "xz"
+)

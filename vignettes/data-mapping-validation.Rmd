@@ -36,10 +36,9 @@ metadata <- tibble::tribble(
 
 ## Mapping
 
-`update_mapping()` loads the integrated condition-to-study mapping. By default it
-also assigns `mapping` in the global environment for compatibility with older
-interactive workflows. Use `assign_global = FALSE` in scripts when you want a
-pure return value.
+`update_mapping()` loads and returns the integrated condition-to-study mapping.
+Set `assign_global = TRUE` when an interactive workflow also needs a caller-side
+object named `mapping`.
 
 ```{r update-mapping}
 mapping <- tibble::tibble(

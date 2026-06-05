@@ -59,15 +59,20 @@ test_that("mapping resolver returns explicit mappings", {
 
 test_that("mapping resolver uses and normalizes cached mappings", {
   cache_env <- fearbase:::.fearbase_env
-  if (exists("mapping", envir = cache_env, inherits = FALSE)) {
-    old_mapping <- get("mapping", envir = cache_env, inherits = FALSE)
-    on.exit(assign("mapping", old_mapping, envir = cache_env), add = TRUE)
+  if (exists(".mapping", envir = cache_env, inherits = FALSE)) {
+    old_mapping <- get(".mapping", envir = cache_env, inherits = FALSE)
+    on.exit(assign(".mapping", old_mapping, envir = cache_env), add = TRUE)
   } else {
-    on.exit(rm("mapping", envir = cache_env), add = TRUE)
+    on.exit(
+      if (exists(".mapping", envir = cache_env, inherits = FALSE)) {
+        rm(".mapping", envir = cache_env)
+      },
+      add = TRUE
+    )
   }
 
   assign(
-    "mapping",
+    ".mapping",
     tibble::tibble(condition_id = 1, study_id = 2),
     envir = cache_env
   )
@@ -78,24 +83,68 @@ test_that("mapping resolver uses and normalizes cached mappings", {
   testthat::expect_equal(resolved$study_id, "2")
 })
 
-test_that("mapping loader reads sysdata mappings from the working directory", {
-  temporary_working_directory <- tempfile("mapping-sysdata-")
-  dir.create(file.path(temporary_working_directory, "R"), recursive = TRUE)
-  on.exit(unlink(temporary_working_directory, recursive = TRUE), add = TRUE)
+test_that("mapping resolver uses bundled internal data", {
+  cache_env <- fearbase:::.fearbase_env
+  if (exists(".mapping", envir = cache_env, inherits = FALSE)) {
+    old_mapping <- get(".mapping", envir = cache_env, inherits = FALSE)
+    on.exit(assign(".mapping", old_mapping, envir = cache_env), add = TRUE)
+    rm(".mapping", envir = cache_env)
+  } else {
+    on.exit(
+      if (exists(".mapping", envir = cache_env, inherits = FALSE)) {
+        rm(".mapping", envir = cache_env)
+      },
+      add = TRUE
+    )
+  }
 
-  mapping <- tibble::tibble(condition_id = "c1", study_id = "s1")
-  save(mapping, file = file.path(
-    temporary_working_directory,
-    "R",
-    "sysdata.rda"
-  ))
+  resolved <- fearbase:::.get_mapping()
 
-  withr::local_dir(temporary_working_directory)
+  testthat::expect_s3_class(resolved, "data.frame")
+  testthat::expect_named(
+    resolved,
+    c("condition_id", "study_id", "paper_cond_id", "paper_study_id")
+  )
+  testthat::expect_true(all(vapply(resolved, is.character, logical(1))))
+})
 
-  loaded <- fearbase:::.load_mapping_from_sysdata()
+test_that("mapping resolver prefers bundled internal data over global data", {
+  cache_env <- fearbase:::.fearbase_env
+  if (exists(".mapping", envir = cache_env, inherits = FALSE)) {
+    old_cached_mapping <- get(".mapping", envir = cache_env, inherits = FALSE)
+    on.exit(
+      assign(".mapping", old_cached_mapping, envir = cache_env),
+      add = TRUE
+    )
+    rm(".mapping", envir = cache_env)
+  } else {
+    on.exit(
+      if (exists(".mapping", envir = cache_env, inherits = FALSE)) {
+        rm(".mapping", envir = cache_env)
+      },
+      add = TRUE
+    )
+  }
 
-  testthat::expect_equal(loaded$condition_id, "c1")
-  testthat::expect_equal(loaded$study_id, "s1")
+  if (exists("mapping", envir = .GlobalEnv, inherits = FALSE)) {
+    old_global_mapping <- get("mapping", envir = .GlobalEnv, inherits = FALSE)
+    on.exit(
+      assign("mapping", old_global_mapping, envir = .GlobalEnv),
+      add = TRUE
+    )
+  } else {
+    on.exit(rm("mapping", envir = .GlobalEnv), add = TRUE)
+  }
+
+  assign(
+    "mapping",
+    tibble::tibble(condition_id = "global", study_id = "global"),
+    envir = .GlobalEnv
+  )
+
+  resolved <- fearbase:::.get_mapping()
+
+  testthat::expect_false("global" %in% resolved$condition_id)
 })
 
 test_that("metadata mapping maps legacy condition identifiers", {
@@ -119,4 +168,27 @@ test_that("study-design mapping maps legacy condition identifiers", {
 
   testthat::expect_equal(mapped$condition_id, "c1")
   testthat::expect_equal(mapped$study_id, "s1")
+})
+
+test_that("update_mapping returns mapping without global assignment by default", {
+  if (exists("mapping", envir = .GlobalEnv, inherits = FALSE)) {
+    old_global_mapping <- get("mapping", envir = .GlobalEnv, inherits = FALSE)
+    on.exit(
+      assign("mapping", old_global_mapping, envir = .GlobalEnv),
+      add = TRUE
+    )
+    rm("mapping", envir = .GlobalEnv)
+  } else {
+    on.exit(
+      if (exists("mapping", envir = .GlobalEnv, inherits = FALSE)) {
+        rm("mapping", envir = .GlobalEnv)
+      },
+      add = TRUE
+    )
+  }
+
+  resolved <- update_mapping()
+
+  testthat::expect_s3_class(resolved, "data.frame")
+  testthat::expect_false(exists("mapping", envir = .GlobalEnv, inherits = FALSE))
 })

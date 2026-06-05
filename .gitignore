@@ -22,10 +22,12 @@ backlog.md
 # --- Data & Results (The Pipeline specific stuff) ---
 # Ignore all raw data formats to be safe
 *.csv
+!data-raw/mapping.csv
 *.xlsx
 *.xls
 *.rds
 *.rda
+!R/sysdata.rda
 *.parquet
 *.sqlite
 *.db

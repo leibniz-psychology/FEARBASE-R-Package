@@ -9,7 +9,7 @@
 # - Prevents namespace pollution
 # - Avoids accidental overwriting by users
 #
-# This environment will store the "mapping" object
+# This environment will store the internal ".mapping" object
 # once it is loaded the first time (lazy caching).
 .fearbase_env <- new.env(parent = emptyenv())
 
@@ -48,61 +48,14 @@
 
 
 ############################################################
-# 3) Attempt to load mapping from sysdata.rda
+# 3) Try to retrieve mapping from package namespace
 ############################################################
 
-# This function tries to load a saved mapping object
-# from the package's internal R/sysdata.rda file.
-#
-# Important:
-# - It loads into a temporary environment
-# - It does NOT pollute global or namespace
-# - It safely checks if the object exists
-.load_mapping_from_sysdata <- function() {
-
-  # Define possible file locations
-  candidate_paths <- c(
-    file.path("R", "sysdata.rda"),
-    file.path(getwd(), "R", "sysdata.rda")
-  )
-
-  # Iterate over possible locations
-  for (path in candidate_paths) {
-
-    # Skip if file does not exist
-    if (!file.exists(path)) {
-      next
-    }
-
-    # Create temporary isolated environment
-    # to avoid accidental overwriting
-    tmp_env <- new.env(parent = emptyenv())
-
-    # Load file contents into tmp_env
-    load(path, envir = tmp_env)
-
-    # Check whether object named "mapping" exists
-    if (exists("mapping", envir = tmp_env, inherits = FALSE)) {
-
-      # If yes, return that object
-      return(get("mapping", envir = tmp_env, inherits = FALSE))
-    }
-  }
-
-  # If nothing found, return NULL
-  return(NULL)
-}
-
-
-
-############################################################
-# 4) Try to retrieve mapping from package namespace
-############################################################
-
-# This function checks if the mapping object
+# This function checks if the .mapping object
 # is already stored in the installed package namespace.
 #
-# This happens if sysdata.rda was bundled at build time.
+# This is the canonical internal-data path for package objects bundled in
+# R/sysdata.rda. R lazy-loads those objects into the namespace on demand.
 .get_namespace_mapping <- function() {
 
   # Safely determine current package name
@@ -119,19 +72,20 @@
   # Get namespace environment of package
   ns <- asNamespace(pkg_name)
 
-  # Check if object exists inside namespace
-  if (!exists("mapping", envir = ns, inherits = FALSE)) {
+  # Check if the private internal object exists inside the namespace. The
+  # leading dot mirrors the object name written by data-raw/build-mapping.R.
+  if (!exists(".mapping", envir = ns, inherits = FALSE)) {
     return(NULL)
   }
 
-  # Retrieve and return mapping object
-  get("mapping", envir = ns, inherits = FALSE)
+  # Retrieve and return the internal mapping object without exposing it to users.
+  get(".mapping", envir = ns, inherits = FALSE)
 }
 
 
 
 ############################################################
-# 5) Core resolver: Determine correct mapping source
+# 4) Core resolver: Determine correct mapping source
 ############################################################
 
 # This is the central orchestration function.
@@ -139,11 +93,10 @@
 # It implements a priority-based resolution strategy:
 #
 # 1) User-supplied mapping argument
-# 2) Cached internal mapping (.fearbase_env)
-# 3) mapping in .GlobalEnv
-# 4) mapping in package namespace
-# 5) mapping from sysdata.rda
-# 6) Stop with error if none found
+# 2) Cached internal .mapping (.fearbase_env)
+# 3) .mapping in package namespace
+# 4) mapping in .GlobalEnv
+# 5) Stop with error if none found
 #
 # It also normalizes and caches package-bundled mappings internally.
 .get_mapping <- function(mapping = NULL) {
@@ -158,14 +111,24 @@
   ##########################################################
   # 2) Check internal cached version
   ##########################################################
-  if (exists("mapping", envir = .fearbase_env, inherits = FALSE)) {
+  if (exists(".mapping", envir = .fearbase_env, inherits = FALSE)) {
     return(.normalize_mapping(
-      get("mapping", envir = .fearbase_env)
+      get(".mapping", envir = .fearbase_env)
     ))
   }
 
   ##########################################################
-  # 3) Check global environment (backwards compatibility)
+  # 3) Check installed package namespace
+  ##########################################################
+  namespace_mapping <- .get_namespace_mapping()
+  if (!is.null(namespace_mapping)) {
+    package_mapping <- .normalize_mapping(namespace_mapping)
+    assign(".mapping", package_mapping, envir = .fearbase_env)
+    return(package_mapping)
+  }
+
+  ##########################################################
+  # 4) Check global environment (legacy compatibility)
   ##########################################################
   if (exists("mapping", envir = .GlobalEnv, inherits = FALSE)) {
     return(.normalize_mapping(
@@ -173,52 +136,27 @@
     ))
   }
 
-  ##########################################################
-  # 4) Check installed package namespace
-  ##########################################################
-  namespace_mapping <- .get_namespace_mapping()
-  if (!is.null(namespace_mapping)) {
-    return(.normalize_mapping(namespace_mapping))
-  }
-
-  ##########################################################
-  # 5) Attempt loading from sysdata.rda
-  ##########################################################
-  package_mapping <- .load_mapping_from_sysdata()
-
-  # If still NULL -> fail hard
-  if (is.null(package_mapping)) {
-    stop(
-      "No internal mapping object could be found. ",
-      "Rebuild the package mapping via data-raw/build-mapping.R."
-    )
-  }
-
-  # Normalize ID types
-  package_mapping <- .normalize_mapping(package_mapping)
-
-  # Cache internally for future calls. Public assignment, when requested, is
-  # handled by update_mapping() in the caller's environment.
-  assign("mapping", package_mapping, envir = .fearbase_env)
-
-  return(package_mapping)
+  stop(
+    "No internal mapping object could be found. ",
+    "Rebuild the package mapping via data-raw/build-mapping.R."
+  )
 }
 
 
 
 ############################################################
-# 6) Public user-facing function
+# 5) Public user-facing function
 ############################################################
 
 #' Load the integrated study-to-condition mapping
 #'
 #' @param assign_global Logical. Should mapping also be assigned
-#'   to the calling environment? When called interactively from the console,
-#'   this creates or updates `mapping` in the global environment.
+#'   to the calling environment? Defaults to `FALSE`. When set to `TRUE`, this
+#'   creates or updates `mapping` in the calling environment.
 #'
 #' @return A normalized mapping data frame.
 #' @export
-update_mapping <- function(assign_global = TRUE) {
+update_mapping <- function(assign_global = FALSE) {
   # Resolve the mapping through the package cache first. The optional assignment
   # is deliberately performed in the caller's environment instead of writing
   # directly to .GlobalEnv, which keeps interactive compatibility without
@@ -235,7 +173,7 @@ update_mapping <- function(assign_global = TRUE) {
 
 
 ############################################################
-# 7) Apply mapping to long-format data
+# 6) Apply mapping to long-format data
 ############################################################
 
 # This function ensures that condition_id and study_id
@@ -286,7 +224,7 @@ update_mapping <- function(assign_global = TRUE) {
 
 
 ############################################################
-# 8) Apply mapping to metadata
+# 7) Apply mapping to metadata
 ############################################################
 
 # Metadata uses "id" instead of "study_id".
@@ -329,7 +267,7 @@ update_mapping <- function(assign_global = TRUE) {
 
 
 ############################################################
-# 9) Apply mapping to study design data
+# 8) Apply mapping to study design data
 ############################################################
 
 # Nearly identical to long-data version,

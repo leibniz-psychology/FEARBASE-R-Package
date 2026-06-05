@@ -109,7 +109,7 @@ The package has one central mapping table with these required columns:
 - `paper_cond_id`;
 - `paper_study_id`.
 
-The mapping source is maintained in `data-raw/mapping.csv`; the runtime object is stored as internal package data in `R/sysdata.rda`.
+The mapping source is maintained in `data-raw/mapping.csv`; the runtime object is stored as the private internal object `.mapping` in `R/sysdata.rda`.
 
 Rebuild command:
 
@@ -123,10 +123,9 @@ Rebuild command:
 
 1.  explicit function argument;
 2.  internal `.fearbase_env` cache;
-3.  `.GlobalEnv$mapping`, for backwards compatibility;
-4.  installed package namespace;
-5.  local `R/sysdata.rda`;
-6.  error with rebuild guidance.
+3.  installed package namespace object `.mapping`;
+4.  `.GlobalEnv$mapping`, for backwards compatibility;
+5.  error with rebuild guidance.
 
 Mapping identifiers are normalized to character vectors by `.normalize_mapping()` to preserve leading zeros and avoid join mismatches.
 
