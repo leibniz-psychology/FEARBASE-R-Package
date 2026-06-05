@@ -15,6 +15,7 @@ execution:
 #| label: load-packages-data
 devtools::load_all() # Load fearbase package
 library(tidyverse)
+library(data.table)
 
 csv_files <- dir(
   "C:\\Users\\calting\\Documents\\GitLab\\FEARBASE-R-Package\\data",
@@ -23,13 +24,10 @@ csv_files <- dir(
 )
 
 # read all csv files
-for (f in csv_files) {
-  assign(
-    sub(".csv", "", basename(f)),
-    read_csv(f),
-    envir = .GlobalEnv
-  )
-}
+data_list <- csv_files %>%
+  set_names(~ tools::file_path_sans_ext(basename(.x))) %>%
+  purrr::map(fread) %>%
+  imap(~ assign(.y, .x, envir = .GlobalEnv))
 
 dl = data_long
 md = metadata
@@ -53,7 +51,8 @@ I'd remove the histogram from the package due to colours being not differentiabl
 #| label: fig-age-hist-study
 #| fig-cap: "Age distribution by study (not dataset)."
 #| code-fold: true
-age(dl = data_long, type = "histogram", grouping_variable = "study_id")
+age(dl = data_long, type = "histogram", grouping_variable = "study_id") +
+  theme_fearbase(legend_position = "right")
 ```
 
 :::
@@ -64,7 +63,8 @@ age(dl = data_long, type = "histogram", grouping_variable = "study_id")
 #| label: fig-age-hist-condition
 #| fig-cap: "Age distribution by condition (= dataset, not study)."
 #| code-fold: true
-age(dl = data_long, type = "histogram", grouping_variable = "condition_id")
+age(dl = data_long, type = "histogram", grouping_variable = "condition_id") +
+  theme_fearbase(legend_position = "right")
 ```
 
 :::
@@ -81,7 +81,8 @@ age(dl = data_long, type = "histogram", grouping_variable = "condition_id")
 #| label: fig-age-ridge-study
 #| fig-cap: "Age densities by study (not dataset)."
 #| code-fold: true
-age(dl = data_long, type = "ridge", grouping_variable = "study_id")
+age(dl = data_long, type = "ridge", grouping_variable = "study_id") +
+  theme_fearbase(legend_position = "none")
 ```
 
 :::
@@ -92,7 +93,8 @@ age(dl = data_long, type = "ridge", grouping_variable = "study_id")
 #| label: fig-age-ridge-condition
 #| fig-cap: "Age densities by condition (= dataset, not study)."
 #| code-fold: true
-age(dl = data_long, type = "ridge", grouping_variable = "condition_id")
+age(dl = data_long, type = "ridge", grouping_variable = "condition_id") +
+  theme_fearbase(legend_position = "none")
 ```
 
 :::
@@ -412,7 +414,8 @@ measures_heatmap(
   dl = data_long,
   md = metadata,
   cb = codebook
-)
+) +
+  theme_fearbase()
 ```
 :::
 ::::
@@ -494,98 +497,7 @@ trial_phase_counts(
 #| fig-cap: "Number of studies by Country."
 #| code-fold: true
 #| echo: false
-library(sf)
-library(ggplot2)
-library(ggiraph)
-library(patchwork)
-library(countrycode)
-library(rnaturalearth)
-library(rnaturalearthdata)
-
-# Clean fearbase country metadata
-metadata <- metadata %>%
-  mutate(countryClean = countryname(dataCountry))
-
-# get country counts
-fearbase_country_counts <- metadata %>%
-  select(countryClean) %>%
-  table() %>%
-  as_tibble() %>%
-  mutate(countryClean = forcats::fct_reorder(countryClean, n))
-
-
-# Get World Data
-world_sf <- ne_countries(scale = "large", returnclass = "sf")
-world_sf <- world_sf %>%
-  mutate(
-    countryClean = countryname(sovereignt, nomatch = NULL)
-  )
-
-# add fearbase data to world data
-world_sf_complete <- world_sf %>%
-  left_join(
-    fearbase_country_counts,
-    by = c("countryClean" = "countryClean")
-  ) %>%
-  filter(countryClean != "Antarctica")
-
-# create colour palette
-n_countries <- length(unique(fearbase_country_counts$countryClean))
-nn = 4
-new_palette <- generate_palette(n_countries * nn)
-new_colors <- setNames(
-  new_palette[seq(0, n_countries * nn, nn)],
-  levels(fearbase_country_counts$countryClean)
-)
-
-# country bar graph
-p1 <- ggplot(
-  fearbase_country_counts,
-  aes(
-    x = reorder(countryClean, n),
-    y = n,
-    tooltip = n,
-    data_id = countryClean,
-    fill = countryClean
-  )
-) +
-  geom_col_interactive(data = filter(fearbase_country_counts, !is.na(n))) +
-  # geom_text(stat='identity',
-  #           aes(label=n),
-  #           size = 4,
-  #           hjust=-1) +
-  guides(fill = "none") +
-  scale_fill_manual(values = new_colors) +
-  coord_flip() +
-  theme(axis.title.x = element_blank(), axis.title.y = element_blank()) +
-  scale_y_continuous("Number of datasets", breaks = seq(0, 8))
-#p1
-
-p2 <- ggplot() +
-  geom_sf(data = world_sf_complete, fill = "lightgrey", color = "lightgrey") +
-  geom_sf_interactive(
-    data = filter(world_sf_complete, !is.na(n)),
-    aes(fill = countryClean, tooltip = countryClean, data_id = countryClean)
-  ) +
-  coord_sf(crs = st_crs(3857)) +
-  theme_void() +
-  theme(
-    axis.title.x = element_blank(),
-    axis.title.y = element_blank(),
-    legend.position = "none"
-  ) +
-  scale_fill_manual(values = new_colors)
-
-combined_plot <- p1 / p2 + plot_layout(heights = c(1, 3))
-#combined_plot
-
-# Create the interactive plot
-interactive_plot <- girafe(ggobj = combined_plot)
-interactive_plot <- girafe_options(
-  interactive_plot,
-  opts_hover(css = "fill:orange;stroke:black;")
-)
-interactive_plot
+choropleth_country(metadata)
 ```
 
 :::
@@ -606,6 +518,7 @@ dl <- data_long
 
 data_sex <- data_long |>
   filter(measure == "sex" & !is.na(value)) |>
+  #filter(measure == "sex") |>
   mutate(value = .normalize_sex_value(value)) |>
   group_by(.data[[grouping_variable]], "sex") |>
   count(value) |>
@@ -619,6 +532,7 @@ data_sex <- data_long |>
 
 data_sex_pyramid <- dl |>
   filter(measure == "sex" & !is.na(value)) |>
+  #filter(measure == "sex") |>
   mutate(value = .normalize_sex_value(value)) |>
   group_by(.data[[grouping_variable]], "sex") |>
   count(value) |>
@@ -846,6 +760,7 @@ phase_order <- c(
 
 observed_phases <- data_long_phases |>
   distinct(.data$phase) |>
+  filter(.data$phase != "") |>
   pull(.data$phase)
 
 # Use the requested display order for known phases and append any future
@@ -859,6 +774,7 @@ phases <- c(
 # row is one condition and TRUE means that the condition contains that phase.
 data_long_upset <- data_long_phases |>
   mutate(in_phase = TRUE) |>
+  filter(!phase == "") |>
   tidyr::pivot_wider(
     names_from = "phase",
     values_from = "in_phase",
@@ -907,6 +823,7 @@ data_long_participant_phases <- data_long_mapped |>
 # Use the same phase vector as the condition-level plot so the two versions
 # are directly comparable and keep identical set labels.
 data_long_participants <- data_long_participant_phases |>
+  filter(phase != "") |>
   mutate(in_phase = TRUE) |>
   tidyr::pivot_wider(
     names_from = "phase",
