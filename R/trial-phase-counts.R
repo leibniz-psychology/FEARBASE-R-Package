@@ -431,7 +431,8 @@ trial_phase_counts <- function(
         labs(
           x = "Number of Trials",
           y = "Number of Participants"
-        )
+        ) +
+        theme_fearbase_dense()
     } else {
       graph <- plot_data |>
         ggplot(
@@ -453,7 +454,8 @@ trial_phase_counts <- function(
           x = "Number of Trials",
           y = "Number of Participants",
           fill = grouping_variable
-      )
+        ) +
+        theme_fearbase_dense()
     }
   } else {
     # Count each grouping unit once per phase and observed trial total. This
@@ -491,7 +493,8 @@ trial_phase_counts <- function(
       labs(
         x = "Number of Trials",
         y = "Number of Studies"
-      )
+      ) +
+      theme_fearbase_dense()
   }
 
   # Return the plot object without printing so callers can add themes or save it

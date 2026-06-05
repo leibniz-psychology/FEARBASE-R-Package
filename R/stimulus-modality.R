@@ -219,7 +219,7 @@ stimulus_modality <- function(
     coord_polar("y", start = 0) +
     labs(fill = legend_title) +
     scale_fill_manual(values = fill_values) +
-    theme_void() +
+    theme_fearbase_void(background = "white") +
     geom_label(
       data = label_data,
       aes(
@@ -227,10 +227,8 @@ stimulus_modality <- function(
         group = .data$modality
       ),
       position = position_stack(vjust = 0.5),
-      fill = "white"
-    ) +
-    theme(
-      plot.background = element_rect(fill = "white", color = NA)
+      fill = "white",
+      size = .fearbase_geom_text_size(scale = 0.85)
     ) +
     guides(
       fill = guide_none()

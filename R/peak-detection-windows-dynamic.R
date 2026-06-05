@@ -508,14 +508,12 @@ peak_detection_windows_dynamic <- function(
       label = "CS Onset",
       color = "black",
       vjust = -0.5,
-      size = rel(3)
+      size = .fearbase_geom_text_size(scale = 1.15)
     ) +
     # Apply whole-second breaks and keep the legend above the plotting panel.
     scale_x_discrete(labels = group_axis_labels) +
     scale_y_continuous(breaks = y_breaks) +
-    theme(
-      legend.position = "top"
-    )
+    theme_fearbase_dense(legend_position = "top")
 
   # Wrap the ggplot in a ggiraph widget so the interactive segment tooltips are
   # available to downstream OpenCPU, Quarto, Shiny, or browser renderers.

@@ -220,7 +220,8 @@ instructions <- function(
         to = max(data_instructions$n),
         by = 2
       )
-    )
+    ) +
+    theme_fearbase_dense()
 
   return(graph)
 }

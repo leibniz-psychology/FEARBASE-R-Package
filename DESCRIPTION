@@ -32,6 +32,9 @@ Depends:
 Suggests: 
     knitr,
     rmarkdown,
+    showtext,
+    sysfonts,
+    systemfonts,
     testthat (>= 3.0.0),
     withr
 VignetteBuilder: knitr

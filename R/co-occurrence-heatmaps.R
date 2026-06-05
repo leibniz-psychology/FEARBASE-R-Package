@@ -406,7 +406,8 @@ plot_co_occurrence_heatmap <- function(
         label = .data[[value_var]]
       ),
       colour = "white",
-      fontface = "bold"
+      fontface = "bold",
+      size = .fearbase_geom_text_size(base_size = 10, scale = 0.75)
     ) +
     geom_tile(
       aes(alpha = .data$fill_white),
@@ -422,15 +423,8 @@ plot_co_occurrence_heatmap <- function(
     ) +
     scale_alpha(guide = "none") +
     labs(fill = "Number of Participants") +
+    theme_fearbase_heatmap(base_size = 10, legend_position = "top") +
     theme(
-      axis.text.x = element_text(angle = 90, hjust = 1),
-      legend.position = "top",
-      legend.key.width = grid::unit(2, "line"),
-      legend.title = element_text(
-        margin = margin(r = 20)
-      ),
-      panel.background = element_rect(fill = "white"),
-      axis.title = element_blank(),
       plot.margin = margin(
         t = 5.5,
         r = 5.5,
@@ -504,12 +498,16 @@ plot_horizontal_bar <- function(df, cat_var, count_var, fill_var = NULL) {
     geom_text(
       aes(label = .data[[count_var]]),
       hjust = -0.1,
-      color = "black"
+      color = "black",
+      size = .fearbase_geom_text_size(base_size = 10, scale = 0.8)
     ) +
     coord_flip(ylim = c(0, axis_upper_limit)) +
-    theme_void() +
+    theme_fearbase_void(
+      base_size = 10,
+      legend_position = "top",
+      background = "transparent"
+    ) +
     theme(
-      legend.position = "top",
       legend.title = element_blank()
     )
 }

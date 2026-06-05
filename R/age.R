@@ -256,7 +256,8 @@ age <- function(
         fill = legend_label
       ) +
       scale_fill_discrete(name = legend_label) +
-      guides(fill = guide_legend(reverse = TRUE))
+      guides(fill = guide_legend(reverse = TRUE)) +
+      theme_fearbase()
   } else {
     # Ridge plots use the unaggregated numeric ages so ggridges can estimate a
     # density curve separately for each ordered group.
@@ -286,7 +287,8 @@ age <- function(
         # The group is already shown on the y-axis, so suppress the duplicate
         # fill legend for density/ridge output.
         legend.position = "none"
-      )
+      ) +
+      theme_fearbase_dense(legend_position = "none")
   }
 
   # Return the plot without printing so callers can add layers, theme it, or

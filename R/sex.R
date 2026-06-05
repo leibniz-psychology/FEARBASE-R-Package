@@ -303,7 +303,7 @@ sex <- function(dl = NULL) {
     ) +
     coord_polar("y", start = 0) +
     labs(fill = "Sex") +
-    theme_void() +
+    theme_fearbase_void(background = "transparent") +
     geom_label(
       data = stacked_label_data,
       aes(
@@ -311,7 +311,8 @@ sex <- function(dl = NULL) {
         group = .data$sex
       ),
       position = position_stack(vjust = 0.5),
-      fill = "white"
+      fill = "white",
+      size = .fearbase_geom_text_size(scale = 0.85)
     ) +
     ggrepel::geom_label_repel(
       data = repelled_label_data,
@@ -321,12 +322,9 @@ sex <- function(dl = NULL) {
       ),
       position = position_stack(vjust = 0.5),
       fill = "white",
+      size = .fearbase_geom_text_size(scale = 0.85),
       min.segment.length = 0,
       show.legend = FALSE
-    ) +
-    theme(
-      legend.position = "none",
-      plot.background = element_rect(fill = "transparent", color = NA)
     )
 
   # Return the plot without printing so callers can add layers, theme it, or

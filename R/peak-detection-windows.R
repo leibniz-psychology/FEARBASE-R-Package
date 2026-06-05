@@ -415,7 +415,7 @@ peak_detection_windows <- function(
       ),
       color = "black",
       hjust = 0,
-      size = 3,
+      size = .fearbase_geom_text_size(scale = 0.8),
       fontface = 2
     ) +
     # Draw a zero-second reference line for stimulus onset.
@@ -428,11 +428,11 @@ peak_detection_windows <- function(
       label = "CS Onset",
       color = "black",
       vjust = -0.5,
-      size = 5
+      size = .fearbase_geom_text_size(scale = 1.15)
     ) +
     # Apply whole-second breaks and keep the legend above the plotting panel.
     scale_y_continuous(breaks = y_breaks) +
-    theme(legend.position = "top")
+    theme_fearbase_dense(legend_position = "top")
 
   # Return the ggplot object so callers can print it, add layers, or save it.
   return(graph)

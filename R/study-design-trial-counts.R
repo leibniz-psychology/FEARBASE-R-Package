@@ -147,7 +147,8 @@ study_design_trial_counts <- function(sd = NULL, cb = NULL) {
       axis.labels = "all_x"
     ) +
     scale_x_continuous(breaks = scales::extended_breaks(10)) +
-    labs(x = "Number of Trials", y = "Number of Studies")
+    labs(x = "Number of Trials", y = "Number of Studies") +
+    theme_fearbase_dense()
 
   return(graph)
 }

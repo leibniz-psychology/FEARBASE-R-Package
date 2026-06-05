@@ -223,7 +223,8 @@ sample_size_by_study <- function(
     labs(
       x = x_axis_title,
       y = "Number of Participants"
-    )
+    ) +
+    theme_fearbase_dense()
 
   # Return the ggplot object without printing so callers can add layers, themes,
   # or pass the plot to ggsave().

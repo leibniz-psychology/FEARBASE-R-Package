@@ -219,7 +219,8 @@ data_collection_year <- function(
     scale_y_continuous(
       breaks = seq(0L, ceiling(max(data_collection_year$n) / 2) * 2, by = 2),
       limits = c(0L, ceiling(max(data_collection_year$n) / 2) * 2)
-    )
+    ) +
+    theme_fearbase()
 
   # Return the plot object without printing it so callers can add layers,
   # change themes, or save it with ggsave().
