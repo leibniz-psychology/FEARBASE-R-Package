@@ -608,7 +608,7 @@ arrange_histogram_layout <- function(hm, bp) {
   if (
     !is.character(exclude) ||
       length(exclude) == 0L ||
-      any(is.na(exclude)) ||
+      anyNA(exclude) ||
       any(exclude == "")
   ) {
     stop(

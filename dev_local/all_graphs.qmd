@@ -30,6 +30,11 @@ for (f in csv_files) {
     envir = .GlobalEnv
   )
 }
+
+dl = data_long
+md = metadata
+cb = codebook
+sd = study_design
 ```
 
 # Participant-related

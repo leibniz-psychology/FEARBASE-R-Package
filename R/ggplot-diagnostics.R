@@ -167,7 +167,7 @@ trace_removed_rows <- function(
     panel_id <- as.integer(as.character(panel_id))
     axis_range <- ranges_for_row(panel_id, axis_name)
 
-    if (any(is.na(axis_range))) {
+    if (anyNA(axis_range)) {
       return(FALSE)
     }
 

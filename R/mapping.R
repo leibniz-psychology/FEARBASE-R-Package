@@ -14,7 +14,6 @@
 .fearbase_env <- new.env(parent = emptyenv())
 
 
-
 ############################################################
 # 2) Normalize mapping ID columns
 ############################################################
@@ -46,7 +45,6 @@
 }
 
 
-
 ############################################################
 # 3) Try to retrieve mapping from package namespace
 ############################################################
@@ -57,7 +55,6 @@
 # This is the canonical internal-data path for package objects bundled in
 # R/sysdata.rda. R lazy-loads those objects into the namespace on demand.
 .get_namespace_mapping <- function() {
-
   # Safely determine current package name
   pkg_name <- tryCatch(
     utils::packageName(),
@@ -83,7 +80,6 @@
 }
 
 
-
 ############################################################
 # 4) Core resolver: Determine correct mapping source
 ############################################################
@@ -100,7 +96,6 @@
 #
 # It also normalizes and caches package-bundled mappings internally.
 .get_mapping <- function(mapping = NULL) {
-
   ##########################################################
   # 1) User explicitly supplied mapping
   ##########################################################
@@ -143,7 +138,6 @@
 }
 
 
-
 ############################################################
 # 5) Public user-facing function
 ############################################################
@@ -171,7 +165,6 @@ update_mapping <- function(assign_global = FALSE) {
 }
 
 
-
 ############################################################
 # 6) Apply mapping to long-format data
 ############################################################
@@ -183,8 +176,7 @@ update_mapping <- function(assign_global = FALSE) {
 
   # If condition_id already exists and contains values,
   # do nothing (idempotent behavior).
-  if ("condition_id" %in% names(dl) &&
-      any(!is.na(dl$condition_id))) {
+  if ("condition_id" %in% names(dl) && !all(is.na(dl$condition_id))) {
     return(dl)
   }
 
@@ -222,7 +214,6 @@ update_mapping <- function(assign_global = FALSE) {
 }
 
 
-
 ############################################################
 # 7) Apply mapping to metadata
 ############################################################
@@ -234,7 +225,7 @@ update_mapping <- function(assign_global = FALSE) {
   # If mapping already applied, return as-is
   if (
     all(c("condition_id", "study_id") %in% names(md)) &&
-    any(!is.na(md$condition_id))
+      !all(is.na(md$condition_id))
   ) {
     return(md)
   }
@@ -265,7 +256,6 @@ update_mapping <- function(assign_global = FALSE) {
 }
 
 
-
 ############################################################
 # 8) Apply mapping to study design data
 ############################################################
@@ -275,8 +265,7 @@ update_mapping <- function(assign_global = FALSE) {
 .apply_mapping_to_study_design <- function(sd, mapping = NULL) {
   .validate_data_frame(sd, "sd")
 
-  if ("condition_id" %in% names(sd) &&
-      any(!is.na(sd$condition_id))) {
+  if ("condition_id" %in% names(sd) && !all(is.na(sd$condition_id))) {
     return(sd)
   }
 

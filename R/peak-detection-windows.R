@@ -344,7 +344,7 @@ peak_detection_windows <- function(
 
   # Guard against all-missing or infinite endpoint values after numeric
   # coercion. This produces a clearer message than a later ggplot scale error.
-  if (any(!is.finite(y_limits))) {
+  if (!all(is.finite(y_limits))) {
     stop(
       "SCR window start and end values must contain finite numeric data.",
       call. = FALSE

@@ -196,7 +196,7 @@ stimulus_modality <- function(
   # Because count_data is ordered by descending selected count, placing the
   # primary color first restores the original visual contract: the largest
   # modality slice receives the main FEARBASE color.
-  n_modalities <- length(levels(count_data$modality))
+  n_modalities <- nlevels(count_data$modality)
   main_color <- generate_palette(1)
   generated_colors <- generate_palette(max(n_modalities, 2L))
   secondary_colors <- generated_colors[

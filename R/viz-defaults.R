@@ -6,11 +6,11 @@ fearbase_palette <- c(
 )
 
 fearbase_palette_v2 <- c(
-  hsl_to_rgb(215.44, 1, .8),
-  hsl_to_rgb(215.44, 1, .5745), #secondary
-  hsl_to_rgb(221.25, 1, .3137), #primary
-  hsl_to_rgb(221.25, 1, .2), #primary 800
-  hsl_to_rgb(221.25, 1, .05)
+  hsl_to_rgb(215.44, 1, 0.8),
+  hsl_to_rgb(215.44, 1, 0.5745), #secondary
+  hsl_to_rgb(221.25, 1, 0.3137), #primary
+  hsl_to_rgb(221.25, 1, 0.2), #primary 800
+  hsl_to_rgb(221.25, 1, 0.05)
 )
 
 generate_palette <- function(n_colors) {
