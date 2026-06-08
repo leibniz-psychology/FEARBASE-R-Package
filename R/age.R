@@ -356,7 +356,7 @@ age <- function(
           x = .data$age,
         )
       ) +
-        ggdist::stat_slab(fill = fearbase_palette_v2[3]) +
+        ggdist::stat_slab(fill = generate_palette(1)) +
         labs(
           x = "Age",
           y = "Density"
