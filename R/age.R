@@ -58,9 +58,9 @@
 #' grouped histogram plots, counts are computed per exact age value and group,
 #' then bars are stacked and filled by the grouping variable.
 #'
-#' For ridge plots, kernel density estimates are computed using
+#' For grouped ridge plots, kernel density estimates are computed using
 #' `ggridges::geom_density_ridges()`. Without grouping, a single overall
-#' density ridge is drawn.
+#' density slab is drawn using `ggdist::stat_slab()`.
 #'
 #' If `type` does not match any supported value, an error is raised.
 #'
@@ -71,10 +71,12 @@
 #' \itemize{
 #'   \item `dplyr`
 #'   \item `ggplot2`
-#'   \item `ggridges` (only for ridge/density plots)
+#'   \item `ggridges` (only for grouped ridge/density plots)
+#'   \item `ggdist` (only for ungrouped ridge/density plots)
 #' }
 #'
 #' @seealso \code{\link[ggridges]{geom_density_ridges}}
+#' @seealso \code{\link[ggdist]{stat_slab}}
 #'
 #' @examples
 #' \dontrun{
@@ -234,7 +236,7 @@ age <- function(
     # local plotting-only factor that represents the overall age distribution
     # without adding a user-facing grouping requirement.
     data_age <- data_age |>
-      mutate(plot_group = factor("All participants"))
+      mutate(plot_group = factor("Density"))
   }
 
   ############################################################
@@ -344,7 +346,7 @@ age <- function(
           # fill legend for density/ridge output.
           legend.position = "none"
         ) +
-        theme_fearbase_dense(legend_position = "none")
+        theme_fearbase(legend_position = "none")
     } else {
       # The ungrouped ridge keeps the same density geometry while mapping every
       # observation to one plotting-only factor level.
@@ -352,16 +354,14 @@ age <- function(
         data_age,
         aes(
           x = .data$age,
-          y = .data$plot_group,
-          group = .data$plot_group
         )
       ) +
-        ggridges::geom_density_ridges() +
+        ggdist::stat_slab(fill = fearbase_palette_v2[3]) +
         labs(
           x = "Age",
-          y = NULL
+          y = "Density"
         ) +
-        theme_fearbase_dense(legend_position = "none")
+        theme_fearbase(legend_position = "none")
     }
   }
 
