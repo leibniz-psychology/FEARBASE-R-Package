@@ -231,12 +231,6 @@ age <- function(
       data_age[[grouping_variable]],
       levels = study_order
     )
-  } else {
-    # Ridge plots require a discrete y aesthetic. In ungrouped mode, create a
-    # local plotting-only factor that represents the overall age distribution
-    # without adding a user-facing grouping requirement.
-    data_age <- data_age |>
-      mutate(plot_group = factor("Density"))
   }
 
   ############################################################
