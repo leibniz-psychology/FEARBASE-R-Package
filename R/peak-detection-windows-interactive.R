@@ -1,4 +1,4 @@
-#' Visualize SCR peak detection windows
+#' Visualize interactive SCR peak detection windows
 #'
 #' Creates a horizontal interval plot of skin conductance response (SCR)
 #' baseline, peak-detection, and trough-detection scoring windows by study or
@@ -13,12 +13,12 @@
 #'   (`study_id` or `condition_id`) and one complete supported SCR window column
 #'   set. See Details.
 #' @param grouping_variable A single character string specifying the identifier
-#'   variable used for backwards-compatible input validation. The dynamic plot
+#'   variable used for backwards-compatible input validation. The interactive plot
 #'   itself groups rows by unique SCR scoring-window definitions and shows the
 #'   condition IDs belonging to each definition in interactive tooltips.
 #' @param save_html_widget A single logical value. If `TRUE`, the generated
 #'   [ggiraph::girafe()] htmlwidget is additionally written to
-#'   `peak_detection_windows_dynamic.html` in the current working directory
+#'   `peak_detection_windows_interactive.html` in the current working directory
 #'   before the widget object is returned. In OpenCPU sessions, files written to
 #'   the working directory are exposed through the session `/files/` endpoint.
 #'
@@ -50,14 +50,14 @@
 #'
 #' @examples
 #' \dontrun{
-#' peak_detection_windows_dynamic(metadata)
-#' peak_detection_windows_dynamic(metadata, grouping_variable = "condition_id")
+#' peak_detection_windows_interactive(metadata)
+#' peak_detection_windows_interactive(metadata, grouping_variable = "condition_id")
 #' }
 #'
 #' @importFrom ggiraph geom_segment_interactive girafe
 #' @importFrom rlang .data
 #' @export
-peak_detection_windows_dynamic <- function(
+peak_detection_windows_interactive <- function(
   md,
   grouping_variable = "study_id",
   save_html_widget = FALSE
@@ -153,7 +153,7 @@ peak_detection_windows_dynamic <- function(
   if (!"condition_id" %in% available_grouping_variables) {
     stop(
       "`condition_id` must be available in `md` after mapping to build ",
-      "dynamic SCR scoring-window tooltips.",
+      "interactive SCR scoring-window tooltips.",
       call. = FALSE
     )
   }
@@ -260,7 +260,7 @@ peak_detection_windows_dynamic <- function(
       across(all_of(available_grouping_variables), as.factor)
     ) |>
     # Collapse metadata rows to the SCR scoring-window definitions requested
-    # for the dynamic plot. The tooltip keeps the condition IDs behind each
+    # for the interactive plot. The tooltip keeps the condition IDs behind each
     # definition, so identical scoring setups are drawn only once.
     group_by(
       .data$scr_scoring_approach,
@@ -526,9 +526,9 @@ peak_detection_windows_dynamic <- function(
   if (save_html_widget) {
     htmlwidgets::saveWidget(
       graph_widget,
-      file = "peak_detection_windows_dynamic.html",
+      file = "peak_detection_windows_interactive.html",
       selfcontained = FALSE,
-      libdir = "peak_detection_windows_dynamic_files"
+      libdir = "peak_detection_windows_interactive_files"
     )
   }
 

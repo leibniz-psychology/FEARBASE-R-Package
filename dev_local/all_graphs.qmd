@@ -377,12 +377,12 @@ peak_detection_windows(md = metadata, grouping_variable = "condition_id")
 
 ::::
 
-::: {#scr-scoring-approach-by-condition-dynamic}
+::: {#scr-scoring-approach-by-condition-interactive}
 ```{r}
-#| label: fig-scr-scoring-approach-dynamic
+#| label: fig-scr-scoring-approach-interactive
 #| fig-cap: "Unique SCR Scoring Approach Settings. Hover with your mouse over a segment to show Dataset IDs."
 #| code-fold: true
-peak_detection_windows_dynamic(
+peak_detection_windows_interactive(
   md = metadata,
   grouping_variable = "condition_id"
 )

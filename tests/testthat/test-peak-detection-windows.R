@@ -45,8 +45,8 @@ test_that("peak detection windows reject empty numeric SCR intervals", {
   )
 })
 
-test_that("dynamic peak detection windows group scoring definitions", {
-  graph <- peak_detection_windows_dynamic(fixture_metadata())
+test_that("interactive peak detection windows group scoring definitions", {
+  graph <- peak_detection_windows_interactive(fixture_metadata())
 
   testthat::expect_s3_class(graph, "girafe")
 
@@ -71,34 +71,34 @@ test_that("dynamic peak detection windows group scoring definitions", {
   )
 })
 
-test_that("dynamic peak detection windows validate scalar inputs", {
+test_that("interactive peak detection windows validate scalar inputs", {
   testthat::expect_error(
-    peak_detection_windows_dynamic(1),
+    peak_detection_windows_interactive(1),
     "`md` must be a data frame"
   )
   testthat::expect_error(
-    peak_detection_windows_dynamic(
+    peak_detection_windows_interactive(
       fixture_metadata(),
       grouping_variable = NA_character_
     ),
     "single non-missing character"
   )
   testthat::expect_error(
-    peak_detection_windows_dynamic(fixture_metadata(), save_html_widget = NA),
+    peak_detection_windows_interactive(fixture_metadata(), save_html_widget = NA),
     "single non-missing logical"
   )
 })
 
-test_that("dynamic peak detection windows support legacy SCR columns", {
+test_that("interactive peak detection windows support legacy SCR columns", {
   md <- fixture_metadata()
   names(md) <- sub("^physio_", "", names(md))
 
-  graph <- peak_detection_windows_dynamic(md)
+  graph <- peak_detection_windows_interactive(md)
 
   testthat::expect_s3_class(graph, "girafe")
 })
 
-test_that("dynamic peak detection windows can save an HTML widget", {
+test_that("interactive peak detection windows can save an HTML widget", {
   temporary_working_directory <- tempfile("peak-detection-widget-")
 
   dir.create(temporary_working_directory)
@@ -106,12 +106,12 @@ test_that("dynamic peak detection windows can save an HTML widget", {
 
   withr::local_dir(temporary_working_directory)
 
-  graph <- peak_detection_windows_dynamic(
+  graph <- peak_detection_windows_interactive(
     fixture_metadata(),
     save_html_widget = TRUE
   )
 
   testthat::expect_s3_class(graph, "girafe")
-  testthat::expect_true(file.exists("peak_detection_windows_dynamic.html"))
-  testthat::expect_true(dir.exists("peak_detection_windows_dynamic_files"))
+  testthat::expect_true(file.exists("peak_detection_windows_interactive.html"))
+  testthat::expect_true(dir.exists("peak_detection_windows_interactive_files"))
 })

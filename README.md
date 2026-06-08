@@ -104,7 +104,7 @@ trial_phase_counts(
 
 reinforcement_rates(metadata, grouping_variable = "study_id")
 peak_detection_windows(metadata)
-peak_detection_windows_dynamic(metadata)
+peak_detection_windows_interactive(metadata)
 ```
 
 ### Co-occurrence heatmaps
@@ -127,7 +127,7 @@ FEARBASE summaries are not the right entry point.
 | Mapping | `update_mapping()` | Load the integrated study-to-condition mapping used to normalize identifiers. |
 | Participant summaries | `age()`, `age_descriptives()`, `sex()`, `sample_size_by_study()` | Summarize age, sex or gender, and sample-size distributions. |
 | Metadata summaries | `all_studies()`, `data_collection_year()`, `stimulus_modality()` | Summarize study coverage, collection years, and stimulus modality distributions. |
-| Study and trial summaries | `trial_phase_counts()`, `reinforcement_rates()`, `peak_detection_windows()`, `peak_detection_windows_dynamic()` | Inspect trial counts, reinforcement rates, and peak-detection windows. |
+| Study and trial summaries | `trial_phase_counts()`, `reinforcement_rates()`, `peak_detection_windows()`, `peak_detection_windows_interactive()` | Inspect trial counts, reinforcement rates, and peak-detection windows. |
 | Co-occurrence plots | `measures_heatmap()`, `phases_heatmap()`, `plot_co_occurrence_heatmap()`, `plot_horizontal_bar()` | Visualize how measures and experimental phases co-occur across conditions. |
 | Diagnostics | `trace_removed_rows()` | Inspect rows removed during data-processing workflows. |
 
