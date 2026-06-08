@@ -74,6 +74,7 @@ compact database abbreviations into plot labels.
 ### Participant summaries
 
 ```r
+age(data_long, type = "histogram")
 age(data_long, type = "histogram", grouping_variable = "study_id")
 age(data_long, type = "ridge", grouping_variable = "condition_id")
 

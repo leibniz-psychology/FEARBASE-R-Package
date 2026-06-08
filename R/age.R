@@ -2,7 +2,8 @@
 #'
 #' Generates a visualization of participant age distributions from a dataset
 #' in long format. The function supports either stacked histograms of age counts
-#' or ridge (kernel density) plots grouped by a specified grouping variable.
+#' or ridge (kernel density) plots, optionally grouped by a specified grouping
+#' variable.
 #'
 #' The input data must contain a column `measure` and a column `value`.
 #' Only rows where `measure == "age"` are retained. The `value` column
@@ -27,11 +28,12 @@
 #'   \itemize{
 #'     \item `"histogram"`, `"hist"`, `"h"`: Stacked histogram of counts per
 #'       age value.
-#'     \item `"ridge"`, `"density"`, `"r"`, `"d"`: Kernel density ridge plot.
+#'     \item `"ridge"`, `"density"`, `"r"`: Kernel density ridge plot.
 #'   }
 #'
-#' @param grouping_variable Character string specifying the grouping variable.
-#'   Must be exactly one of:
+#' @param grouping_variable Optional character string specifying the grouping
+#'   variable. If `NULL` (default), all valid age observations are plotted
+#'   without grouping. If supplied, must be exactly one of:
 #'   \itemize{
 #'     \item `"condition_id"`
 #'     \item `"study_id"`
@@ -47,15 +49,18 @@
 #'   \item Filters rows where `measure == "age"`.
 #'   \item Coerces `value` to numeric (`as.numeric()`).
 #'   \item Removes rows with missing age values.
-#'   \item Converts the grouping variable to a factor.
-#'   \item Orders factor levels by descending mean age per group.
+#'   \item If a grouping variable is supplied, converts it to a factor.
+#'   \item If a grouping variable is supplied, orders factor levels by
+#'     descending mean age per group.
 #' }
 #'
-#' For histogram plots, counts are computed per exact age value and group.
-#' Bars are stacked and filled by the grouping variable.
+#' For ungrouped histogram plots, counts are computed per exact age value. For
+#' grouped histogram plots, counts are computed per exact age value and group,
+#' then bars are stacked and filled by the grouping variable.
 #'
 #' For ridge plots, kernel density estimates are computed using
-#' `ggridges::geom_density_ridges()`.
+#' `ggridges::geom_density_ridges()`. Without grouping, a single overall
+#' density ridge is drawn.
 #'
 #' If `type` does not match any supported value, an error is raised.
 #'
@@ -73,6 +78,9 @@
 #'
 #' @examples
 #' \dontrun{
+#' # Ungrouped histogram
+#' age(dl)
+#'
 #' # Histogram grouped by study
 #' age(dl, type = "histogram", grouping_variable = "study_id")
 #'
@@ -85,7 +93,7 @@
 age <- function(
   dl,
   type = "histogram",
-  grouping_variable = "study_id"
+  grouping_variable = NULL
 ) {
   ############################################################
   # 1) Normalize the caller's long-format data schema
@@ -113,19 +121,26 @@ age <- function(
     "paper_study_id"
   )
 
-  grouping_variable <- .validate_choice(
-    grouping_variable,
-    "grouping_variable",
-    valid_group_vars
-  )
+  # NULL is the explicit ungrouped mode. Any non-NULL value must still be one
+  # of the same supported identifier columns used by the historical grouped
+  # implementation.
+  has_grouping_variable <- !is.null(grouping_variable)
 
-  # The requested grouping variable must survive the mapping step and be
-  # present in the resulting data before it can be used by dplyr or ggplot2.
-  if (!grouping_variable %in% names(dl)) {
-    stop(
-      "`grouping_variable` not found in `dl`.",
-      call. = FALSE
+  if (has_grouping_variable) {
+    grouping_variable <- .validate_choice(
+      grouping_variable,
+      "grouping_variable",
+      valid_group_vars
     )
+
+    # The requested grouping variable must survive the mapping step and be
+    # present in the resulting data before it can be used by dplyr or ggplot2.
+    if (!grouping_variable %in% names(dl)) {
+      stop(
+        "`grouping_variable` not found in `dl`.",
+        call. = FALSE
+      )
+    }
   }
 
   # Match plot types case-insensitively while preserving a small set of short
@@ -136,13 +151,13 @@ age <- function(
   # Keep the aliases explicit so the branching condition below is easy to
   # audit when new plot types are added.
   valid_hist <- c("histogram", "hist", "h")
-  valid_ridge <- c("ridge", "density", "r", "d")
+  valid_ridge <- c("ridge", "density", "r")
 
   # Stop before any data transformation if the requested visualization mode is
   # not one of the supported histogram or ridge-density variants.
   if (!type %in% c(valid_hist, valid_ridge)) {
     stop(
-      "`type` must be one of: histogram, hist, h, ridge, density, r, d.",
+      "`type` must be one of: histogram, hist, h, ridge, density, r.",
       call. = FALSE
     )
   }
@@ -194,101 +209,160 @@ age <- function(
   # 4) Order groups by descending mean age for stable visual comparison
   ############################################################
 
-  # Compute a single ordered level vector from the prepared age data. Ordering
-  # by mean age keeps both histogram legends and ridge plot axes consistent
-  # across repeated calls with the same input data.
-  study_order <- data_age |>
-    group_by(.data[[grouping_variable]]) |>
-    summarise(
-      mean_age = mean(.data$age, na.rm = TRUE),
-      .groups = "drop"
-    ) |>
-    arrange(.data$mean_age) |>
-    pull(all_of(grouping_variable))
+  if (has_grouping_variable) {
+    # Compute a single ordered level vector from the prepared age data.
+    # Ordering by mean age keeps both histogram legends and ridge plot axes
+    # consistent across repeated calls with the same input data.
+    study_order <- data_age |>
+      group_by(.data[[grouping_variable]]) |>
+      summarise(
+        mean_age = mean(.data$age, na.rm = TRUE),
+        .groups = "drop"
+      ) |>
+      arrange(.data$mean_age) |>
+      pull(all_of(grouping_variable))
 
-  # Rebuild only the selected grouping factor with explicit levels. Other
-  # grouping columns can remain as ordinary factors because they are not mapped
-  # to the current plot.
-  data_age[[grouping_variable]] <- factor(
-    data_age[[grouping_variable]],
-    levels = study_order
-  )
+    # Rebuild only the selected grouping factor with explicit levels. Other
+    # grouping columns can remain as ordinary factors because they are not
+    # mapped to the current plot.
+    data_age[[grouping_variable]] <- factor(
+      data_age[[grouping_variable]],
+      levels = study_order
+    )
+  } else {
+    # Ridge plots require a discrete y aesthetic. In ungrouped mode, create a
+    # local plotting-only factor that represents the overall age distribution
+    # without adding a user-facing grouping requirement.
+    data_age <- data_age |>
+      mutate(plot_group = factor("All participants"))
+  }
 
   ############################################################
   # 5) Build the requested ggplot object
   ############################################################
 
-  # Use the raw grouping column name as the legend or axis label. This keeps the
-  # helper schema-oriented and avoids guessing at display labels.
-  legend_label <- grouping_variable |>
-    stringr::str_to_title() |>
-    stringr::str_replace(pattern = "_id", replacement = " ID")
+  # Use the raw grouping column name as the legend or axis label in grouped
+  # mode. Ungrouped plots use compact labels because no data column is mapped to
+  # color or a group axis.
+  legend_label <- NULL
+
+  if (has_grouping_variable) {
+    legend_label <- grouping_variable |>
+      stringr::str_to_title() |>
+      stringr::str_replace(pattern = "_id", replacement = " ID")
+  }
 
   if (type %in% valid_hist) {
-    # Histograms are represented as exact age-by-group counts rather than
-    # binned continuous histograms because age is expected to be reported in
-    # interpretable units such as years.
-    data_age <- data_age |>
-      group_by(
-        .data$age,
-        .data[[grouping_variable]]
-      ) |>
-      summarise(
-        n = n(),
-        .groups = "drop"
-      )
+    if (has_grouping_variable) {
+      # Grouped histograms are represented as exact age-by-group counts rather
+      # than binned continuous histograms because age is expected to be reported
+      # in interpretable units such as years.
+      data_age <- data_age |>
+        group_by(
+          .data$age,
+          .data[[grouping_variable]]
+        ) |>
+        summarise(
+          n = n(),
+          .groups = "drop"
+        )
 
-    # Draw one stacked bar per observed age value, with fill indicating the
-    # requested grouping variable.
-    graph <- ggplot(
-      data_age,
-      aes(x = .data$age, y = .data$n)
-    ) +
-      geom_bar(
-        aes(fill = .data[[grouping_variable]]),
-        stat = "identity",
-        color = "white",
-        linewidth = 0.2
+      # Draw one stacked bar per observed age value, with fill indicating the
+      # requested grouping variable.
+      graph <- ggplot(
+        data_age,
+        aes(x = .data$age, y = .data$n)
       ) +
-      labs(
-        x = "Age",
-        y = "Number of Participants",
-        fill = legend_label
+        geom_bar(
+          aes(fill = .data[[grouping_variable]]),
+          stat = "identity",
+          color = "white",
+          linewidth = 0.2
+        ) +
+        labs(
+          x = "Age",
+          y = "Number of Participants",
+          fill = legend_label
+        ) +
+        scale_fill_discrete(name = legend_label) +
+        guides(fill = guide_legend(reverse = TRUE)) +
+        theme_fearbase(legend_position = "right")
+    } else {
+      # Ungrouped histograms collapse all participants into one exact age-count
+      # distribution, avoiding a synthetic fill legend.
+      data_age <- data_age |>
+        group_by(.data$age) |>
+        summarise(
+          n = n(),
+          .groups = "drop"
+        )
+
+      graph <- ggplot(
+        data_age,
+        aes(x = .data$age, y = .data$n)
       ) +
-      scale_fill_discrete(name = legend_label) +
-      guides(fill = guide_legend(reverse = TRUE)) +
-      theme_fearbase()
+        geom_bar(
+          stat = "identity",
+          color = "white",
+          linewidth = 0.2
+        ) +
+        labs(
+          x = "Age",
+          y = "Number of Participants"
+        ) +
+        theme_fearbase(legend_position = "right")
+    }
   } else {
-    # Ridge plots use the unaggregated numeric ages so ggridges can estimate a
-    # density curve separately for each ordered group.
-    graph <- ggplot(
-      data_age,
-      aes(
-        x = .data$age,
-        y = .data[[grouping_variable]],
-        group = .data[[grouping_variable]],
-        fill = .data[[grouping_variable]]
-      )
-    ) +
-      ggridges::geom_density_ridges() +
-      labs(
-        x = "Age",
-        y = legend_label,
-        fill = legend_label
+    if (has_grouping_variable) {
+      # Ridge plots use the unaggregated numeric ages so ggridges can estimate
+      # a density curve separately for each ordered group.
+      graph <- ggplot(
+        data_age,
+        aes(
+          x = .data$age,
+          y = .data[[grouping_variable]],
+          group = .data[[grouping_variable]],
+          fill = .data[[grouping_variable]]
+        )
       ) +
-      # # Keep the ridge fills on the package palette while reversing the color
-      # # assignment so the ordered y-axis reads from the opposite palette end.
-      # scale_fill_discrete(
-      #   palette = function(n) {
-      #     rev(generate_palette(n))
-      #   }
-      # ) +
-      theme(
-        # The group is already shown on the y-axis, so suppress the duplicate
-        # fill legend for density/ridge output.
-        legend.position = "none"
+        ggridges::geom_density_ridges() +
+        labs(
+          x = "Age",
+          y = legend_label,
+          fill = legend_label
+        ) +
+        # # Keep the ridge fills on the package palette while reversing the
+        # # color assignment so the ordered y-axis reads from the opposite
+        # # palette end.
+        # scale_fill_discrete(
+        #   palette = function(n) {
+        #     rev(generate_palette(n))
+        #   }
+        # ) +
+        theme(
+          # The group is already shown on the y-axis, so suppress the duplicate
+          # fill legend for density/ridge output.
+          legend.position = "none"
+        ) +
+        theme_fearbase_dense(legend_position = "none")
+    } else {
+      # The ungrouped ridge keeps the same density geometry while mapping every
+      # observation to one plotting-only factor level.
+      graph <- ggplot(
+        data_age,
+        aes(
+          x = .data$age,
+          y = .data$plot_group,
+          group = .data$plot_group
+        )
       ) +
-      theme_fearbase_dense(legend_position = "none")
+        ggridges::geom_density_ridges() +
+        labs(
+          x = "Age",
+          y = NULL
+        ) +
+        theme_fearbase_dense(legend_position = "none")
+    }
   }
 
   # Return the plot without printing so callers can add layers, theme it, or

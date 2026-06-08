@@ -1,8 +1,19 @@
 test_that("age histogram works", {
   age(fixture_long_data()) |> testthat::expect_s3_class("ggplot")
+  age(
+    fixture_long_data(),
+    grouping_variable = "study_id"
+  ) |>
+    testthat::expect_s3_class("ggplot")
 })
 test_that("age ridgeplot works", {
   age(fixture_long_data(), type = "r") |> testthat::expect_s3_class("ggplot")
+  age(
+    fixture_long_data(),
+    type = "r",
+    grouping_variable = "condition_id"
+  ) |>
+    testthat::expect_s3_class("ggplot")
 })
 
 test_that("age plot validates inputs and grouping choices", {
