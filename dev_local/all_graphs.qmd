@@ -16,6 +16,7 @@ execution:
 devtools::load_all() # Load fearbase package
 library(tidyverse)
 library(data.table)
+library(plotly)
 
 csv_files <- dir(
   "C:\\Users\\calting\\Documents\\GitLab\\FEARBASE-R-Package\\data",
@@ -35,13 +36,30 @@ cb = codebook
 sd = study_design
 ```
 
+# Allgemeine Anmerkungen
+
+- Naming Convention for grouping variables:
+  - "study_id" -> "Study ID", "by Study"
+  - "condition_id" -> "Dataset ID", "by Dataset"
+
 # Participant-related
 
 ## Age
 
+- Suggested Title: Age Distribution by {grouping_variable}
+- Suggested Fill Legend Title: "Study ID", "Dataset ID"
+- Auswahlmöglichkeiten:
+  - grouping variable: study_id, condition_id {Optional für Histogramm}
+  - type: histogram, hist, h
+
 ### Histogram
 
-I'd remove the histogram from the package due to colours being not differentiable in a meaningful way (see comment in "Introducing the fearbase")
+NOTE:
+- Grouping is now optional (useful for histogram)
+- allowed grouping variables: "study_id", "condition_id"
+- if grouping variable is supplied: Legend Title is generated automatically from grouping variable string ("study_id" -> "Study ID", "condition_id" -> "Condition ID")
+  - "Condition ID" should be "Dataset ID" -> Ask Joel, if ID variable can be renamed upon export
+
 
 :::: {.column-page layout="[ 50, 50 ]"}
 
@@ -73,6 +91,10 @@ age(dl = data_long, type = "histogram", grouping_variable = "condition_id") +
 
 ### Ridgeline Plots
 
+NOTE:
+- grouping by "study_id" and "condition_id" implemented
+- automatic naming of y axis label based on grouping variable string
+
 :::: {.column-page layout-ncol="2"}
 
 ::: {#ridge-by-study}
@@ -81,8 +103,10 @@ age(dl = data_long, type = "histogram", grouping_variable = "condition_id") +
 #| label: fig-age-ridge-study
 #| fig-cap: "Age densities by study (not dataset)."
 #| code-fold: true
-age(dl = data_long, type = "ridge", grouping_variable = "study_id") +
+r <- age(dl = data_long, type = "ridge", grouping_variable = "study_id") +
   theme_fearbase(legend_position = "none")
+
+ggplotly(r)
 ```
 
 :::
@@ -103,6 +127,13 @@ age(dl = data_long, type = "ridge", grouping_variable = "condition_id") +
 
 
 ## Sex
+
+- Suggested Title: Biological^1 Sex Distribution
+- Suggested Footnote: 
+- Auswahlmöglichkeiten:
+  - Grouping Variable: study_id, condition_id (Pflichtfeld)
+  - Counts to display: Number of studies, number of participants (Pflichtfeld)
+
 
 ::: {#sex-pie-chart}
 

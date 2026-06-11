@@ -321,6 +321,7 @@ age <- function(
           fill = .data[[grouping_variable]]
         )
       ) +
+        #ggridges::stat_density_ridges(quantile_lines = TRUE, quantiles = 2) +
         ggridges::geom_density_ridges() +
         labs(
           x = "Age",
