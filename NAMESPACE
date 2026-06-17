@@ -3,6 +3,7 @@
 export(age)
 export(ageDescriptives)
 export(age_descriptives)
+export(age_interactive)
 export(allStudies)
 export(all_studies)
 export(checkData)
