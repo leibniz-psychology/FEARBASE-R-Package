@@ -20,6 +20,7 @@ RUN apt-get update && apt-get install -y \
     libtiff5-dev \
     libuv1-dev \
     libxml2-dev \
+    pandoc \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* \
     && rm -rf /tmp/downloaded_packages/ /tmp/*.rds \
